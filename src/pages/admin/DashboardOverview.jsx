@@ -48,6 +48,12 @@ const DashboardOverview = () => {
         totalConversations: 0,
         averageRAGScore: 0,
         walletVolume: 0,
+        totalDakshina: 0,
+        dakshinaWallet: 0,
+        dakshinaGateway: 0,
+        totalTokens: 0,
+        aiCost: 0,
+        currentBalance: 0,
         activeSubscriptions: 0,
         trends: {
             users: 0,
@@ -72,6 +78,12 @@ const DashboardOverview = () => {
                         totalConversations: data.totalConversations ?? 0,
                         averageRAGScore: data.averageRAGScore ?? 0,
                         walletVolume: data.walletVolume ?? 0,
+                        totalDakshina: data.totalDakshina ?? 0,
+                        dakshinaWallet: data.dakshinaWallet ?? 0,
+                        dakshinaGateway: data.dakshinaGateway ?? 0,
+                        totalTokens: data.totalTokens ?? 0,
+                        aiCost: data.aiCost ?? 0,
+                        currentBalance: data.currentBalance ?? 0,
                         activeSubscriptions: data.activeSubscriptions ?? 0,
                         trends: data.trends || { users: 0, sessions: 0, conversations: 0, wallet: 0 }
                     });
@@ -122,14 +134,14 @@ const DashboardOverview = () => {
                     color="indigo"
                     icon={<svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
                 />
-                <StatCard
+                {/* <StatCard
                     title="Active Sessions"
                     value={stats.activeToday.toString()}
                     subtext="Concurrent Waveforms"
                     trend={stats.trends.sessions}
                     color="rose"
                     icon={<svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-                />
+                /> */}
                 <StatCard
                     title="Inference Volume"
                     value={(stats.totalConversations || 0).toLocaleString()}
@@ -139,27 +151,34 @@ const DashboardOverview = () => {
                     icon={<svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>}
                 />
                 <StatCard
-                    title="RAG Precision"
-                    value={`${stats.averageRAGScore}%`}
-                    subtext="Contextual Fidelity Rate"
+                    title="Total Dakshina Got"
+                    value={`₹${(stats.totalDakshina || 0).toLocaleString()}`}
+                    subtext={`Wallet: ₹${stats.dakshinaWallet.toLocaleString()} | Gateway: ₹${stats.dakshinaGateway.toLocaleString()}`}
                     color="emerald"
                     icon={<svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
                 />
                 <StatCard
-                    title="Vault Volume"
+                    title="Wallet Recharges"
                     value={`₹${(stats.walletVolume || 0).toLocaleString()}`}
-                    subtext="Aggregate Asset Value"
+                    subtext="Aggregate Inflow"
                     trend={stats.trends.wallet}
                     color="orange"
                     icon={<svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
                 />
                 <StatCard
-                    title="Enrollment"
-                    value={stats.activeSubscriptions.toString()}
-                    subtext="Premium Tier Identities"
+                    title="AI Usage & Cost"
+                    subtext={`${(stats.totalTokens || 0).toLocaleString()} tks`}
+                    value={`${(stats.aiCost || 0).toFixed(2)}`}
+                    color="rose"
+                    icon={<svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+                />
+                {/* <StatCard
+                    title="Vault Balance"
+                    value={`₹${(stats.currentBalance || 0).toLocaleString()}`}
+                    subtext="Liability / Held Assets"
                     color="slate"
                     icon={<svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
-                />
+                /> */}
             </div>
 
             <div className="bg-slate-900 rounded-[4rem] p-16 text-white shadow-[0_40px_100px_rgba(0,0,0,0.5)] border border-white/5 relative overflow-hidden group">
