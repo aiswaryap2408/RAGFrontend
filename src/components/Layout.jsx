@@ -22,6 +22,8 @@ const Layout = ({ children }) => {
                         boxShadow: 3,
                         display: 'flex',
                         flexDirection: 'column',
+                        position: "relative",
+                        overflow: "hidden",
                     }}
                 >
                     {children}

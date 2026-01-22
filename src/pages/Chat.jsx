@@ -441,29 +441,29 @@ const Chat = () => {
 
     const [drawerOpen, setDrawerOpen] = React.useState(false);
 
-//   const location = useLocation();
-//   const navigate = useNavigate();
+    //   const location = useLocation();
+    //   const navigate = useNavigate();
 
-  const showMenu = [
-    "/chat",
-    "/profile",
-    "/history",
-    "/dakshina",
-    "/wallet",
-    "/wallet/recharge",
-  ].includes(location.pathname);
+    const showMenu = [
+        "/chat",
+        "/profile",
+        "/history",
+        "/dakshina",
+        "/wallet",
+        "/wallet/recharge",
+    ].includes(location.pathname);
 
-  const toggleDrawer = (open) => (event) => {
-    if (
-      event.type === "keydown" &&
-      (event.key === "Tab" || event.key === "Shift")
-    ) {
-      return;
-    }
-    setDrawerOpen(open);
-  };
+    const toggleDrawer = (open) => (event) => {
+        if (
+            event.type === "keydown" &&
+            (event.key === "Tab" || event.key === "Shift")
+        ) {
+            return;
+        }
+        setDrawerOpen(open);
+    };
 
-  const handleNavigation = (path) => {
+    const handleNavigation = (path) => {
         if (path === 'logout') {
             localStorage.clear();
             navigate('/');
@@ -487,39 +487,39 @@ const Chat = () => {
         }}>
             <Header backgroundImage="/svg/top_curve_dark.svg" />
             {showMenu && (
-        <Box
-          onClick={toggleDrawer(true)}
-          sx={{
-            position: "absolute",
-            top: 50,
-            left: 15,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            height: 20,
-            cursor: "pointer",
-            zIndex: 3,
-          }}
-        >
-          {[1, 2, 3].map((i) => (
-            <Box
-              key={i}
-              sx={{
-                width: 30,
-                height: "0.2rem",
-                bgcolor: "text.primary",
-              }}
-            />
-          ))}
-        </Box>
-      )}
+                <Box
+                    onClick={toggleDrawer(true)}
+                    sx={{
+                        position: "absolute",
+                        top: 50,
+                        left: 15,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        height: 20,
+                        cursor: "pointer",
+                        zIndex: 3,
+                    }}
+                >
+                    {[1, 2, 3].map((i) => (
+                        <Box
+                            key={i}
+                            sx={{
+                                width: 30,
+                                height: "0.2rem",
+                                bgcolor: "text.primary",
+                            }}
+                        />
+                    ))}
+                </Box>
+            )}
 
-      <HamburgerMenu
-        open={drawerOpen}
-        toggleDrawer={setDrawerOpen}
-        handleNavigation={handleNavigation}
-        sx={{ position: 'relative' }}
-        />
+            <HamburgerMenu
+                open={drawerOpen}
+                toggleDrawer={setDrawerOpen}
+                handleNavigation={handleNavigation}
+
+            />
 
 
             <PrimaryButton
