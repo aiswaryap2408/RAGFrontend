@@ -50,31 +50,44 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
     //   }}
     // >
     <Drawer
-  anchor="left"
-  open={open}
-  onClose={() => toggleDrawer(false)}
-  disablePortal
-//   disableScrollLock 
-  sx={{
-    
-    "& .MuiDrawer-paper": {
-      position: "absolute",
-      width: 320,
-      height: "100%",
-      bgcolor: "#2f3148",
-      color: "#fff",
-      borderTopRightRadius: 30,
-      borderBottomRightRadius: 30,
-
-      overflowY: "auto",
-      "&::-webkit-scrollbar": {
-        display: "none",
-      },
-      scrollbarWidth: "none",
-    },
-  }}
->
-
+      anchor="left"
+      open={open}
+      onClose={() => toggleDrawer(false)}
+      disableScrollLock
+      disablePortal
+      ModalProps={{
+        keepMounted: true,
+        style: { position: 'absolute' }
+      }}
+      PaperProps={{
+        style: { position: 'absolute' }
+      }}
+      sx={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        height: "100%",
+        width: "100%",
+        zIndex: 1300,
+        "& .MuiDrawer-root": {
+          position: "absolute"
+        },
+        "& .MuiDrawer-paper": {
+          width: 320,
+          height: "100%",
+          bgcolor: "#2f3148",
+          color: "#fff",
+          borderTopRightRadius: 30,
+          borderBottomRightRadius: 30,
+          boxSizing: 'border-box',
+          overflowY: "auto",
+          "&::-webkit-scrollbar": {
+            display: "none",
+          },
+          scrollbarWidth: "none",
+        },
+      }}
+    >
       <Box
         sx={{
           width: "100%",
@@ -94,9 +107,7 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
             alignItems: "center",
           }}
         >
-          <Box sx={{ fontWeight: "bold", fontSize: 16 }}>
-            Menu
-          </Box>
+          <Box sx={{ fontWeight: "bold", fontSize: 16 }}>Menu</Box>
 
           {/* CLOSE BUTTON ADDED HERE */}
           <IconButton
@@ -120,7 +131,10 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
             </ListItemButton>
           </ListItem>
 
-          <ListItem disablePadding onClick={() => handleNavigation("/chat-new")}>
+          <ListItem
+            disablePadding
+            onClick={() => handleNavigation("/chat-new")}
+          >
             <ListItemButton sx={{ py: 1.5 }}>
               <ListItemIcon sx={{ minWidth: 40, color: "#F26A2E" }}>
                 <AddCommentIcon />

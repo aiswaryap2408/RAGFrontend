@@ -23,7 +23,7 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
                 sx={{
                     position: "absolute",
                     bottom: 65,
-                    left: -11,
+                    left: 0,
                     width: 100,
                 }}
             >
@@ -39,7 +39,7 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
                 sx={{
                     position: "absolute",
                     bottom: 65,
-                    right: -11,
+                    right: 0,
                     width: 100,
                 }}
             >
