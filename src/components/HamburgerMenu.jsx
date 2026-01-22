@@ -50,31 +50,29 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
     //   }}
     // >
     <Drawer
-  anchor="left"
-  open={open}
-  onClose={() => toggleDrawer(false)}
-  disablePortal
-//   disableScrollLock 
-  sx={{
-    
-    "& .MuiDrawer-paper": {
-      position: "absolute",
-      width: 320,
-      height: "100%",
-      bgcolor: "#2f3148",
-      color: "#fff",
-      borderTopRightRadius: 30,
-      borderBottomRightRadius: 30,
+      anchor="left"
+      open={open}
+      onClose={() => toggleDrawer(false)}
+      disablePortal
+      //   disableScrollLock
+      sx={{
+        "& .MuiDrawer-paper": {
+          position: "absolute",
+          width: 320,
+          height: "100%",
+          bgcolor: "#2f3148",
+          color: "#fff",
+          borderTopRightRadius: 30,
+          borderBottomRightRadius: 30,
 
-      overflowY: "auto",
-      "&::-webkit-scrollbar": {
-        display: "none",
-      },
-      scrollbarWidth: "none",
-    },
-  }}
->
-
+          overflowY: "auto",
+          "&::-webkit-scrollbar": {
+            display: "none",
+          },
+          scrollbarWidth: "none",
+        },
+      }}
+    >
       <Box
         sx={{
           width: "100%",
@@ -94,9 +92,7 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
             alignItems: "center",
           }}
         >
-          <Box sx={{ fontWeight: "bold", fontSize: 16 }}>
-            Menu
-          </Box>
+          <Box sx={{ fontWeight: "bold", fontSize: 16 }}>Menu</Box>
 
           {/* CLOSE BUTTON ADDED HERE */}
           <IconButton
@@ -120,7 +116,10 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
             </ListItemButton>
           </ListItem>
 
-          <ListItem disablePadding onClick={() => handleNavigation("/chat-new")}>
+          <ListItem
+            disablePadding
+            onClick={() => handleNavigation("/chat-new")}
+          >
             <ListItemButton sx={{ py: 1.5 }}>
               <ListItemIcon sx={{ minWidth: 40, color: "#F26A2E" }}>
                 <AddCommentIcon />
