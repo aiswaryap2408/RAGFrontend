@@ -15,13 +15,12 @@ const Login = () => {
 
     useEffect(() => {
         const mobile = localStorage.getItem('mobile');
-        const token = localStorage.getItem('token');
-        if (mobile && token) {
+        if (mobile) {
             navigate('/chat');
         }
     }, [navigate]);
 
-    const handleMobileSubmit = async (e) => {
+    const handleMobileSubmit = async(e) => {
         if (e) e.preventDefault();
         setError('');
 
@@ -59,11 +58,11 @@ const Login = () => {
                     alignItems: 'center',
                     textAlign: 'center',
                     px: 3,
-                    pb: 10, // Extra padding at bottom to balance the header
+                    pb: 5, // Extra padding at bottom to balance the header
                     mt: -5  // Pull up slightly to account for the large header space
                 }}
             >
-                <Box>
+                <Box sx={{mb: 2.5}}>
                     <GurujiImage />
 
                     <Typography fontSize={16} mt={1} color="text.primary">
@@ -73,7 +72,7 @@ const Login = () => {
 
                 <Typography
                     mt={4}
-                    mb={2}
+                    mb={.5}
                     fontSize={15}
                     fontWeight={700}
                     color="primary"
@@ -81,27 +80,23 @@ const Login = () => {
                     Login / Sign-in with your phone number:
                 </Typography>
 
-                {error && (
-                    <Typography color="error" variant="body2" sx={{ mb: 2 }}>
-                        {error}
-                    </Typography>
-                )}
+                
 
                 {/* Phone Input Box */}
                 <Box
                     sx={{
                         display: "flex",
                         border: "2px solid #f2a28a",
-                        borderRadius: 2, // Slightly more rounded
+                        borderRadius: 1, // Slightly more rounded
                         overflow: "hidden",
                         bgcolor: "#fff",
                         width: "100%",
-                        maxWidth: 320,
-                        mb: 3,
+                        maxWidth: 350,
+                        // mb: 1.5,
                         boxShadow: '0 4px 12px rgba(242,162,138,0.1)'
                     }}
                 >
-                    <Box sx={{ px: 2, py: 2, fontSize: 16, color: "#666", bgcolor: "#FFF0E6", borderRight: "1px solid #f2a28a", fontWeight: 700 }}>
+                    <Box sx={{ px: 1.5, py: 1.5, fontSize: 16, color: "#666" }}>
                         +91
                     </Box>
                     <TextField
@@ -109,19 +104,26 @@ const Login = () => {
                         fullWidth
                         InputProps={{
                             disableUnderline: true,
-                            sx: { px: 2, height: '100%', fontSize: 16, fontWeight: 600 }
+                            sx: { px: 2, height: '100%', fontSize: 16, fontWeight: 500 }
                         }}
-                        placeholder="Mobile number"
+                        // placeholder="Mobile number"
                         value={mobile}
                         onChange={(e) => setMobile(e.target.value)}
                         inputProps={{ maxLength: 10, type: 'tel' }}
                         onKeyPress={(e) => e.key === 'Enter' && handleMobileSubmit()}
                     />
+                    
                 </Box>
+                {error && (
+                    <Typography color="error" variant="body2" >
+                        {error}
+                    </Typography>
+                )}
+                
 
                 <PrimaryButton
                     label={loading ? "Sending..." : "Get OTP"}
-                    sx={{ width: { xs: '100%', sm: '280px' }, height: 50, borderRadius: 3 }}
+                    sx={{ width: { xs: '100%', sm: '200px' }, height: 50, borderRadius: 1, fontSize: 15, mt: 1.5 }}
                     onClick={handleMobileSubmit}
                     disabled={loading}
                 />

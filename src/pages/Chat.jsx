@@ -18,6 +18,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import Header from "../components/header";
 import ChatInputFooter from "../components/ChatInputFooter";
 import FeedbackDrawer from '../components/FeedbackDrawer';
+import HamburgerMenu from '../components/HamburgerMenu';
 
 
 const SequentialResponse = ({ gurujiJson, onComplete, animate = false }) => {
@@ -438,6 +439,42 @@ const Chat = () => {
         }
     };
 
+    const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+//   const location = useLocation();
+//   const navigate = useNavigate();
+
+  const showMenu = [
+    "/chat",
+    "/profile",
+    "/history",
+    "/dakshina",
+    "/wallet",
+    "/wallet/recharge",
+  ].includes(location.pathname);
+
+  const toggleDrawer = (open) => (event) => {
+    if (
+      event.type === "keydown" &&
+      (event.key === "Tab" || event.key === "Shift")
+    ) {
+      return;
+    }
+    setDrawerOpen(open);
+  };
+
+  const handleNavigation = (path) => {
+        if (path === 'logout') {
+            localStorage.clear();
+            navigate('/');
+        } else if (path === '/chat-new') {
+            navigate('/chat', { state: { newSession: true } });
+        } else {
+            navigate(path);
+        }
+        setDrawerOpen(false);
+    };
+
     return (
         <Box sx={{
             // minHeight: '100vh',
@@ -445,10 +482,45 @@ const Chat = () => {
             flexDirection: 'column',
             bgcolor: '#FFF6EB',
             height: "100vh",
-            // position: 'relative',
+            position: 'relative',
             // width: '100%'
         }}>
             <Header backgroundImage="/svg/top_curve_dark.svg" />
+            {showMenu && (
+        <Box
+          onClick={toggleDrawer(true)}
+          sx={{
+            position: "absolute",
+            top: 50,
+            left: 15,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            height: 20,
+            cursor: "pointer",
+            zIndex: 3,
+          }}
+        >
+          {[1, 2, 3].map((i) => (
+            <Box
+              key={i}
+              sx={{
+                width: 30,
+                height: "0.2rem",
+                bgcolor: "text.primary",
+              }}
+            />
+          ))}
+        </Box>
+      )}
+
+      <HamburgerMenu
+        open={drawerOpen}
+        toggleDrawer={setDrawerOpen}
+        handleNavigation={handleNavigation}
+        sx={{ position: 'relative' }}
+        />
+
 
             <PrimaryButton
                 label="End Consultation"
