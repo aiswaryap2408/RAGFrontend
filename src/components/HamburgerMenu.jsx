@@ -53,18 +53,33 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
       anchor="left"
       open={open}
       onClose={() => toggleDrawer(false)}
+      disableScrollLock
       disablePortal
-      //   disableScrollLock
+      ModalProps={{
+        keepMounted: true,
+        style: { position: 'absolute' }
+      }}
+      PaperProps={{
+        style: { position: 'absolute' }
+      }}
       sx={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        height: "100%",
+        width: "100%",
+        zIndex: 1300,
+        "& .MuiDrawer-root": {
+          position: "absolute"
+        },
         "& .MuiDrawer-paper": {
-          position: "absolute",
           width: 320,
           height: "100%",
           bgcolor: "#2f3148",
           color: "#fff",
           borderTopRightRadius: 30,
           borderBottomRightRadius: 30,
-
+          boxSizing: 'border-box',
           overflowY: "auto",
           "&::-webkit-scrollbar": {
             display: "none",
