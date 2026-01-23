@@ -11,7 +11,8 @@ import {
     CircularProgress,
     TextField,
     Divider,
-    ListItemButton
+    ListItemButton,
+    Button
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -36,8 +37,184 @@ const tryParseJson = (data) => {
     return null;
 };
 
+const MayaIntro = ({ name, content, mayaJson }) => (
+    <Box sx={{ mb: 3, px: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+            <Box sx={{
+                width: 45,
+                height: 45,
+                borderRadius: '50%',
+                bgcolor: 'white',
+                border: '3px solid #F36A2F',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}>
+                <Typography sx={{ fontWeight: 900, color: '#F36A2F', fontSize: '1rem' }}>M</Typography>
+            </Box>
+            <Box sx={{
+                p: 2.5,
+                borderRadius: '0 24px 24px 24px',
+                bgcolor: 'white',
+                color: '#333',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                border: '1px solid #FFF',
+                maxWidth: '85%'
+            }}>
+                <Typography sx={{ fontSize: '0.7rem', fontWeight: 900, color: '#F36A2F', mb: 0.5, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    Receptionist Maya
+                </Typography>
+                <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.95rem', fontWeight: 500 }}>
+                    {name && <strong>Namaste {name}, </strong>}{content}
+                </Typography>
 
-const SequentialResponse = ({ gurujiJson, onComplete, animate = false, onGenerateReport }) => {
+                {mayaJson && (
+                    <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px dashed #eee' }}>
+                        <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 800, mb: 1 }}>INTENT ANALYSIS</Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            <Box sx={{ px: 1.5, py: 0.5, bgcolor: '#FFF6EB', color: '#F36A2F', borderRadius: 10, fontSize: '0.65rem', fontWeight: 800, border: '1px solid #FFE0BD' }}>
+                                CATEGORY: {mayaJson.category?.toUpperCase()}
+                            </Box>
+                            <Box sx={{ px: 1.5, py: 0.5, bgcolor: '#F0FDF4', color: '#16A34A', borderRadius: 10, fontSize: '0.65rem', fontWeight: 800, border: '1px solid #DCFCE7' }}>
+                                SENTIMENT: {mayaJson.sentiment?.toUpperCase()}
+                            </Box>
+                        </Box>
+                    </Box>
+                )}
+            </Box>
+        </Box>
+    </Box>
+);
+
+
+const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, disabled }) => (
+    <Box sx={{ px: 3, pt: 3, pb: 1, width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Box sx={{
+            position: "relative",
+            border: "1.5px solid #F36A2F",
+            borderRadius: 4,
+            p: 2.5,
+            bgcolor: "#FFF6EB",
+            width: '100%',
+            maxWidth: 450
+        }}>
+            <Box sx={{
+                position: "absolute",
+                top: -24,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 48,
+                height: 48,
+                borderRadius: "50%",
+                border: "3px solid #F36A2F",
+                bgcolor: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: 'hidden'
+            }}>
+                <img src="/svg/guruji_illustrated.svg" style={{ width: 38 }} alt="Maya" />
+            </Box>
+
+            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 1, textAlign: 'left', fontWeight: 500 }}>
+                {name && <strong>{name}, </strong>}{content}
+            </Typography>
+
+            {loading && (
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress size={20} sx={{ color: '#F36A2F' }} />
+                    <Typography sx={{ fontSize: '0.85rem', color: '#F36A2F', fontWeight: 600 }}>Preparing your report...</Typography>
+                </Box>
+            )}
+
+            {buttonLabel && !loading && (
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                    <Button
+                        onClick={onButtonClick}
+                        disabled={disabled}
+                        startIcon={<img src="/svg/task_alt.svg" style={{ width: 18 }} alt="icon" />}
+                        sx={{
+                            bgcolor: disabled ? '#e0e0e0' : 'white',
+                            color: disabled ? '#999' : '#10b981',
+                            px: 3,
+                            py: 0.8,
+                            borderRadius: 10,
+                            textTransform: 'none',
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                            border: disabled ? '1.5px solid #ccc' : '1.5px solid #10b981',
+                            '&:hover': { bgcolor: disabled ? '#e0e0e0' : '#f0fdf4' },
+                            cursor: disabled ? 'not-allowed' : 'pointer'
+                        }}
+                    >
+                        {buttonLabel}
+                    </Button>
+                </Box>
+            )}
+        </Box>
+    </Box>
+);
+
+const NotificationBox = ({ content, buttonLabel, onButtonClick }) => (
+    <Box sx={{ px: 3, pt: 2, pb: 1, width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Box sx={{
+            position: "relative",
+            bgcolor: '#4dab7c',
+            borderRadius: 4,
+            p: 2.5,
+            width: '100%',
+            maxWidth: 450,
+            color: 'white'
+        }}>
+            <Box sx={{
+                position: "absolute",
+                top: -24,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 48,
+                height: 48,
+                borderRadius: "50%",
+                bgcolor: '#4dab7c',
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: '4px solid #FFF6EB'
+            }}>
+                <PictureAsPdfIcon sx={{ color: 'white' }} />
+            </Box>
+
+            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, mt: 1, textAlign: 'left', fontWeight: 500 }}>
+                {content}
+            </Typography>
+
+            {buttonLabel && (
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                    <Button
+                        onClick={onButtonClick}
+                        startIcon={<PictureAsPdfIcon />}
+                        sx={{
+                            bgcolor: 'white',
+                            color: '#4dab7c',
+                            px: 3,
+                            py: 0.8,
+                            borderRadius: 10,
+                            textTransform: 'none',
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                            '&:hover': { bgcolor: '#f0fdf4' }
+                        }}
+                    >
+                        {buttonLabel}
+                    </Button>
+                </Box>
+            )}
+        </Box>
+    </Box>
+);
+
+const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages, handleReportGeneration, reportState, activeCategory, userName }) => {
     const paras = [
         gurujiJson?.para1 || '',
         gurujiJson?.para2 || '',
@@ -46,7 +223,6 @@ const SequentialResponse = ({ gurujiJson, onComplete, animate = false, onGenerat
 
     const [visibleCount, setVisibleCount] = useState(animate ? 0 : paras.length);
     const [isBuffering, setIsBuffering] = useState(animate ? true : false);
-    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const textEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -60,41 +236,34 @@ const SequentialResponse = ({ gurujiJson, onComplete, animate = false, onGenerat
         }
 
         let currentIdx = 0;
-
         const showNext = () => {
             if (currentIdx >= paras.length) {
                 setIsBuffering(false);
                 if (onComplete) onComplete();
                 return;
             }
-
-            // Buffering period
             setIsBuffering(true);
             scrollToBottom();
-
             setTimeout(() => {
                 setIsBuffering(false);
                 setVisibleCount(prev => prev + 1);
                 currentIdx++;
                 scrollToBottom();
-
-                // Wait a bit before starting next buffer or finishing
                 setTimeout(showNext, 2000);
-            }, 3000); // 3 seconds buffering per para
+            }, 3000);
         };
-
         showNext();
     }, [gurujiJson, animate]);
 
-    const handleReportClick = async () => {
-        if (onGenerateReport) {
-            setIsGeneratingReport(true);
-            try {
-                await onGenerateReport();
-            } finally {
-                setIsGeneratingReport(false);
-            }
+    useEffect(() => {
+        if (reportState !== 'IDLE') {
+            scrollToBottom();
         }
+    }, [reportState]);
+
+    const handleReportClick = () => {
+        const lastMsg = messages[messages.length - 1];
+        handleReportGeneration(lastMsg?.mayaJson?.category || 'general', 'START');
     };
 
     const bubbleSx = {
@@ -114,46 +283,16 @@ const SequentialResponse = ({ gurujiJson, onComplete, animate = false, onGenerat
             {paras.slice(0, visibleCount).map((para, idx) => (
                 <Box key={idx} sx={bubbleSx}>
                     {idx === 0 && (
-                        <Typography sx={{
-                            fontSize: '0.65rem',
-                            fontWeight: 900,
-                            textTransform: 'uppercase',
-                            mb: 0.5,
-                            color: 'rgba(255,255,255,0.9)',
-                            letterSpacing: 1
-                        }}>
+                        <Typography sx={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', mb: 0.5, color: 'rgba(255,255,255,0.9)', letterSpacing: 1 }}>
                             Astrology Guruji
                         </Typography>
                     )}
-                    <Typography
-                        variant="body2"
-                        sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}
-                        dangerouslySetInnerHTML={{ __html: para }}
-                    />
+                    <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para }} />
 
-                    {/* Show button ONLY after the last paragraph is fully visible */}
-                    {idx === paras.length - 1 && (
+                    {idx === paras.length - 1 && reportState === 'IDLE' && (
                         <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-start' }}>
-                            <ListItemButton
-                                onClick={handleReportClick}
-                                disabled={isGeneratingReport}
-                                sx={{
-                                    borderRadius: 2,
-                                    bgcolor: 'rgba(255,255,255,0.2)',
-                                    color: 'white',
-                                    px: 2,
-                                    py: 1,
-                                    width: 'auto',
-                                    border: '1px solid rgba(255,255,255,0.4)',
-                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                                    '&.Mui-disabled': { bgcolor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }
-                                }}
-                            >
-                                {isGeneratingReport ? (
-                                    <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
-                                ) : (
-                                    <PictureAsPdfIcon sx={{ fontSize: 20, mr: 1 }} />
-                                )}
+                            <ListItemButton onClick={handleReportClick} sx={{ borderRadius: 2, bgcolor: 'rgba(255,255,255,0.2)', color: 'white', px: 2, py: 1, width: 'auto', border: '1px solid rgba(255,255,255,0.4)', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}>
+                                <PictureAsPdfIcon sx={{ fontSize: 20, mr: 1 }} />
                                 Get Detailed PDF Report
                             </ListItemButton>
                         </Box>
@@ -168,67 +307,38 @@ const SequentialResponse = ({ gurujiJson, onComplete, animate = false, onGenerat
                     <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.4s' }} />
                 </Box>
             )}
+
+            {(reportState === 'CONFIRMING' || reportState === 'PREPARING' || reportState === 'READY') && (
+                <MayaTemplateBox
+                    name={userName.split(' ')[0]}
+                    content={`detailed predictions on ${activeCategory || 'your query'} are chargeable ₹49.`}
+                    buttonLabel="Paid for detailed answer"
+                    onButtonClick={() => handleReportGeneration(activeCategory, 'PAY')}
+                    loading={reportState === 'PREPARING'}
+                    disabled={reportState === 'PREPARING' || reportState === 'READY'}
+                />
+            )}
+
+            {(reportState === 'PREPARING' || reportState === 'READY') && (
+                <MayaTemplateBox
+                    content={<>The detailed answer will be available in the <strong>"Detailed Reports"</strong> section of your home screen.<br /><br />Once prepared you'll be notified here.</>}
+                    loading={reportState === 'PREPARING'}
+                />
+            )}
+
+            {reportState === 'READY' && (
+                <NotificationBox
+                    content={`The detailed answer on ${activeCategory || 'your query'} is ready.`}
+                    buttonLabel="Download Report"
+                    onButtonClick={() => handleReportGeneration(activeCategory, 'DOWNLOAD')}
+                />
+            )}
+
             <div ref={textEndRef} style={{ height: 1 }} />
         </Box>
     );
 };
 
-const MayaIntro = ({ name, content, mayaJson, rawResponse }) => (
-    <Box sx={{ px: 3, pt: 4, pb: 1, width: "100%" }}>
-        <Box sx={{
-            position: "relative",
-            border: "2px solid #F36A2F",
-            borderRadius: 2,
-            p: 2,
-            bgcolor: "#fcebd3",
-            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-        }}>
-            {/* Avatar */}
-            <Box sx={{
-                position: "absolute",
-                top: -28,
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                border: "5px solid #F36A2F",
-                bgcolor: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-            }}>
-                <img src="/svg/guruji_illustrated.svg" style={{ width: 45 }} alt="Maya" />
-            </Box>
-
-            {/* Content */}
-            <Typography sx={{ fontSize: '1rem', lineHeight: 1.5, color: '#444', mt: 1, whiteSpace: 'pre-line' }}>
-                <strong>{name},</strong> {content}
-            </Typography>
-
-            {/* JSON Output View for Maya Intro */}
-            {(mayaJson || rawResponse) && (
-                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed rgba(0,0,0,0.1)' }}>
-                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#666', mb: 0.5, textTransform: 'uppercase' }}>
-                        Receptionist JSON:
-                    </Typography>
-                    <Box sx={{
-                        bgcolor: 'rgba(255,255,255,0.5)',
-                        p: 1,
-                        borderRadius: 1,
-                        fontSize: '0.75rem',
-                        fontFamily: 'monospace',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-all',
-                        color: '#444'
-                    }}>
-                        {JSON.stringify(mayaJson || rawResponse, null, 2)}
-                    </Box>
-                </Box>
-            )}
-        </Box>
-    </Box>
-);
 
 const Chat = () => {
     const navigate = useNavigate();
@@ -242,12 +352,17 @@ const Chat = () => {
     const [summary, setSummary] = useState(null);
     const [userStatus, setUserStatus] = useState('checking'); // 'checking', 'processing', 'ready', 'failed'
     const [userName, setUserName] = useState(localStorage.getItem('userName') || '');
-    const [walletBalance, setWalletBalance] = useState(100);
+    const [walletBalance, setWalletBalance] = useState(0);
     const [sessionId, setSessionId] = useState(localStorage.getItem('activeSessionId') || `SESS_${Date.now()}`);
     const [showInactivityPrompt, setShowInactivityPrompt] = useState(false);
     const [feedback, setFeedback] = useState({ rating: 0, comment: '' });
     const [submittingFeedback, setSubmittingFeedback] = useState(false);
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+    // Multi-step report flow state
+    const [reportState, setReportState] = useState('IDLE'); // IDLE, CONFIRMING, PREPARING, READY
+    const [activeCategory, setActiveCategory] = useState(null);
+    const [readyReportData, setReadyReportData] = useState(null);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -564,46 +679,67 @@ const Chat = () => {
         setDrawerOpen(false);
     };
 
-    const handleReportGeneration = async (mayaCategory) => {
+    const handleReportGeneration = async (category, action) => {
         const mobile = localStorage.getItem('mobile');
         if (!mobile) return;
 
-        try {
-            const res = await generateReport(mobile, mayaCategory || 'general');
+        if (action === 'START') {
+            setActiveCategory(category);
+            setReportState('CONFIRMING');
+            return;
+        }
 
-            // Check if it's JSON (insufficient funds) or Blob (PDF)
-            if (res.data.type === 'application/json') {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const result = JSON.parse(reader.result);
-                    if (result.status === 'insufficient_funds') {
-                        if (window.confirm(`Insufficient coins. You need ${result.required_amount} coins for this report. Go to recharge?`)) {
-                            navigate('/wallet/recharge');
-                        }
+        if (action === 'PAY') {
+            if (!window.confirm(`Do you wish to pay ₹49 for the detailed prediction?`)) return;
+
+            setReportState('PREPARING');
+
+            // Simulate 20-second report generation delay
+            setTimeout(async () => {
+                try {
+                    const res = await generateReport(mobile, category || 'general');
+
+                    if (res.data.type === 'application/json') {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const result = JSON.parse(reader.result);
+                            if (result.status === 'insufficient_funds') {
+                                alert(`Insufficient coins. You need ${result.required_amount} coins for this report.`);
+                                setReportState('CONFIRMING');
+                            }
+                        };
+                        reader.readAsText(res.data);
+                        return;
                     }
-                };
-                reader.readAsText(res.data);
-                return;
-            }
 
-            // Download PDF
-            const url = window.URL.createObjectURL(new Blob([res.data]));
+                    // Report is ready
+                    setReadyReportData(res.data);
+                    setReportState('READY');
+
+                    // Refresh balance
+                    const balanceRes = await api.get(`/auth/user-status/${mobile}`);
+                    if (balanceRes.data.wallet_balance !== undefined) {
+                        setWalletBalance(balanceRes.data.wallet_balance);
+                    }
+                } catch (err) {
+                    console.error("Report Error:", err);
+                    alert("Failed to generate report. Please try again.");
+                    setReportState('CONFIRMING');
+                }
+            }, 20000); // 20 seconds delay
+
+            return;
+        }
+
+        if (action === 'DOWNLOAD') {
+            if (!readyReportData) return;
+            const url = window.URL.createObjectURL(new Blob([readyReportData]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `Astrology_Report_${mayaCategory || 'General'}.pdf`);
+            link.setAttribute('download', `Astrology_Report_${category || 'General'}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
-
-            // Refresh balance
-            const balanceRes = await api.get(`/auth/user-status/${mobile}`);
-            if (balanceRes.data.wallet_balance !== undefined) {
-                setWalletBalance(balanceRes.data.wallet_balance);
-            }
-
-        } catch (err) {
-            console.error("Report Generation Error:", err);
-            alert("Failed to generate report. Please try again.");
         }
     };
 
@@ -735,7 +871,11 @@ const Chat = () => {
                                     <SequentialResponse
                                         gurujiJson={gurujiData}
                                         animate={msg.animating}
-                                        onGenerateReport={() => handleReportGeneration(msg.mayaJson?.category)}
+                                        messages={messages}
+                                        handleReportGeneration={handleReportGeneration}
+                                        reportState={reportState}
+                                        activeCategory={activeCategory}
+                                        userName={userName}
                                     />
                                     {/* JSON Output View for Guruji Multi-bubble */}
                                     {(gurujiData || msg.mayaJson) && (
@@ -848,13 +988,7 @@ const Chat = () => {
                                         </Box>
                                     )}
 
-                                    {msg.amount > 0 && (
-                                        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                            <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#B45309', bgcolor: '#FEF3C7', px: 1, py: 0.2, borderRadius: 1 }}>
-                                                PREMIUM: -{msg.amount} coins
-                                            </Typography>
-                                        </Box>
-                                    )}
+                                    {/* Automated chat fee label removed */}
                                 </Box>
                             </Box>
                         </Box>

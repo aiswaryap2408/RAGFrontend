@@ -29,6 +29,9 @@ export const updateSystemPrompt = (prompt) => api.post('/admin/system-prompt', {
 export const getMayaPrompt = () => api.get('/admin/maya-prompt');
 export const updateMayaPrompt = (prompt) => api.post('/admin/maya-prompt', { prompt });
 
+export const getReportPrompt = () => api.get('/admin/report-prompt');
+export const updateReportPrompt = (prompt) => api.post('/admin/report-prompt', { prompt });
+
 // Chat Tester Endpoints
 export const testUpload = (formData) => api.post('/admin/test-upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
