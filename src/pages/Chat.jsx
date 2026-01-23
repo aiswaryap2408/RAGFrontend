@@ -202,7 +202,7 @@ const Chat = () => {
     const [userStatus, setUserStatus] = useState('checking'); // 'checking', 'processing', 'ready', 'failed'
     const [userName, setUserName] = useState(localStorage.getItem('userName') || '');
     const [walletBalance, setWalletBalance] = useState(100);
-    const [sessionId, setSessionId] = useState(`SESS_${Date.now()}`);
+    const [sessionId, setSessionId] = useState(localStorage.getItem('activeSessionId') || `SESS_${Date.now()}`);
     const [showInactivityPrompt, setShowInactivityPrompt] = useState(false);
     const [feedback, setFeedback] = useState({ rating: 0, comment: '' });
     const [submittingFeedback, setSubmittingFeedback] = useState(false);
@@ -216,37 +216,59 @@ const Chat = () => {
     // Load Chat History (Smart Resume Logic)
     useEffect(() => {
         const loadHistory = async () => {
-            if (location.state?.newSession) {
-                handleNewChat();
-                return;
-            }
             const mobile = localStorage.getItem('mobile');
             if (mobile) {
                 try {
                     const res = await getChatHistory(mobile);
                     if (res.data.sessions && res.data.sessions.length > 0) {
                         const mostRecentSession = res.data.sessions[0];
+                        const currentLocalSid = localStorage.getItem('activeSessionId');
+
+                        // Scenario 1: User explicitly clicked "New Consultation"
+                        if (location.state?.newSession) {
+                            handleNewChat();
+                            return;
+                        }
+
+                        // Scenario 2: Most recent session on server is already ended
+                        if (mostRecentSession.is_ended) {
+                            console.log("Most recent session on server is marked as ended.");
+                            // If our local session ID matches the ended one, we MUST start fresh
+                            if (currentLocalSid === mostRecentSession.session_id) {
+                                handleNewChat();
+                                return;
+                            }
+                        }
+
+                        // Scenario 3: We have history, and it's for our current session
                         const history = mostRecentSession.messages;
                         if (history && history.length > 0) {
-                            const mappedHistory = history.map(msg => {
-                                // Try to extract gurujiJson from multiple possible sources
-                                const gJson = tryParseJson(msg.guruji_json || msg.gurujiJson) ||
-                                    (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null);
+                            // If local SID matches server, load it
+                            // Or if we don't have a local SID yet (first load), adopt the server's if NOT ended
+                            if (currentLocalSid === mostRecentSession.session_id || (!currentLocalSid && !mostRecentSession.is_ended)) {
 
-                                return {
-                                    ...msg,
-                                    gurujiJson: gJson,
-                                    mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
-                                    animating: false // History shouldn't animate
-                                };
-                            });
+                                if (!currentLocalSid) {
+                                    setSessionId(mostRecentSession.session_id);
+                                    localStorage.setItem('activeSessionId', mostRecentSession.session_id);
+                                }
 
-                            setSessionId(mostRecentSession.session_id);
-                            setMessages(prev => {
-                                // Only append if empty or just initial greeting
-                                if (prev.length > 2) return prev;
-                                return [...prev, ...mappedHistory];
-                            });
+                                const mappedHistory = history.map(msg => {
+                                    const gJson = tryParseJson(msg.guruji_json || msg.gurujiJson) ||
+                                        (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null);
+
+                                    return {
+                                        ...msg,
+                                        gurujiJson: gJson,
+                                        mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                        animating: false
+                                    };
+                                });
+
+                                setMessages(prev => {
+                                    if (prev.length > 2) return prev;
+                                    return [...prev, ...mappedHistory];
+                                });
+                            }
                         }
                     }
                 } catch (err) {
@@ -255,7 +277,7 @@ const Chat = () => {
             }
         };
         loadHistory();
-    }, [location.state?.newSession]); // Added location.state?.newSession to dependencies
+    }, [location.state]);
 
     useEffect(() => {
         scrollToBottom();
@@ -323,10 +345,12 @@ const Chat = () => {
     };
 
     const handleNewChat = () => {
+        const newSid = `SESS_${Date.now()}`;
         setMessages([
             { role: 'assistant', content: "welcome! \n\nI'll connect you to our astrologer.You may call him as 'Guruji'", assistant: 'maya' }
         ]);
-        setSessionId(`SESS_${Date.now()}`);
+        setSessionId(newSid);
+        localStorage.setItem('activeSessionId', newSid);
         setSummary(null);
         setFeedback({ rating: 0, comment: '' });
         setFeedbackSubmitted(false);
