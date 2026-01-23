@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import api, { sendMessage, endChat, getChatHistory, submitFeedback } from '../api';
+import api, { sendMessage, endChat, getChatHistory, submitFeedback, generateReport } from '../api';
 import axios from 'axios';
 
 import {
@@ -13,6 +13,7 @@ import {
     Divider,
     ListItemButton
 } from '@mui/material';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import CancelIcon from '@mui/icons-material/Cancel';
 import PrimaryButton from '../components/PrimaryButton';
 import Header from "../components/header";
@@ -20,8 +21,23 @@ import ChatInputFooter from "../components/ChatInputFooter";
 import FeedbackDrawer from '../components/FeedbackDrawer';
 import HamburgerMenu from '../components/HamburgerMenu';
 
+const tryParseJson = (data) => {
+    if (!data) return null;
+    if (typeof data === 'object') return data;
+    if (typeof data !== 'string') return null;
+    const trimmed = data.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+            return JSON.parse(trimmed);
+        } catch (e) {
+            return null;
+        }
+    }
+    return null;
+};
 
-const SequentialResponse = ({ gurujiJson, onComplete, animate = false }) => {
+
+const SequentialResponse = ({ gurujiJson, onComplete, animate = false, onGenerateReport }) => {
     const paras = [
         gurujiJson?.para1 || '',
         gurujiJson?.para2 || '',
@@ -30,6 +46,7 @@ const SequentialResponse = ({ gurujiJson, onComplete, animate = false }) => {
 
     const [visibleCount, setVisibleCount] = useState(animate ? 0 : paras.length);
     const [isBuffering, setIsBuffering] = useState(animate ? true : false);
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const textEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -69,6 +86,17 @@ const SequentialResponse = ({ gurujiJson, onComplete, animate = false }) => {
         showNext();
     }, [gurujiJson, animate]);
 
+    const handleReportClick = async () => {
+        if (onGenerateReport) {
+            setIsGeneratingReport(true);
+            try {
+                await onGenerateReport();
+            } finally {
+                setIsGeneratingReport(false);
+            }
+        }
+    };
+
     const bubbleSx = {
         p: 2,
         borderRadius: '20px 20px 20px 0',
@@ -102,6 +130,34 @@ const SequentialResponse = ({ gurujiJson, onComplete, animate = false }) => {
                         sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}
                         dangerouslySetInnerHTML={{ __html: para }}
                     />
+
+                    {/* Show button ONLY after the last paragraph is fully visible */}
+                    {idx === paras.length - 1 && (
+                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-start' }}>
+                            <ListItemButton
+                                onClick={handleReportClick}
+                                disabled={isGeneratingReport}
+                                sx={{
+                                    borderRadius: 2,
+                                    bgcolor: 'rgba(255,255,255,0.2)',
+                                    color: 'white',
+                                    px: 2,
+                                    py: 1,
+                                    width: 'auto',
+                                    border: '1px solid rgba(255,255,255,0.4)',
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+                                    '&.Mui-disabled': { bgcolor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }
+                                }}
+                            >
+                                {isGeneratingReport ? (
+                                    <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                                ) : (
+                                    <PictureAsPdfIcon sx={{ fontSize: 20, mr: 1 }} />
+                                )}
+                                Get Detailed PDF Report
+                            </ListItemButton>
+                        </Box>
+                    )}
                 </Box>
             ))}
 
@@ -187,7 +243,7 @@ const Chat = () => {
     const [userStatus, setUserStatus] = useState('checking'); // 'checking', 'processing', 'ready', 'failed'
     const [userName, setUserName] = useState(localStorage.getItem('userName') || '');
     const [walletBalance, setWalletBalance] = useState(100);
-    const [sessionId, setSessionId] = useState(`SESS_${Date.now()}`);
+    const [sessionId, setSessionId] = useState(localStorage.getItem('activeSessionId') || `SESS_${Date.now()}`);
     const [showInactivityPrompt, setShowInactivityPrompt] = useState(false);
     const [feedback, setFeedback] = useState({ rating: 0, comment: '' });
     const [submittingFeedback, setSubmittingFeedback] = useState(false);
@@ -201,28 +257,59 @@ const Chat = () => {
     // Load Chat History (Smart Resume Logic)
     useEffect(() => {
         const loadHistory = async () => {
-            if (location.state?.newSession) {
-                handleNewChat();
-                return;
-            }
             const mobile = localStorage.getItem('mobile');
             if (mobile) {
                 try {
                     const res = await getChatHistory(mobile);
                     if (res.data.sessions && res.data.sessions.length > 0) {
                         const mostRecentSession = res.data.sessions[0];
+                        const currentLocalSid = localStorage.getItem('activeSessionId');
+
+                        // Scenario 1: User explicitly clicked "New Consultation"
+                        if (location.state?.newSession) {
+                            handleNewChat();
+                            return;
+                        }
+
+                        // Scenario 2: Most recent session on server is already ended
+                        if (mostRecentSession.is_ended) {
+                            console.log("Most recent session on server is marked as ended.");
+                            // If our local session ID matches the ended one, we MUST start fresh
+                            if (currentLocalSid === mostRecentSession.session_id) {
+                                handleNewChat();
+                                return;
+                            }
+                        }
+
+                        // Scenario 3: We have history, and it's for our current session
                         const history = mostRecentSession.messages;
                         if (history && history.length > 0) {
-                            const lastMsg = history[history.length - 1];
-                            // Relaxed Logic: Always load the most recent session to ensure sync
-                            // We can add a larger threshold if needed (e.g. 24 hours), but for sync, always loading is safer.
+                            // If local SID matches server, load it
+                            // Or if we don't have a local SID yet (first load), adopt the server's if NOT ended
+                            if (currentLocalSid === mostRecentSession.session_id || (!currentLocalSid && !mostRecentSession.is_ended)) {
 
-                            setSessionId(mostRecentSession.session_id);
-                            setMessages(prev => {
-                                // Only append if empty or just initial greeting
-                                if (prev.length > 2) return prev;
-                                return [...prev, ...history];
-                            });
+                                if (!currentLocalSid) {
+                                    setSessionId(mostRecentSession.session_id);
+                                    localStorage.setItem('activeSessionId', mostRecentSession.session_id);
+                                }
+
+                                const mappedHistory = history.map(msg => {
+                                    const gJson = tryParseJson(msg.guruji_json || msg.gurujiJson) ||
+                                        (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null);
+
+                                    return {
+                                        ...msg,
+                                        gurujiJson: gJson,
+                                        mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                        animating: false
+                                    };
+                                });
+
+                                setMessages(prev => {
+                                    if (prev.length > 2) return prev;
+                                    return [...prev, ...mappedHistory];
+                                });
+                            }
                         }
                     }
                 } catch (err) {
@@ -231,7 +318,7 @@ const Chat = () => {
             }
         };
         loadHistory();
-    }, [location.state?.newSession]); // Added location.state?.newSession to dependencies
+    }, [location.state]);
 
     useEffect(() => {
         scrollToBottom();
@@ -299,10 +386,12 @@ const Chat = () => {
     };
 
     const handleNewChat = () => {
+        const newSid = `SESS_${Date.now()}`;
         setMessages([
             { role: 'assistant', content: "welcome! \n\nI'll connect you to our astrologer.You may call him as 'Guruji'", assistant: 'maya' }
         ]);
-        setSessionId(`SESS_${Date.now()}`);
+        setSessionId(newSid);
+        localStorage.setItem('activeSessionId', newSid);
         setSummary(null);
         setFeedback({ rating: 0, comment: '' });
         setFeedbackSubmitted(false);
@@ -475,6 +564,49 @@ const Chat = () => {
         setDrawerOpen(false);
     };
 
+    const handleReportGeneration = async (mayaCategory) => {
+        const mobile = localStorage.getItem('mobile');
+        if (!mobile) return;
+
+        try {
+            const res = await generateReport(mobile, mayaCategory || 'general');
+
+            // Check if it's JSON (insufficient funds) or Blob (PDF)
+            if (res.data.type === 'application/json') {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const result = JSON.parse(reader.result);
+                    if (result.status === 'insufficient_funds') {
+                        if (window.confirm(`Insufficient coins. You need ${result.required_amount} coins for this report. Go to recharge?`)) {
+                            navigate('/wallet/recharge');
+                        }
+                    }
+                };
+                reader.readAsText(res.data);
+                return;
+            }
+
+            // Download PDF
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Astrology_Report_${mayaCategory || 'General'}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            // Refresh balance
+            const balanceRes = await api.get(`/auth/user-status/${mobile}`);
+            if (balanceRes.data.wallet_balance !== undefined) {
+                setWalletBalance(balanceRes.data.wallet_balance);
+            }
+
+        } catch (err) {
+            console.error("Report Generation Error:", err);
+            alert("Failed to generate report. Please try again.");
+        }
+    };
+
     return (
         <Box sx={{
             // minHeight: '100vh',
@@ -580,7 +712,9 @@ const Chat = () => {
                         );
                     }
 
-                    if (msg.gurujiJson) {
+                    const gurujiData = msg.gurujiJson || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null);
+
+                    if (gurujiData) {
                         return (
                             <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 2, width: '100%' }}>
                                 <Box sx={{
@@ -599,11 +733,12 @@ const Chat = () => {
                                 </Box>
                                 <Box sx={{ flex: 1, maxWidth: '85%' }}>
                                     <SequentialResponse
-                                        gurujiJson={msg.gurujiJson}
+                                        gurujiJson={gurujiData}
                                         animate={msg.animating}
+                                        onGenerateReport={() => handleReportGeneration(msg.mayaJson?.category)}
                                     />
                                     {/* JSON Output View for Guruji Multi-bubble */}
-                                    {(msg.gurujiJson || msg.mayaJson) && (
+                                    {(gurujiData || msg.mayaJson) && (
                                         <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)' }}>
                                             <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(0,0,0,0.4)', mb: 0.5, textTransform: 'uppercase' }}>
                                                 Debug Data:
@@ -616,11 +751,11 @@ const Chat = () => {
                                                     </Box>
                                                 </Box>
                                             )}
-                                            {msg.gurujiJson && (
+                                            {gurujiData && (
                                                 <Box>
                                                     <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700 }}>ASTROLOGER STRUCTURED RESPONSE</Typography>
                                                     <Box sx={{ bgcolor: 'rgba(243,106,47,0.05)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#444', border: '1px solid rgba(243,106,47,0.1)' }}>
-                                                        {JSON.stringify(msg.gurujiJson, null, 2)}
+                                                        {JSON.stringify(gurujiData, null, 2)}
                                                     </Box>
                                                 </Box>
                                             )}
