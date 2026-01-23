@@ -63,26 +63,42 @@ const ChatHistory = () => {
         return { label: role, color: 'default', icon: null };
     };
 
-    const formatContent = (content) => {
+    const formatContent = (content, msg) => {
         if (!content) return "";
 
-        // Check if content is a JSON string (Guruji's new format)
-        if (content.trim().startsWith('{')) {
+        // Try to parse if it's Guruji and looks like JSON
+        const isGuruji = msg?.role === 'guruji' || msg?.assistant === 'guruji';
+        if (isGuruji && typeof content === 'string' && content.trim().startsWith('{')) {
             try {
-                const data = JSON.parse(content);
-                const parts = [];
-                if (data.para1) parts.push(data.para1);
-                if (data.para2) parts.push(data.para2);
-                if (data.para3) parts.push(data.para3);
-                if (data.follow_up || data.followup) {
-                    parts.push(`<br>🤔 <b>${data.follow_up || data.followup}</b>`);
+                const data = JSON.parse(content.trim());
+                if (data.para1 || data.para2 || data.para3) {
+                    const parts = [];
+                    if (data.para1) parts.push(data.para1);
+                    if (data.para2) parts.push(data.para2);
+                    if (data.para3) parts.push(data.para3);
+                    if (data.follow_up || data.followup) {
+                        parts.push(`<br>🤔 <b>${data.follow_up || data.followup}</b>`);
+                    }
+                    return parts.join("<br><br>");
                 }
-                return parts.join("<br><br>");
             } catch (e) {
-                // Not valid JSON or parsing failed, fallback to raw
-                return content;
+                // Ignore parsing errors and fallback
             }
         }
+
+        // Also check if guruji_json or gurujiJson exists as an object
+        const gJson = msg?.guruji_json || msg?.gurujiJson;
+        if (gJson && typeof gJson === 'object') {
+            const parts = [];
+            if (gJson.para1) parts.push(gJson.para1);
+            if (gJson.para2) parts.push(gJson.para2);
+            if (gJson.para3) parts.push(gJson.para3);
+            if (gJson.follow_up || gJson.followup) {
+                parts.push(`<br>🤔 <b>${gJson.follow_up || gJson.followup}</b>`);
+            }
+            if (parts.length > 0) return parts.join("<br><br>");
+        }
+
         return content;
     };
 
@@ -204,7 +220,7 @@ const ChatHistory = () => {
                                                             border: isUser ? 'none' : '1px solid rgba(0,0,0,0.05)'
                                                         }}
                                                     >
-                                                        <Typography variant="body2" dangerouslySetInnerHTML={{ __html: formatContent(msg.content) }} />
+                                                        <Typography variant="body2" dangerouslySetInnerHTML={{ __html: formatContent(msg.content, msg) }} />
                                                     </Box>
                                                 </Box>
                                             );
