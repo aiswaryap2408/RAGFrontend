@@ -20,6 +20,21 @@ import ChatInputFooter from "../components/ChatInputFooter";
 import FeedbackDrawer from '../components/FeedbackDrawer';
 import HamburgerMenu from '../components/HamburgerMenu';
 
+const tryParseJson = (data) => {
+    if (!data) return null;
+    if (typeof data === 'object') return data;
+    if (typeof data !== 'string') return null;
+    const trimmed = data.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+            return JSON.parse(trimmed);
+        } catch (e) {
+            return null;
+        }
+    }
+    return null;
+};
+
 
 const SequentialResponse = ({ gurujiJson, onComplete, animate = false }) => {
     const paras = [
@@ -213,15 +228,24 @@ const Chat = () => {
                         const mostRecentSession = res.data.sessions[0];
                         const history = mostRecentSession.messages;
                         if (history && history.length > 0) {
-                            const lastMsg = history[history.length - 1];
-                            // Relaxed Logic: Always load the most recent session to ensure sync
-                            // We can add a larger threshold if needed (e.g. 24 hours), but for sync, always loading is safer.
+                            const mappedHistory = history.map(msg => {
+                                // Try to extract gurujiJson from multiple possible sources
+                                const gJson = tryParseJson(msg.guruji_json || msg.gurujiJson) ||
+                                    (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null);
+
+                                return {
+                                    ...msg,
+                                    gurujiJson: gJson,
+                                    mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                    animating: false // History shouldn't animate
+                                };
+                            });
 
                             setSessionId(mostRecentSession.session_id);
                             setMessages(prev => {
                                 // Only append if empty or just initial greeting
                                 if (prev.length > 2) return prev;
-                                return [...prev, ...history];
+                                return [...prev, ...mappedHistory];
                             });
                         }
                     }
@@ -580,7 +604,9 @@ const Chat = () => {
                         );
                     }
 
-                    if (msg.gurujiJson) {
+                    const gurujiData = msg.gurujiJson || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null);
+
+                    if (gurujiData) {
                         return (
                             <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 2, width: '100%' }}>
                                 <Box sx={{
@@ -599,11 +625,11 @@ const Chat = () => {
                                 </Box>
                                 <Box sx={{ flex: 1, maxWidth: '85%' }}>
                                     <SequentialResponse
-                                        gurujiJson={msg.gurujiJson}
+                                        gurujiJson={gurujiData}
                                         animate={msg.animating}
                                     />
                                     {/* JSON Output View for Guruji Multi-bubble */}
-                                    {(msg.gurujiJson || msg.mayaJson) && (
+                                    {(gurujiData || msg.mayaJson) && (
                                         <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)' }}>
                                             <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(0,0,0,0.4)', mb: 0.5, textTransform: 'uppercase' }}>
                                                 Debug Data:
@@ -616,11 +642,11 @@ const Chat = () => {
                                                     </Box>
                                                 </Box>
                                             )}
-                                            {msg.gurujiJson && (
+                                            {gurujiData && (
                                                 <Box>
                                                     <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700 }}>ASTROLOGER STRUCTURED RESPONSE</Typography>
                                                     <Box sx={{ bgcolor: 'rgba(243,106,47,0.05)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#444', border: '1px solid rgba(243,106,47,0.1)' }}>
-                                                        {JSON.stringify(msg.gurujiJson, null, 2)}
+                                                        {JSON.stringify(gurujiData, null, 2)}
                                                     </Box>
                                                 </Box>
                                             )}
