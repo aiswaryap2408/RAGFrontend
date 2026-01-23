@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import api, { sendMessage, endChat, getChatHistory, submitFeedback } from '../api';
+import api, { sendMessage, endChat, getChatHistory, submitFeedback, generateReport } from '../api';
 import axios from 'axios';
 
 import {
@@ -13,6 +13,7 @@ import {
     Divider,
     ListItemButton
 } from '@mui/material';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import CancelIcon from '@mui/icons-material/Cancel';
 import PrimaryButton from '../components/PrimaryButton';
 import Header from "../components/header";
@@ -36,7 +37,7 @@ const tryParseJson = (data) => {
 };
 
 
-const SequentialResponse = ({ gurujiJson, onComplete, animate = false }) => {
+const SequentialResponse = ({ gurujiJson, onComplete, animate = false, onGenerateReport }) => {
     const paras = [
         gurujiJson?.para1 || '',
         gurujiJson?.para2 || '',
@@ -45,6 +46,7 @@ const SequentialResponse = ({ gurujiJson, onComplete, animate = false }) => {
 
     const [visibleCount, setVisibleCount] = useState(animate ? 0 : paras.length);
     const [isBuffering, setIsBuffering] = useState(animate ? true : false);
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const textEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -84,6 +86,17 @@ const SequentialResponse = ({ gurujiJson, onComplete, animate = false }) => {
         showNext();
     }, [gurujiJson, animate]);
 
+    const handleReportClick = async () => {
+        if (onGenerateReport) {
+            setIsGeneratingReport(true);
+            try {
+                await onGenerateReport();
+            } finally {
+                setIsGeneratingReport(false);
+            }
+        }
+    };
+
     const bubbleSx = {
         p: 2,
         borderRadius: '20px 20px 20px 0',
@@ -117,6 +130,34 @@ const SequentialResponse = ({ gurujiJson, onComplete, animate = false }) => {
                         sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}
                         dangerouslySetInnerHTML={{ __html: para }}
                     />
+
+                    {/* Show button ONLY after the last paragraph is fully visible */}
+                    {idx === paras.length - 1 && (
+                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-start' }}>
+                            <ListItemButton
+                                onClick={handleReportClick}
+                                disabled={isGeneratingReport}
+                                sx={{
+                                    borderRadius: 2,
+                                    bgcolor: 'rgba(255,255,255,0.2)',
+                                    color: 'white',
+                                    px: 2,
+                                    py: 1,
+                                    width: 'auto',
+                                    border: '1px solid rgba(255,255,255,0.4)',
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+                                    '&.Mui-disabled': { bgcolor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }
+                                }}
+                            >
+                                {isGeneratingReport ? (
+                                    <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                                ) : (
+                                    <PictureAsPdfIcon sx={{ fontSize: 20, mr: 1 }} />
+                                )}
+                                Get Detailed PDF Report
+                            </ListItemButton>
+                        </Box>
+                    )}
                 </Box>
             ))}
 
@@ -523,6 +564,49 @@ const Chat = () => {
         setDrawerOpen(false);
     };
 
+    const handleReportGeneration = async (mayaCategory) => {
+        const mobile = localStorage.getItem('mobile');
+        if (!mobile) return;
+
+        try {
+            const res = await generateReport(mobile, mayaCategory || 'general');
+
+            // Check if it's JSON (insufficient funds) or Blob (PDF)
+            if (res.data.type === 'application/json') {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const result = JSON.parse(reader.result);
+                    if (result.status === 'insufficient_funds') {
+                        if (window.confirm(`Insufficient coins. You need ${result.required_amount} coins for this report. Go to recharge?`)) {
+                            navigate('/wallet/recharge');
+                        }
+                    }
+                };
+                reader.readAsText(res.data);
+                return;
+            }
+
+            // Download PDF
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Astrology_Report_${mayaCategory || 'General'}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            // Refresh balance
+            const balanceRes = await api.get(`/auth/user-status/${mobile}`);
+            if (balanceRes.data.wallet_balance !== undefined) {
+                setWalletBalance(balanceRes.data.wallet_balance);
+            }
+
+        } catch (err) {
+            console.error("Report Generation Error:", err);
+            alert("Failed to generate report. Please try again.");
+        }
+    };
+
     return (
         <Box sx={{
             // minHeight: '100vh',
@@ -651,6 +735,7 @@ const Chat = () => {
                                     <SequentialResponse
                                         gurujiJson={gurujiData}
                                         animate={msg.animating}
+                                        onGenerateReport={() => handleReportGeneration(msg.mayaJson?.category)}
                                     />
                                     {/* JSON Output View for Guruji Multi-bubble */}
                                     {(gurujiData || msg.mayaJson) && (
