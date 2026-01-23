@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardOverview from './DashboardOverview';
 import SystemPromptEditor from './SystemPromptEditor';
 import EditMayaPrompt from './EditMayaPrompt';
+import ReportPromptEditor from './ReportPromptEditor';
 import {
     getAllUsers as getUsers,
     getUserDetails,
@@ -108,10 +109,9 @@ const AdminDashboard = () => {
             const wallet = walletRes?.data || walletRes;
             const transactions = transactionsRes?.data || transactionsRes;
 
-            // Combine chats and summaries into sessions for timeline
+            // Focus only on chats
             const chats = (details?.chats || []).map(c => ({ ...c, type: 'chat' }));
-            const summaries = (details?.summaries || []).map(s => ({ ...s, type: 'summary' }));
-            const sessions = [...chats, ...summaries].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            const sessions = [...chats].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
             setUserDetails({
                 user: details?.user || details?.profile || details,
@@ -177,34 +177,39 @@ const AdminDashboard = () => {
         }, 1000);
     };
 
-    const processedSessions = (userDetails.sessions || []).reduce((acc, s) => {
-        const sid = s.session_id || 'legacy';
-        if (!acc[sid]) {
-            acc[sid] = {
-                session_id: sid,
-                timestamp: s.timestamp,
-                chats: [],
-                summaries: [],
-                topic: 'Consultation'
-            };
-        }
+    const processedSessions = [...(userDetails.sessions || [])]
+        .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+        .reduce((acc, s) => {
+            // If no session_id, fallback to date-based legacy ID or 'legacy'
+            const dateStr = s.timestamp ? (typeof s.timestamp === 'string' ? s.timestamp.split('T')[0] :
+                new Date(s.timestamp * (s.timestamp > 10000000000 ? 1 : 1000)).toISOString().split('T')[0])
+                : 'unknown';
 
-        if (s.type === 'chat') {
-            acc[sid].chats.push(s);
-            if (acc[sid].topic === 'Consultation') {
-                acc[sid].topic = s.user_message?.slice(0, 40) + (s.user_message?.length > 40 ? '...' : '');
+            const sid = s.session_id || `legacy_${dateStr}`;
+            if (!acc[sid]) {
+                acc[sid] = {
+                    session_id: sid,
+                    timestamp: s.timestamp,
+                    chats: [],
+                    topic: 'Consultation'
+                };
             }
-        } else {
-            acc[sid].summaries.push(s);
-        }
 
-        // Keep the latest timestamp for the session
-        if (s.timestamp && (!acc[sid].timestamp || s.timestamp > acc[sid].timestamp)) {
-            acc[sid].timestamp = s.timestamp;
-        }
+            if (s.type === 'chat') {
+                acc[sid].chats.push(s);
+                if (acc[sid].topic === 'Consultation') {
+                    const topicText = s.message || s.user_message || '...';
+                    acc[sid].topic = topicText.slice(0, 40) + (topicText.length > 40 ? '...' : '');
+                }
+            }
 
-        return acc;
-    }, {});
+            // Keep the latest timestamp for the session
+            if (s.timestamp && (!acc[sid].timestamp || s.timestamp > acc[sid].timestamp)) {
+                acc[sid].timestamp = s.timestamp;
+            }
+
+            return acc;
+        }, {});
 
     const sortedSessions = Object.values(processedSessions)
         .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
@@ -252,7 +257,7 @@ const AdminDashboard = () => {
                         active={activeTab === 'users'}
                         onClick={() => setActiveTab('users')}
                         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}
-                        label="User Base"
+                        label="User Management"
                         themeColor="rose"
                     />
 
@@ -260,7 +265,7 @@ const AdminDashboard = () => {
                         active={activeTab === 'maya'}
                         onClick={() => setActiveTab('maya')}
                         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
-                        label="Maya Portal"
+                        label="Maya Prompt"
                         themeColor="violet"
                     />
 
@@ -268,8 +273,15 @@ const AdminDashboard = () => {
                         active={activeTab === 'guruji'}
                         onClick={() => setActiveTab('guruji')}
                         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>}
-                        label="Guruji AI"
+                        label="Guruji Short Prompt"
                         themeColor="orange"
+                    />
+                    <NavButton
+                        active={activeTab === 'report-prompt'}
+                        onClick={() => setActiveTab('report-prompt')}
+                        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                        label="Guruji Detailed Prompt"
+                        themeColor="emerald"
                     />
                     <NavButton
                         active={activeTab === 'system'}
@@ -433,32 +445,52 @@ const AdminDashboard = () => {
                                                 <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
                                                     {selectedSessionId && processedSessions[selectedSessionId] ? (
                                                         <>
-                                                            {processedSessions[selectedSessionId].summaries.map((s, i) => (
-                                                                <div key={i} className="bg-slate-800/40 border border-slate-700/50 p-6 rounded-3xl italic text-slate-300 text-sm shadow-sm">
-                                                                    "{s.summary}"
-                                                                </div>
-                                                            ))}
                                                             <div className="space-y-6">
-                                                                {processedSessions[selectedSessionId].chats.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)).map((chat, i) => (
-                                                                    <div key={i} className="space-y-4">
-                                                                        <div className="flex justify-end">
-                                                                            <div className="max-w-[80%] bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-none shadow-lg shadow-indigo-900/40 text-sm">
-                                                                                {chat.user_message}
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex justify-start">
-                                                                            <div className="max-w-[85%] bg-slate-900 border border-slate-800 p-6 rounded-2xl rounded-tl-none shadow-sm text-sm">
-                                                                                <div className="text-slate-200 leading-relaxed" dangerouslySetInnerHTML={{ __html: chat.bot_response }} />
-                                                                                <div className="mt-4 pt-4 border-t border-slate-800/50 flex space-x-4">
-                                                                                    <div className="flex flex-col">
-                                                                                        <span className="text-[8px] font-black text-slate-600 uppercase">RAG</span>
-                                                                                        <span className="text-indigo-400 font-bold">{chat.metrics?.rag_score}%</span>
-                                                                                    </div>
+                                                                {processedSessions[selectedSessionId].chats.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)).map((chat, i) => {
+                                                                    const isUser = chat.role === 'user';
+                                                                    const isMaya = chat.role === 'maya';
+                                                                    const isGuruji = chat.role === 'guruji';
+
+                                                                    let content = (chat.message || chat.user_message || chat.bot_response || '').toString();
+                                                                    if (isGuruji && content.includes('{')) {
+                                                                        try {
+                                                                            let cleanJson = content.trim();
+                                                                            if (cleanJson.startsWith('```')) {
+                                                                                const match = cleanJson.match(/```(?:json)?\s*(\{.*?\})\s*```/s);
+                                                                                if (match) cleanJson = match[1];
+                                                                                else cleanJson = cleanJson.replace(/^```(json)?\s*|\s*```$/g, '');
+                                                                            }
+                                                                            const parsed = JSON.parse(cleanJson);
+                                                                            content = [parsed.para1, parsed.para2, parsed.para3].filter(Boolean).join('<br><br>');
+                                                                            if (parsed.follow_up || parsed.followup) {
+                                                                                content += `<br><br><span class="opacity-50 italic">${parsed.follow_up || parsed.followup}</span>`;
+                                                                            }
+                                                                        } catch (e) { }
+                                                                    }
+
+                                                                    return (
+                                                                        <div key={i} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                                                                            <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm text-sm ${isUser ? 'bg-indigo-600 text-white rounded-tr-none border border-indigo-500' :
+                                                                                isMaya ? 'bg-violet-900/40 text-violet-100 rounded-tl-none border border-violet-800/50' :
+                                                                                    'bg-slate-800 text-emerald-400 rounded-tl-none border border-slate-700'
+                                                                                }`}>
+                                                                                <div className="flex items-center space-x-2 mb-1 opacity-50 text-[9px] font-black uppercase tracking-widest">
+                                                                                    <span>{chat.role || (chat.user_message ? 'user' : 'bot')}</span>
+                                                                                    {chat.timestamp && (
+                                                                                        <span>• {new Date(chat.timestamp * (chat.timestamp > 10000000000 ? 1 : 1000)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                                    )}
                                                                                 </div>
+                                                                                <div className="prose prose-invert max-w-none leading-relaxed" dangerouslySetInnerHTML={{ __html: content }} />
+                                                                                {chat.category && isMaya && (
+                                                                                    <div className="mt-2 text-[8px] font-black text-rose-400 uppercase tracking-tighter bg-rose-900/30 px-2 py-0.5 rounded inline-block">
+                                                                                        Flag: {chat.category}
+                                                                                    </div>
+                                                                                )}
+                                                                                {/* Dakshina cost label removed */}
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                ))}
+                                                                    );
+                                                                })}
                                                             </div>
                                                         </>
                                                     ) : (
@@ -556,6 +588,10 @@ const AdminDashboard = () => {
                 ) : activeTab === 'guruji' ? (
                     <div className="flex-1 overflow-y-auto p-12 bg-black">
                         <SystemPromptEditor />
+                    </div>
+                ) : activeTab === 'report-prompt' ? (
+                    <div className="flex-1 overflow-y-auto p-12 bg-black">
+                        <ReportPromptEditor />
                     </div>
                 ) : activeTab === 'tester' ? (
                     <div className="flex-1 overflow-y-auto p-8 bg-black flex justify-center custom-scrollbar">
