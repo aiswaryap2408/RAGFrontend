@@ -47,6 +47,7 @@ export const getWalletStatus = () => api.get('/wallet/status');
 export const getBalance = (mobile) => api.get(`/wallet/balance/${mobile}`);
 export const getTransactionHistory = (mobile) => api.get(`/wallet/history/${mobile}`);
 export const rechargeWallet = (data) => api.post('/wallet/recharge', data);
+export const generateReport = (mobile, category) => api.post('/wallet/generate-report', { mobile, category }, { responseType: 'blob' });
 export const toggleWalletSystem = (enabled) => api.post(`/wallet/toggle-system?enabled=${enabled}`);
 export const getDashboardStats = (range = '7D') => api.get(`/admin/stats?range=${range}`);
 
