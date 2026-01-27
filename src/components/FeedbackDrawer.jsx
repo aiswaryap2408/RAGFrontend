@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Box, Drawer, Typography, TextField, Button } from "@mui/material";
-import StarRateIcon from '@mui/icons-material/StarRate';
+import StarIcon from '@mui/icons-material/Star';
 
 const FeedbackDrawer = ({
     open,
@@ -37,10 +37,10 @@ const FeedbackDrawer = ({
             PaperProps={{
                 sx: {
                     bgcolor: "#5AA270",
-                    borderTopLeftRadius: 25,
-                    borderTopRightRadius: 25,
-                    px: 3,
-                    pt: 3,
+                    borderTopLeftRadius: 20,
+                    borderTopRightRadius: 20,
+                    px: 3.5,
+                    pt: 5,
                     pb: 1.5,
                     maxWidth: 450,
                     mx: "auto",
@@ -59,7 +59,7 @@ const FeedbackDrawer = ({
                             color: "#fff",
                             fontSize: 16,
                             mb: 1,
-                            fontWeight: 400,
+                            // fontWeight: 400,
                         }}
                     >
                         Feedback (Optional)
@@ -67,7 +67,7 @@ const FeedbackDrawer = ({
 
                     <TextField
                         multiline
-                        minRows={4}
+                        minRows={5}
                         placeholder="Give your feedback here"
                         value={feedback}
                         onChange={(e) => setFeedback(e.target.value)}
@@ -75,7 +75,7 @@ const FeedbackDrawer = ({
                         InputProps={{
                             sx: {
                                 bgcolor: "#fff",
-                                borderRadius: 1,
+                                borderRadius: .5,
                                 fontSize: 14,
                                 border: "none",
                                 "& .MuiOutlinedInput-notchedOutline": { border: "none" }
@@ -95,7 +95,7 @@ const FeedbackDrawer = ({
                                 key={star}
                                 onClick={() => setRating(star)}
                                 sx={{
-                                    mx: 1,
+                                    mx: .3,
                                     mb: 1,
                                     cursor: "pointer",
                                     color: star <= rating ? "#fff" : "rgba(255,255,255,0.4)",
@@ -103,7 +103,7 @@ const FeedbackDrawer = ({
                                     transform: star <= rating ? "scale(1.1)" : "scale(1)",
                                 }}
                             >
-                                <StarRateIcon sx={{ fontSize: 45 }} />
+                                <StarIcon sx={{ fontSize: 48 }} />
                             </Box>
                         ))}
                     </Box>

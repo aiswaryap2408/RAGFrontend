@@ -117,7 +117,7 @@ const SequentialResponse = ({ gurujiJson, onComplete, animate = false }) => {
     );
 };
 
-const MayaIntro = ({ name, content, mayaJson, rawResponse }) => (
+const MayaIntro = ({ name, content, mayaJson, rawResponse, time }) => (
     <Box sx={{ px: 3, pt: 4, pb: 1, width: "100%" }}>
         <Box sx={{
             position: "relative",
@@ -170,6 +170,17 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse }) => (
                     </Box>
                 </Box>
             )}
+            {time && (
+                <Typography sx={{
+                    fontSize: 12,
+                    opacity: 0.8,
+                    textAlign: "right",
+                    mt: 0.5,
+                    color: "#666"
+                }}>
+                    {time}
+                </Typography>
+            )}
         </Box>
     </Box>
 );
@@ -178,8 +189,24 @@ const Chat = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [feedbackDrawerOpen, setFeedbackDrawerOpen] = useState(false);
+
+    // Helper to format time strings
+    const formatTime = (dateStr) => {
+        if (!dateStr) return '';
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return ''; // Invalid date
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+        } catch (e) {
+            return '';
+        }
+    };
+
+    // Helper to get current time string
+    const getCurrentTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+
     const [messages, setMessages] = useState([
-        { role: 'assistant', content: "welcome! I'll connect you to our astrologer.\nYou may call him as 'Guruji'", assistant: 'maya' }
+        { role: 'assistant', content: "welcome! I'll connect you to our astrologer.\nYou may call him as 'Guruji'", assistant: 'maya', time: getCurrentTime(), timestamp: new Date().toISOString() }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -221,7 +248,14 @@ const Chat = () => {
                             setMessages(prev => {
                                 // Only append if empty or just initial greeting
                                 if (prev.length > 2) return prev;
-                                return [...prev, ...history];
+
+                                const processedHistory = history.map(msg => ({
+                                    ...msg,
+                                    time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || ''
+                                }));
+                                console.log("Debug: Loaded History with Times:", processedHistory);
+
+                                return [...prev, ...processedHistory];
                             });
                         }
                     }
@@ -300,7 +334,7 @@ const Chat = () => {
 
     const handleNewChat = () => {
         setMessages([
-            { role: 'assistant', content: "welcome! \n\nI'll connect you to our astrologer.You may call him as 'Guruji'", assistant: 'maya' }
+            { role: 'assistant', content: "welcome! \n\nI'll connect you to our astrologer.You may call him as 'Guruji'", assistant: 'maya', time: getCurrentTime(), timestamp: new Date().toISOString() }
         ]);
         setSessionId(`SESS_${Date.now()}`);
         setSummary(null);
@@ -401,7 +435,7 @@ const Chat = () => {
         const text = typeof msg === 'string' ? msg : input;
         if (!text.trim() || loading || userStatus !== 'ready') return;
 
-        const userMsg = { role: 'user', content: text };
+        const userMsg = { role: 'user', content: text, time: getCurrentTime(), timestamp: new Date().toISOString() };
         setMessages(prev => [...prev, userMsg]);
         if (typeof msg !== 'string') setInput('');
         setLoading(true);
@@ -429,7 +463,9 @@ const Chat = () => {
                 rawResponse: res.data,
                 mayaJson: maya_json,
                 gurujiJson: guruji_json,
-                animating: true
+                animating: true,
+                time: getCurrentTime(),
+                timestamp: new Date().toISOString()
             }]);
         } catch (err) {
             console.error("Chat Error:", err);
@@ -560,7 +596,7 @@ const Chat = () => {
                     flex: 1,
                     overflowY: "auto",
                     px: 3,
-                    pb: 1,
+                    pb: 2.5,
                     "&::-webkit-scrollbar": { display: "block" },
                     scrollbarWidth: "thin",
                 }}
@@ -576,6 +612,7 @@ const Chat = () => {
                                 content={msg.content}
                                 mayaJson={msg.mayaJson}
                                 rawResponse={msg.rawResponse}
+                                time={msg.time}
                             />
                         );
                     }
@@ -626,6 +663,9 @@ const Chat = () => {
                                             )}
                                         </Box>
                                     )}
+                                    <Typography sx={{ fontSize: 12, opacity: 0.6, textAlign: "right", px: 1, mt: 0.5 }}>
+                                        {msg.time}
+                                    </Typography>
                                 </Box>
                             </Box>
                         );
@@ -647,9 +687,10 @@ const Chat = () => {
                                 alignItems: 'flex-start',
                                 gap: 1.5,
                                 flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
-                                maxWidth: '90%'
+                                maxWidth: '90%',
+
                             }}>
-                                {msg.role === 'assistant' && (
+                                {/* {msg.role === 'assistant' && (
                                     <Box sx={{
                                         width: 40,
                                         height: 40,
@@ -668,16 +709,24 @@ const Chat = () => {
                                             <img src="/svg/guruji_illustrated.svg" style={{ width: 32 }} alt="G" />
                                         )}
                                     </Box>
-                                )}
+                                )} */}
 
                                 <Box sx={{
-                                    p: 2,
-                                    borderRadius: msg.role === 'user' ? '20px 20px 0 20px' : '20px 20px 20px 0',
+                                    // p: 2,
+                                    p: '16px 12px 8px 16px',
+                                    // borderRadius: msg.role === 'user' ? '20px 20px 0 20px' : '20px 20px 20px 0',
+                                    borderRadius: '10px',
                                     bgcolor: msg.role === 'user' ? '#2f3148' : '#ff8338',
                                     color: 'white',
                                     boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                     border: 'none',
-                                    position: 'relative'
+                                    position: 'relative',
+                                    // width: 'fit-content',
+                                    maxWidth: '85%',
+                                    minWidth: '100px',
+                                    overflowWrap: "break-word",
+                                    wordBreak: "break-word",
+                                    whiteSpace: "pre-line",
                                 }}>
                                     {msg.role === 'assistant' && (
                                         <Typography sx={{
@@ -686,7 +735,8 @@ const Chat = () => {
                                             textTransform: 'uppercase',
                                             mb: 0.5,
                                             color: 'rgba(255,255,255,0.9)',
-                                            letterSpacing: 1
+                                            letterSpacing: 1,
+
                                         }}>
                                             {msg.assistant === 'maya' ? 'Maya' : 'Astrology Guruji'}
                                         </Typography>
@@ -720,6 +770,16 @@ const Chat = () => {
                                             </Typography>
                                         </Box>
                                     )}
+                                    <Typography
+                                        sx={{
+                                            fontSize: 12,
+                                            opacity: 0.8,
+                                            textAlign: "right",
+                                            mt: 0.5,
+                                        }}
+                                    >
+                                        {msg.time}
+                                    </Typography>
                                 </Box>
                             </Box>
                         </Box>
