@@ -6,7 +6,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AddIcon from '@mui/icons-material/Add';
 import HistoryIcon from '@mui/icons-material/History';
-import Header from '../../components/header';
+// import Header from '../../components/header';
+import Subheader from '../../components/subheader';
 
 const Wallet = () => {
     const [balance, setBalance] = useState(0);
@@ -46,7 +47,7 @@ const Wallet = () => {
             overflow: 'hidden'
         }}>
             <Box sx={{ position: 'relative', flexShrink: 0, zIndex: 100, bgcolor: '#FFF6EB' }}>
-                <Header />
+                <Subheader title="My Wallet" showBack onBack={() => navigate('/chat')} />
             </Box>
 
             <Box sx={{
