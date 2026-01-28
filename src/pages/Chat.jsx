@@ -21,6 +21,7 @@ import Header from "../components/header";
 import ChatInputFooter from "../components/ChatInputFooter";
 import FeedbackDrawer from '../components/FeedbackDrawer';
 import HamburgerMenu from '../components/HamburgerMenu';
+import Dakshina from '../pages/Dakshina';
 
 const tryParseJson = (data) => {
     if (!data) return null;
@@ -40,7 +41,7 @@ const tryParseJson = (data) => {
 const MayaIntro = ({ name, content, mayaJson }) => (
     <Box sx={{ mb: 3, px: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
-            <Box sx={{
+            {/* <Box sx={{
                 width: 45,
                 height: 45,
                 borderRadius: '50%',
@@ -53,10 +54,10 @@ const MayaIntro = ({ name, content, mayaJson }) => (
                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
             }}>
                 <Typography sx={{ fontWeight: 900, color: '#F36A2F', fontSize: '1rem' }}>M</Typography>
-            </Box>
+            </Box> */}
             <Box sx={{
                 p: 2.5,
-                borderRadius: '0 24px 24px 24px',
+                borderRadius: 1,
                 bgcolor: 'white',
                 color: '#333',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
@@ -679,6 +680,8 @@ const Chat = () => {
     };
 
     const [drawerOpen, setDrawerOpen] = React.useState(false);
+    const [dakshinaOpen, setDakshinaOpen] = useState(false);
+
 
     //   const location = useLocation();
     //   const navigate = useNavigate();
@@ -843,7 +846,7 @@ const Chat = () => {
                 }}
             />
 
-            <FeedbackDrawer
+            {/* <FeedbackDrawer
                 open={feedbackDrawerOpen}
                 onClose={() => setFeedbackDrawerOpen(false)}
                 onSubmit={handleDrawerSubmit}
@@ -855,7 +858,25 @@ const Chat = () => {
                     setFeedbackDrawerOpen(false);
                     handleNewChat();
                 }}
+            /> */}
+
+
+
+            <FeedbackDrawer
+                open={feedbackDrawerOpen}
+                onClose={() => setFeedbackDrawerOpen(false)}
+                onAddDakshina={() => {
+                    setFeedbackDrawerOpen(false);
+                    setTimeout(() => setDakshinaOpen(true), 150);
+                }}
             />
+
+            <Dakshina
+                open={dakshinaOpen}
+                onClose={() => setDakshinaOpen(false)}
+            />
+
+
 
             {/* Chat Messages Area - Scrollable segment with visible scrollbar */}
             <Box

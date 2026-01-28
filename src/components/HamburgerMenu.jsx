@@ -17,6 +17,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import HistoryIcon from "@mui/icons-material/History";
 import LogoutIcon from "@mui/icons-material/Logout";
 import CloseIcon from "@mui/icons-material/Close";
+import WalletIcon from '@mui/icons-material/Wallet';
 
 const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
   return (
@@ -154,19 +155,19 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
         <List sx={{ pt: 2 }}>
           <ListItem disablePadding onClick={() => handleNavigation("logout")}>
             <ListItemButton sx={{ py: 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 40, color: "#888" }}>
-                <LogoutIcon />
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <LogoutIcon sx={{ minWidth: 40, color: "#fff" }} />
               </ListItemIcon>
               <ListItemText
                 primary="Logout"
-                primaryTypographyProps={{ fontWeight: 500, color: "#666" }}
+                primaryTypographyProps={{ fontWeight: 500 }}
               />
             </ListItemButton>
           </ListItem>
 
           <ListItem disablePadding onClick={() => handleNavigation("/chat")}>
             <ListItemButton sx={{ py: 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 40, color: "#F26A2E" }}>
+              <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
                 <HomeIcon />
               </ListItemIcon>
               <ListItemText
@@ -181,7 +182,7 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
             onClick={() => handleNavigation("/chat-new")}
           >
             <ListItemButton sx={{ py: 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 40, color: "#F26A2E" }}>
+              <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
                 <AddCommentIcon />
               </ListItemIcon>
               <ListItemText
@@ -193,7 +194,7 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
 
           <ListItem disablePadding onClick={() => handleNavigation("/profile")}>
             <ListItemButton sx={{ py: 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 40, color: "#F26A2E" }}>
+              <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
                 <PersonIcon />
               </ListItemIcon>
               <ListItemText
@@ -205,7 +206,7 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
 
           <ListItem disablePadding onClick={() => handleNavigation("/history")}>
             <ListItemButton sx={{ py: 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 40, color: "#F26A2E" }}>
+              <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
                 <HistoryIcon />
               </ListItemIcon>
               <ListItemText
@@ -217,8 +218,8 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
 
           <ListItem disablePadding onClick={() => handleNavigation("/wallet")}>
             <ListItemButton sx={{ py: 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 40, color: "#F26A2E" }}>
-                <span style={{ fontSize: 20 }}>💰</span>
+              <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
+                <WalletIcon />
               </ListItemIcon>
               <ListItemText
                 primary="My Wallet"

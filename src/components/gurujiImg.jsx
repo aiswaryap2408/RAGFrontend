@@ -1,9 +1,15 @@
 import React from "react";
 import { Box } from "@mui/material";
 
-const GurujiImage = () => {
+const GurujiImage = ({ sx = {} }) => {
     return (
-        <Box width={250} mx="auto">
+        <Box
+            sx={{
+                width: 250,
+                mx: "auto",
+                ...sx,
+            }}
+        >
             <img
                 src="/svg/guruji_illustrated.svg"
                 alt="guruji"
