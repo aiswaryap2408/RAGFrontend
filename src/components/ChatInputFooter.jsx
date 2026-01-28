@@ -17,14 +17,15 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
 
 
     return (
-        <Box sx={{ position: "relative", width: "100%", mt: 4 }}>
+        <Box sx={{ position: "relative", width: "100%", mt: .1 }}>
             {/* Bottom Curves */}
             <Box
                 sx={{
                     position: "absolute",
-                    bottom: 65,
+                    bottom: "100%",
                     left: 0,
                     width: 100,
+                    top: '-46px',
                 }}
             >
                 <Box
@@ -38,9 +39,10 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
             <Box
                 sx={{
                     position: "absolute",
-                    bottom: 65,
+                    bottom: "100%",
                     right: 0,
                     width: 100,
+                    top: '-46px',
                 }}
             >
                 <Box
@@ -52,7 +54,7 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
             </Box>
 
             {/* Footer Input Area */}
-            <Box sx={{ bgcolor: "#2f3148", px: 2, py: 1.5, display: "flex", gap: 2 }}>
+            <Box sx={{ bgcolor: "#2f3148", px: 2, py: 1.5, display: "flex", gap: 2, alignItems: "center" }}>
                 <Box
                     sx={{
                         flex: 1,
@@ -61,15 +63,38 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
                         px: 2,
                         display: "flex",
                         alignItems: "center",
+                        minHeight: 48,
+                        // py: 0.5,
+
                     }}
                 >
                     <InputBase
                         fullWidth
+                        multiline
+                        // maxRows={4}
                         placeholder={userStatus === 'ready' ? "Type your message..." : "Preparing..."}
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                        onKeyPress={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend();
+                            }
+                        }}
                         disabled={loading || summary || userStatus !== 'ready'}
+                        sx={{
+                            fontSize: 14,
+                            lineHeight: 1.5,
+                            maxHeight: 52,
+                            overflowY: "auto",
+                            py: 0,
+                            "& textarea": {
+                                maxHeight: 52,
+                                overflowY: "auto",
+                            },
+                            "&::-webkit-scrollbar": { display: "none" },
+                            scrollbarWidth: "none",
+                        }}
                     />
                 </Box>
 

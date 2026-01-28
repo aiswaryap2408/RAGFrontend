@@ -341,18 +341,19 @@ const Chat = () => {
     const location = useLocation();
     const [feedbackDrawerOpen, setFeedbackDrawerOpen] = useState(false);
 
-    // Helpers
+    // Helper to format time strings
     const formatTime = (dateStr) => {
         if (!dateStr) return '';
         try {
             const date = new Date(dateStr);
-            if (isNaN(date.getTime())) return '';
+            if (isNaN(date.getTime())) return ''; // Invalid date
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
         } catch (e) {
             return '';
         }
     };
 
+    // Helper to get current time string
     const getCurrentTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
 
     const [messages, setMessages] = useState([
