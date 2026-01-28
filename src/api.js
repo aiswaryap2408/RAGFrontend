@@ -29,6 +29,9 @@ export const updateSystemPrompt = (prompt) => api.post('/admin/system-prompt', {
 export const getMayaPrompt = () => api.get('/admin/maya-prompt');
 export const updateMayaPrompt = (prompt) => api.post('/admin/maya-prompt', { prompt });
 
+export const getReportPrompt = () => api.get('/admin/report-prompt');
+export const updateReportPrompt = (prompt) => api.post('/admin/report-prompt', { prompt });
+
 // Chat Tester Endpoints
 export const testUpload = (formData) => api.post('/admin/test-upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
@@ -47,6 +50,7 @@ export const getWalletStatus = () => api.get('/wallet/status');
 export const getBalance = (mobile) => api.get(`/wallet/balance/${mobile}`);
 export const getTransactionHistory = (mobile) => api.get(`/wallet/history/${mobile}`);
 export const rechargeWallet = (data) => api.post('/wallet/recharge', data);
+export const generateReport = (mobile, category) => api.post('/wallet/generate-report', { mobile, category }, { responseType: 'blob' });
 export const toggleWalletSystem = (enabled) => api.post(`/wallet/toggle-system?enabled=${enabled}`);
 export const getDashboardStats = (range = '7D') => api.get(`/admin/stats?range=${range}`);
 
