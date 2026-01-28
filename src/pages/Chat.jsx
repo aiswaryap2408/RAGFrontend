@@ -344,8 +344,24 @@ const Chat = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [feedbackDrawerOpen, setFeedbackDrawerOpen] = useState(false);
+
+    // Helper to format time strings
+    const formatTime = (dateStr) => {
+        if (!dateStr) return '';
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return ''; // Invalid date
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+        } catch (e) {
+            return '';
+        }
+    };
+
+    // Helper to get current time string
+    const getCurrentTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+
     const [messages, setMessages] = useState([
-        { role: 'assistant', content: "welcome! I'll connect you to our astrologer.\nYou may call him as 'Guruji'", assistant: 'maya' }
+        { role: 'assistant', content: "welcome! I'll connect you to our astrologer.\nYou may call him as 'Guruji'", assistant: 'maya', time: getCurrentTime(), timestamp: new Date().toISOString() }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -399,6 +415,23 @@ const Chat = () => {
                         // Scenario 3: We have history, and it's for our current session
                         const history = mostRecentSession.messages;
                         if (history && history.length > 0) {
+                            const lastMsg = history[history.length - 1];
+                            // Relaxed Logic: Always load the most recent session to ensure sync
+                            // We can add a larger threshold if needed (e.g. 24 hours), but for sync, always loading is safer.
+
+                            setSessionId(mostRecentSession.session_id);
+                            setMessages(prev => {
+                                // Only append if empty or just initial greeting
+                                if (prev.length > 2) return prev;
+
+                                const processedHistory = history.map(msg => ({
+                                    ...msg,
+                                    time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || ''
+                                }));
+                                console.log("Debug: Loaded History with Times:", processedHistory);
+
+                                return [...prev, ...processedHistory];
+                            });
                             // If local SID matches server, load it
                             // Or if we don't have a local SID yet (first load), adopt the server's if NOT ended
                             if (currentLocalSid === mostRecentSession.session_id || (!currentLocalSid && !mostRecentSession.is_ended)) {
@@ -503,7 +536,7 @@ const Chat = () => {
     const handleNewChat = () => {
         const newSid = `SESS_${Date.now()}`;
         setMessages([
-            { role: 'assistant', content: "welcome! \n\nI'll connect you to our astrologer.You may call him as 'Guruji'", assistant: 'maya' }
+            { role: 'assistant', content: "welcome! \n\nI'll connect you to our astrologer.You may call him as 'Guruji'", assistant: 'maya', time: getCurrentTime(), timestamp: new Date().toISOString() }
         ]);
         setSessionId(newSid);
         localStorage.setItem('activeSessionId', newSid);
@@ -605,7 +638,7 @@ const Chat = () => {
         const text = typeof msg === 'string' ? msg : input;
         if (!text.trim() || loading || userStatus !== 'ready') return;
 
-        const userMsg = { role: 'user', content: text };
+        const userMsg = { role: 'user', content: text, time: getCurrentTime(), timestamp: new Date().toISOString() };
         setMessages(prev => [...prev, userMsg]);
         if (typeof msg !== 'string') setInput('');
         setLoading(true);
@@ -633,7 +666,9 @@ const Chat = () => {
                 rawResponse: res.data,
                 mayaJson: maya_json,
                 gurujiJson: guruji_json,
-                animating: true
+                animating: true,
+                time: getCurrentTime(),
+                timestamp: new Date().toISOString()
             }]);
         } catch (err) {
             console.error("Chat Error:", err);
@@ -828,7 +863,7 @@ const Chat = () => {
                     flex: 1,
                     overflowY: "auto",
                     px: 3,
-                    pb: 1,
+                    pb: 2.5,
                     "&::-webkit-scrollbar": { display: "block" },
                     scrollbarWidth: "thin",
                 }}
@@ -844,6 +879,7 @@ const Chat = () => {
                                 content={msg.content}
                                 mayaJson={msg.mayaJson}
                                 rawResponse={msg.rawResponse}
+                                time={msg.time}
                             />
                         );
                     }
@@ -901,6 +937,9 @@ const Chat = () => {
                                             )}
                                         </Box>
                                     )}
+                                    <Typography sx={{ fontSize: 12, opacity: 0.6, textAlign: "right", px: 1, mt: 0.5 }}>
+                                        {msg.time}
+                                    </Typography>
                                 </Box>
                             </Box>
                         );
@@ -922,9 +961,10 @@ const Chat = () => {
                                 alignItems: 'flex-start',
                                 gap: 1.5,
                                 flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
-                                maxWidth: '90%'
+                                maxWidth: '90%',
+
                             }}>
-                                {msg.role === 'assistant' && (
+                                {/* {msg.role === 'assistant' && (
                                     <Box sx={{
                                         width: 40,
                                         height: 40,
@@ -943,16 +983,24 @@ const Chat = () => {
                                             <img src="/svg/guruji_illustrated.svg" style={{ width: 32 }} alt="G" />
                                         )}
                                     </Box>
-                                )}
+                                )} */}
 
                                 <Box sx={{
-                                    p: 2,
-                                    borderRadius: msg.role === 'user' ? '20px 20px 0 20px' : '20px 20px 20px 0',
+                                    // p: 2,
+                                    p: '16px 12px 8px 16px',
+                                    // borderRadius: msg.role === 'user' ? '20px 20px 0 20px' : '20px 20px 20px 0',
+                                    borderRadius: '10px',
                                     bgcolor: msg.role === 'user' ? '#2f3148' : '#ff8338',
                                     color: 'white',
                                     boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                     border: 'none',
-                                    position: 'relative'
+                                    position: 'relative',
+                                    // width: 'fit-content',
+                                    maxWidth: '85%',
+                                    minWidth: '100px',
+                                    overflowWrap: "break-word",
+                                    wordBreak: "break-word",
+                                    whiteSpace: "pre-line",
                                 }}>
                                     {msg.role === 'assistant' && (
                                         <Typography sx={{
@@ -961,7 +1009,8 @@ const Chat = () => {
                                             textTransform: 'uppercase',
                                             mb: 0.5,
                                             color: 'rgba(255,255,255,0.9)',
-                                            letterSpacing: 1
+                                            letterSpacing: 1,
+
                                         }}>
                                             {msg.assistant === 'maya' ? 'Maya' : 'Astrology Guruji'}
                                         </Typography>
@@ -988,6 +1037,23 @@ const Chat = () => {
                                         </Box>
                                     )}
 
+                                    {msg.amount > 0 && (
+                                        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#B45309', bgcolor: '#FEF3C7', px: 1, py: 0.2, borderRadius: 1 }}>
+                                                PREMIUM: -{msg.amount} coins
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    <Typography
+                                        sx={{
+                                            fontSize: 12,
+                                            opacity: 0.8,
+                                            textAlign: "right",
+                                            mt: 0.5,
+                                        }}
+                                    >
+                                        {msg.time}
+                                    </Typography>
                                     {/* Automated chat fee label removed */}
                                 </Box>
                             </Box>

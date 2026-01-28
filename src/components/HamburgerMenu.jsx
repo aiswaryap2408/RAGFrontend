@@ -8,6 +8,7 @@ import {
   ListItemIcon,
   ListItemText,
   IconButton,
+  Typography,
 } from "@mui/material";
 
 import HomeIcon from "@mui/icons-material/Home";
@@ -19,36 +20,7 @@ import CloseIcon from "@mui/icons-material/Close";
 
 const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
   return (
-    // <Drawer
-    //   anchor="left"
-    //   open={open}
-    //   onClose={() => toggleDrawer(false)}
-    //   disablePortal
-    //   sx={{
-    //     position: "absolute",
-    //     left: 0,
-    //     top: 0,
-    //     width: 350,
 
-    //     "& .MuiDrawer-paper": {
-    //       position: "absolute",
-    //       left: 0,
-    //       top: 0,
-    //       width: 350,
-    //       height: "100%",
-    //       bgcolor: "#2f3148",
-    //       color: "#fff",
-    //       borderTopRightRadius: 30,
-    //       borderBottomRightRadius: 30,
-
-    //       overflowY: "auto",
-    //       "&::-webkit-scrollbar": {
-    //         display: "none",
-    //       },
-    //       scrollbarWidth: "none",
-    //     },
-    //   }}
-    // >
     <Drawer
       anchor="left"
       open={open}
@@ -107,18 +79,91 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
             alignItems: "center",
           }}
         >
-          <Box sx={{ fontWeight: "bold", fontSize: 16 }}>Menu</Box>
+          {/* <Box sx={{ fontWeight: "bold", fontSize: 16 }}>Menu</Box> */}
 
           {/* CLOSE BUTTON ADDED HERE */}
           <IconButton
             onClick={() => toggleDrawer(false)}
             sx={{ color: "#fff" }}
           >
-            <CloseIcon />
+            <CloseIcon sx={{ fontSize: 36 }} />
           </IconButton>
         </Box>
 
+        <Box sx={{ p: 2.5, pb: 2, pt: 0, display: "flex" }}>
+          <Box sx={{ width: "85px", mr: 2 }}>
+
+            <img
+              src="/svg/guruji_illustrated.svg"
+              alt="guruji"
+              style={{
+                width: "85px",
+                height: "85px",
+                borderRadius: "50%",
+                border: "2px solid #ffffff",
+              }}
+            />
+
+            {/* <Box
+                sx={{
+                  width: "85px",
+                  height: "85px",
+                  borderRadius: "50%",
+                  border: "2px solid #ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <PersonIcon sx={{ fontSize: 60, color: "#ffffff" }} />
+              </Box> */}
+
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+            }}
+          >
+
+            <Box>
+              <Typography
+                variant="h5"
+                sx={{ fontSize: 16, fontWeight: "bold" }}
+              >
+                Varun Maniyan
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{ fontSize: 12, color: "#b6b7bf" }}
+              >
+                varun@clickastro.com
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{ fontSize: 12, color: "#b6b7bf" }}
+              >
+                +91 9876543210
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+
         <List sx={{ pt: 2 }}>
+          <ListItem disablePadding onClick={() => handleNavigation("logout")}>
+            <ListItemButton sx={{ py: 1.5 }}>
+              <ListItemIcon sx={{ minWidth: 40, color: "#888" }}>
+                <LogoutIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary="Logout"
+                primaryTypographyProps={{ fontWeight: 500, color: "#666" }}
+              />
+            </ListItemButton>
+          </ListItem>
+
           <ListItem disablePadding onClick={() => handleNavigation("/chat")}>
             <ListItemButton sx={{ py: 1.5 }}>
               <ListItemIcon sx={{ minWidth: 40, color: "#F26A2E" }}>
@@ -182,17 +227,7 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
             </ListItemButton>
           </ListItem>
 
-          <ListItem disablePadding onClick={() => handleNavigation("logout")}>
-            <ListItemButton sx={{ py: 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 40, color: "#888" }}>
-                <LogoutIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary="Logout"
-                primaryTypographyProps={{ fontWeight: 500, color: "#666" }}
-              />
-            </ListItemButton>
-          </ListItem>
+
         </List>
       </Box>
     </Drawer>
