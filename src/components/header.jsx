@@ -34,7 +34,7 @@ const Header = ({ backgroundImage = "/svg/top_curve_light.svg" }) => {
         <Box
             sx={{
                 position: "relative",
-                height: 172,
+                minHeight: '182px',
                 overflow: "hidden",
             }}
         >
@@ -48,21 +48,25 @@ const Header = ({ backgroundImage = "/svg/top_curve_light.svg" }) => {
                     backgroundSize: "contain",
                     zIndex: 1,
                 }}
-            />
+            >
+                {/* Stars */}
+                <Box
+                    sx={{
+                        position: "absolute",
+                        inset: 0,
+                        backgroundImage: `url(/svg/header_stars.svg)`,
+                        backgroundRepeat: "no-repeat",
+                        backgroundPosition: "center",
+                        backgroundSize: "contain",
+                        zIndex: 2,
+                        mt: { xs: -4, sm: 0 },
+                    }}
+                />
+            </Box>
 
-            {/* Stars */}
-            <Box
-                sx={{
-                    position: "absolute",
-                    inset: 0,
-                    backgroundImage: `url(/svg/header_stars.svg)`,
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "center",
-                    backgroundSize: "contain",
-                    zIndex: 2,
-                    mt: { xs: -4, sm: 0 },
-                }}
-            />
+
+
+
 
             {/* Hamburger menu - Only for logged in users on specific pages */}
 

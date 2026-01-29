@@ -20,7 +20,7 @@ const Login = () => {
         }
     }, [navigate]);
 
-    const handleMobileSubmit = async(e) => {
+    const handleMobileSubmit = async (e) => {
         if (e) e.preventDefault();
         setError('');
 
@@ -62,7 +62,7 @@ const Login = () => {
                     mt: -5  // Pull up slightly to account for the large header space
                 }}
             >
-                <Box sx={{mb: 2.5}}>
+                <Box sx={{ mb: 2.5 }}>
                     <GurujiImage />
 
                     <Typography fontSize={16} mt={1} color="text.primary">
@@ -80,7 +80,7 @@ const Login = () => {
                     Login / Sign-in with your phone number:
                 </Typography>
 
-                
+
 
                 {/* Phone Input Box */}
                 <Box
@@ -112,14 +112,14 @@ const Login = () => {
                         inputProps={{ maxLength: 10, type: 'tel' }}
                         onKeyPress={(e) => e.key === 'Enter' && handleMobileSubmit()}
                     />
-                    
+
                 </Box>
                 {error && (
                     <Typography color="error" variant="body2" >
                         {error}
                     </Typography>
                 )}
-                
+
 
                 <PrimaryButton
                     label={loading ? "Sending..." : "Get OTP"}
