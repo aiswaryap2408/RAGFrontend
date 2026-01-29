@@ -6,8 +6,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AddIcon from '@mui/icons-material/Add';
 import HistoryIcon from '@mui/icons-material/History';
-// import Header from '../../components/header';
 import Subheader from '../../components/subheader';
+import PrimaryButton from '../../components/PrimaryButton';
 
 const Wallet = () => {
     const [balance, setBalance] = useState(0);
@@ -38,6 +38,16 @@ const Wallet = () => {
         }
     };
 
+    const rechargeOptions = [
+        { price: 99, points: 100 },
+        { price: 199, points: 210 },
+        { price: 499, points: 530 },
+        { price: 999, points: 1070 },
+        { price: 1999, points: 2150 },
+        { price: 4999, points: 5450 },
+        { price: 9999, points: 11000 },
+    ];
+
     return (
         <Box sx={{
             height: '100vh',
@@ -55,126 +65,82 @@ const Wallet = () => {
                 overflowY: 'auto',
                 position: 'relative',
                 zIndex: 10,
-                mt: -10,
+                mt: 2,
                 px: 2,
-                pb: 5
+                pb: 5,
+                '&::-webkit-scrollbar': { display: 'none' },
+                msOverflowStyle: 'none',
+                scrollbarWidth: 'none'
             }}>
-                <Box sx={{ textAlign: 'center', mb: 4 }}>
-                    <Box sx={{
-                        width: 120,
-                        height: 120,
-                        bgcolor: '#F26A2E',
-                        borderRadius: '50%',
-                        mx: 'auto',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 8px 30px rgba(242,106,46,0.3)',
-                        mb: 2
-                    }}>
-                        <AccountBalanceWalletIcon sx={{ fontSize: 60, color: '#fff' }} />
+                <Box sx={{ mb: 3 }}>
+                    <Typography sx={{ fontWeight: 700, color: '#eb3c34', fontSize: '1rem' }}>Current wallet balance:</Typography>
+                    <Typography sx={{ fontWeight: 500, my: 1, color: '#53300e', fontSize: '2.5rem' }}>1050<span style={{ fontSize: '1.5rem', fontWeight: 400 }}> pts</span></Typography>
+                </Box>
+
+                {/* Recharge Section */}
+                <Box sx={{ mb: 4 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography sx={{ color: '#eb3c34', fontWeight: 700, fontSize: '1rem' }}>Recharge:</Typography>
+                        {/* <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', color: '#54a170' }}>
+                            <Typography sx={{ fontWeight: 700, textDecoration: 'underline', fontSize: '0.9rem', mr: 0.5 }}>
+                                Show previous recharges
+                            </Typography>
+                            <Box component="span" sx={{ fontSize: '1.2rem', fontWeight: 800 }}>›</Box>
+                        </Box> */}
                     </Box>
-                    <Typography variant="h5" sx={{ fontWeight: 800, color: '#111' }}>My Wallet</Typography>
-                    <Typography variant="body2" sx={{ color: '#666' }}>Secure cosmic credit management</Typography>
-                </Box>
 
-                <Card sx={{
-                    borderRadius: 4,
-                    background: 'linear-gradient(135deg, #F26A2E 0%, #FF8338 100%)',
-                    color: 'white',
-                    p: 3,
-                    mb: 4,
-                    boxShadow: '0 10px 30px rgba(242,106,46,0.2)'
-                }}>
-                    <Typography variant="overline" sx={{ fontWeight: 800, opacity: 0.8, letterSpacing: 1.5 }}>Available Balance</Typography>
-                    <Typography variant="h2" sx={{ fontWeight: 900, my: 1 }}>₹{balance.toFixed(2)}</Typography>
-                    <Button
-                        variant="contained"
-                        fullWidth
-                        startIcon={<AddIcon />}
-                        onClick={() => navigate('/wallet/recharge')}
-                        sx={{
-                            mt: 2,
-                            bgcolor: 'white',
-                            color: '#F26A2E',
-                            fontWeight: 800,
-                            borderRadius: 3,
-                            py: 1.5,
-                            textTransform: 'none',
-                            fontSize: '1rem',
-                            '&:hover': { bgcolor: '#FFF0E6' }
-                        }}
-                    >
-                        Recharge Wallet
-                    </Button>
-                </Card>
-
-                <Box sx={{ mb: 2, px: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <HistoryIcon sx={{ color: '#F26A2E' }} />
-                    <Typography variant="h6" sx={{ fontWeight: 800, color: '#333' }}>Transaction History</Typography>
-                </Box>
-
-                <Box sx={{ spaceY: 2 }}>
-                    {loading ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
-                            <div className="spinner-indigo" style={{ width: 30, height: 30 }} />
+                    {/* Table Container */}
+                    <Box sx={{ borderRadius: 1, overflow: 'hidden', bgcolor: '#fff' }}>
+                        {/* Table Header */}
+                        <Box sx={{ display: 'flex', bgcolor: '#54a170', p: 1.5 }}>
+                            <Typography sx={{ flex: 1, color: '#fff', fontWeight: 600 }}>Recharge for</Typography>
+                            <Typography sx={{ flex: 1, color: '#fff', fontWeight: 600 }}>You get</Typography>
+                            <Box sx={{ width: 100 }} />
                         </Box>
-                    ) : history.length === 0 ? (
-                        <Box sx={{ textAlign: 'center', py: 8, bgcolor: 'rgba(255,255,255,0.5)', borderRadius: 3, border: '1px dashed #ccc' }}>
-                            <Typography sx={{ color: '#888', fontStyle: 'italic' }}>No cosmic interactions yet.</Typography>
-                        </Box>
-                    ) : (
-                        history.map((tx, idx) => (
-                            <Box key={idx} sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                p: 2,
-                                bgcolor: 'white',
-                                borderRadius: 3,
-                                mb: 1.5,
-                                border: '1px solid #FFF0E6',
-                                transition: 'all 0.2s',
-                                '&:active': { transform: 'scale(0.98)' }
-                            }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    <Box sx={{
-                                        width: 40, h: 40, borderRadius: 2,
-                                        bgcolor: tx.type === 'credit' ? '#E8F5E9' : '#FFEBEE',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}>
-                                        {tx.type === 'credit' ?
-                                            <Typography sx={{ color: '#2E7D32', fontWeight: 900 }}>+</Typography> :
-                                            <Typography sx={{ color: '#C62828', fontWeight: 900 }}>-</Typography>
-                                        }
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#333' }}>{tx.description}</Typography>
-                                        <Typography variant="caption" sx={{ color: '#999' }}>
-                                            {new Date(tx.timestamp * 1000).toLocaleDateString()}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                                <Box sx={{ textAlign: 'right' }}>
-                                    <Typography sx={{
-                                        fontWeight: 900,
-                                        color: tx.type === 'credit' ? '#2E7D32' : '#C62828'
-                                    }}>
-                                        {tx.type === 'credit' ? '+' : '-'}₹{tx.amount.toFixed(2)}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{
-                                        fontWeight: 800,
-                                        color: tx.status === 'success' ? '#4CAF50' : '#F44336',
-                                        textTransform: 'uppercase',
-                                        fontSize: '0.65rem'
-                                    }}>
-                                        {tx.status}
-                                    </Typography>
-                                </Box>
+
+                        {/* Table Rows */}
+                        {rechargeOptions.map((option, index) => (
+                            <Box
+                                key={index}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    p: 1.5,
+                                    py: 2.5,
+                                    borderBottom: index !== rechargeOptions.length - 1 ? '2px solid #c5c5c5' : 'none',
+                                    transition: 'background 0.2s',
+                                    '&:hover': { bgcolor: '#f9f9f9' }
+                                }}
+                            >
+                                <Typography sx={{ flex: 1, fontWeight: 500, color: '#5b5b5b', fontSize: '1.2rem' }}>
+                                    ₹ {option.price} <Box component="span" sx={{ fontWeight: 400, fontSize: '1rem', color: '#5b5b5b' }}>+ GST</Box>
+                                </Typography>
+                                <Typography sx={{ flex: 1, fontWeight: 700, color: '#5b5b5b', fontSize: '1.2rem' }}>
+                                    {option.points.toLocaleString()} pts
+                                </Typography>
+                                <PrimaryButton
+                                    label="Recharge"
+                                    variant="contained"
+                                    onClick={() => navigate('/wallet/recharge', { state: { amount: option.price } })}
+                                    sx={{
+                                        bgcolor: '#54a170',
+                                        color: '#fff',
+                                        borderRadius: 50,
+                                        textTransform: 'none',
+                                        fontWeight: 500,
+                                        p: .5,
+                                        width: '120px',
+                                        '&:hover': { bgcolor: '#458a5c' }
+                                    }}
+                                />
+
+
                             </Box>
-                        ))
-                    )}
+                        ))}
+                    </Box>
                 </Box>
+
+
             </Box>
         </Box>
     );

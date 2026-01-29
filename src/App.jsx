@@ -16,6 +16,7 @@ import Recharge from './pages/wallet/Recharge';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ScrollToTop from './components/ScrollToTop';
+import Dashboard from './pages/Dashboard';
 
 // User Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -120,7 +121,13 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/dashboard"
+            element={<Dashboard />}
+          />
         </Route>
+
+
 
         {/* Admin Routes (Full Screen, No Mobile Layout) */}
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -133,7 +140,7 @@ function App() {
           }
         />
       </Routes>
-    </Router>
+    </Router >
   );
 }
 
