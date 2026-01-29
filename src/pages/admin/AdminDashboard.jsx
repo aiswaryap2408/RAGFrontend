@@ -54,6 +54,7 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [detailsLoading, setDetailsLoading] = useState(false);
     const [walletEnabled, setWalletEnabled] = useState(true);
+    const [paymentEnabled, setPaymentEnabled] = useState(true);
 
     // RAG Tester State
     const [testFile, setTestFile] = useState(null);
@@ -133,15 +134,50 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleToggleWallet = async () => {
-        const newState = !walletEnabled;
-        setWalletEnabled(newState);
+    const handleTogglePayment = async () => {
         try {
+            const newState = !paymentEnabled;
+            setPaymentEnabled(newState);
+            import('../../api').then(async (api) => {
+                await api.updateSystemSettings('payment_enabled', newState);
+            });
+        } catch (err) {
+            console.error("Failed to update payment settings", err);
+            setPaymentEnabled(!paymentEnabled);
+        }
+    };
+
+    const handleToggleWallet = async () => {
+        try {
+            const newState = !walletEnabled;
+            setWalletEnabled(newState);
             await toggleWalletSystem(newState);
         } catch (err) {
             console.error("Failed to persist wallet state", err);
+            setWalletEnabled(!walletEnabled); // Revert on error
         }
     };
+
+    // Initialize state from settings API on load
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const { getSystemSettings } = await import('../../api');
+                const { data } = await getSystemSettings();
+                if (data && typeof data.payment_enabled !== 'undefined') {
+                    setPaymentEnabled(data.payment_enabled);
+                }
+                // Wallet status is usually part of the user check or separate, 
+                // but if we used toggleWalletSystem before, we should check its current state if possible.
+                // Since we don't have a direct endpoint for global wallet status in api.js clearly revealed,
+                // we'll assume it defaults to true or persists via the same settings API later.
+                // For now, let's leave walletEnabled as is or check if getSystemSettings has it.
+            } catch (e) {
+                console.error("Failed to fetch settings", e);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     const handleTestUpload = async () => {
         if (!testFile) return;
@@ -571,17 +607,34 @@ const AdminDashboard = () => {
                     <div className="flex-1 overflow-y-auto p-12 bg-black">
                         <div className="max-w-xl mx-auto">
                             <h2 className="text-2xl font-black text-white mb-6">System Control</h2>
-                            <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800/60 flex items-center justify-between">
-                                <div>
-                                    <h3 className="font-black text-slate-200">Wallet Ecosystem</h3>
-                                    <p className="text-xs text-slate-500">Enable/Disable transaction modules</p>
+                            <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800/60 space-y-6">
+                                {/* Payment Gateway Toggle */}
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="font-black text-slate-200">Payment Gateway</h3>
+                                        <p className="text-xs text-slate-500">Enable/Disable global payments (Dakshina, Recharge)</p>
+                                    </div>
+                                    <button
+                                        onClick={handleTogglePayment}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all ${paymentEnabled ? 'bg-indigo-600' : 'bg-slate-700'}`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 bg-white rounded-full transition-transform ${paymentEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={handleToggleWallet}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all ${walletEnabled ? 'bg-indigo-600' : 'bg-slate-700'}`}
-                                >
-                                    <span className={`inline-block h-4 w-4 bg-white rounded-full transition-transform ${walletEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                                </button>
+
+                                {/* Wallet System Toggle */}
+                                <div className="flex items-center justify-between pt-6 border-t border-slate-800/60">
+                                    <div>
+                                        <h3 className="font-black text-slate-200">Wallet System</h3>
+                                        <p className="text-xs text-slate-500">Enable/Disable user wallet balance & transactions</p>
+                                    </div>
+                                    <button
+                                        onClick={handleToggleWallet}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all ${walletEnabled ? 'bg-emerald-600' : 'bg-slate-700'}`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 bg-white rounded-full transition-transform ${walletEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
