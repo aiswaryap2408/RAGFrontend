@@ -15,6 +15,7 @@ import Recharge from './pages/wallet/Recharge';
 
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import Settings from './pages/admin/Settings';
 import ScrollToTop from './components/ScrollToTop';
 
 // User Protected Route Component
@@ -129,6 +130,14 @@ function App() {
           element={
             <AdminProtectedRoute>
               <AdminDashboard />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <AdminProtectedRoute>
+              <Settings />
             </AdminProtectedRoute>
           }
         />
