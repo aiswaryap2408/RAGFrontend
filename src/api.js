@@ -54,6 +54,12 @@ export const generateReport = (mobile, category) => api.post('/wallet/generate-r
 export const toggleWalletSystem = (enabled) => api.post(`/wallet/toggle-system?enabled=${enabled}`);
 export const getDashboardStats = (range = '7D') => api.get(`/admin/stats?range=${range}`);
 
+// Payment Module Endpoints
+export const createPaymentOrder = (amount, mobile) => api.post('/payment/create-order', { amount, mobile });
+export const verifyPayment = (data) => api.post('/payment/verify', data);
+export const getSystemSettings = () => api.get('/admin/settings');
+export const updateSystemSettings = (key, value) => api.post('/admin/settings', { key, value });
+
 export const setAuthToken = (token) => {
     if (token) {
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;

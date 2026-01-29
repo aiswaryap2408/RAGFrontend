@@ -14,25 +14,90 @@ const Recharge = () => {
 
     const presets = [100, 200, 500, 1000];
 
+    const [paymentEnabled, setPaymentEnabled] = useState(true);
+
+    React.useEffect(() => {
+        checkPaymentStatus();
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.body.appendChild(script);
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []);
+
+    const checkPaymentStatus = async () => {
+        try {
+            const { data } = await import('../../api').then(m => m.getSystemSettings());
+            if (data && typeof data.payment_enabled !== 'undefined') {
+                setPaymentEnabled(data.payment_enabled);
+            }
+        } catch (e) {
+            console.error("Failed to check payment status", e);
+        }
+    };
+
     const handleRecharge = async () => {
         if (!amount || amount <= 0) {
             alert("Please enter a valid amount");
             return;
         }
 
+        if (!paymentEnabled) {
+            alert("Payments are currently disabled by the administrator.");
+            return;
+        }
+
         setLoading(true);
         try {
-            const res = await rechargeWallet({
-                mobile,
-                amount: parseFloat(amount)
+            // Import dynamically to avoid circular dependency issues if any
+            const { createPaymentOrder, verifyPayment } = await import('../../api');
+
+            // 1. Create Order
+            const orderRes = await createPaymentOrder(parseFloat(amount), mobile);
+            const order = orderRes.data;
+
+            // 2. Open Razorpay
+            const options = {
+                key: order.key,
+                amount: order.amount,
+                currency: order.currency,
+                name: "Astrology Guruji",
+                description: "Wallet Recharge",
+                order_id: order.order_id,
+                handler: async function (response) {
+                    try {
+                        // 3. Verify Payment
+                        await verifyPayment({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        });
+                        alert("Recharge Successful!");
+                        navigate('/wallet');
+                    } catch (err) {
+                        console.error("Verification failed", err);
+                        alert("Payment verification failed. Please contact support.");
+                    }
+                },
+                prefill: {
+                    contact: mobile,
+                },
+                theme: {
+                    color: "#F26A2E"
+                }
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                alert("Payment Failed: " + response.error.description);
             });
-            if (res.data.status === 'success') {
-                alert("Recharge Successful!");
-                navigate('/wallet');
-            }
+            rzp.open();
+
         } catch (error) {
-            console.error("Recharge failed:", error);
-            alert("Payment failed. Please try again.");
+            console.error("Recharge init failed:", error);
+            alert("Failed to initiate payment. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -65,6 +130,12 @@ const Recharge = () => {
                     </IconButton>
                     <Typography variant="h6" sx={{ fontWeight: 800, color: '#333' }}>Add Credits</Typography>
                 </Box>
+
+                {!paymentEnabled && (
+                    <Box sx={{ mb: 2, p: 2, bgcolor: '#FFEBEE', color: '#D32F2F', borderRadius: 2, fontSize: '0.85rem', fontWeight: 700, textAlign: 'center' }}>
+                        ⚠️ Payments are currently paused.
+                    </Box>
+                )}
 
                 <Card sx={{ borderRadius: 4, mb: 4, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
                     <CardContent sx={{ p: 4 }}>
