@@ -37,53 +37,49 @@ const tryParseJson = (data) => {
     return null;
 };
 
-const MayaIntro = ({ name, content, mayaJson }) => (
-    <Box sx={{ mb: 3, px: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+const MayaIntro = ({ name, content, mayaJson, rawResponse, time }) => (
+    <Box sx={{ px: 3, pt: 4, pb: 1, width: "100%" }}>
+        <Box sx={{
+            position: "relative",
+            border: "2px solid #F36A2F",
+            borderRadius: 2,
+            p: 2,
+            bgcolor: "#fcebd3",
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+            {/* Avatar */}
             <Box sx={{
-                width: 45,
-                height: 45,
-                borderRadius: '50%',
-                bgcolor: 'white',
-                border: '3px solid #F36A2F',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                position: "absolute",
+                top: -28,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                border: "5px solid #F36A2F",
+                bgcolor: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
             }}>
-                <Typography sx={{ fontWeight: 900, color: '#F36A2F', fontSize: '1rem' }}>M</Typography>
+                <img src="/svg/guruji_illustrated.svg" style={{ width: 45 }} alt="Maya" />
             </Box>
-            <Box sx={{
-                p: 2.5,
-                borderRadius: '0 24px 24px 24px',
-                bgcolor: 'white',
-                color: '#333',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-                border: '1px solid #FFF',
-                maxWidth: '85%'
-            }}>
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 900, color: '#F36A2F', mb: 0.5, textTransform: 'uppercase', letterSpacing: 1 }}>
-                    Receptionist Maya
-                </Typography>
-                <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.95rem', fontWeight: 500 }}>
-                    {name && <strong>Namaste {name}, </strong>}{content}
-                </Typography>
 
-                {mayaJson && (
-                    <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px dashed #eee' }}>
-                        <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 800, mb: 1 }}>INTENT ANALYSIS</Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                            <Box sx={{ px: 1.5, py: 0.5, bgcolor: '#FFF6EB', color: '#F36A2F', borderRadius: 10, fontSize: '0.65rem', fontWeight: 800, border: '1px solid #FFE0BD' }}>
-                                CATEGORY: {mayaJson.category?.toUpperCase()}
-                            </Box>
-                            <Box sx={{ px: 1.5, py: 0.5, bgcolor: '#F0FDF4', color: '#16A34A', borderRadius: 10, fontSize: '0.65rem', fontWeight: 800, border: '1px solid #DCFCE7' }}>
-                                SENTIMENT: {mayaJson.sentiment?.toUpperCase()}
-                            </Box>
-                        </Box>
-                    </Box>
-                )}
-            </Box>
+            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, textAlign: 'left', fontWeight: 500 }}>
+                {name && <strong>Namaste {name}, </strong>}{content}
+            </Typography>
+
+            {time && (
+                <Typography sx={{
+                    fontSize: 12,
+                    opacity: 0.8,
+                    textAlign: "right",
+                    mt: 0.5,
+                    color: "#666"
+                }}>
+                    {time}
+                </Typography>
+            )}
         </Box>
     </Box>
 );
@@ -267,8 +263,8 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     };
 
     const bubbleSx = {
-        p: 2,
-        borderRadius: '20px 20px 20px 0',
+        p: '16px 12px 8px 16px',
+        borderRadius: '10px',
         bgcolor: '#ff8338',
         color: 'white',
         boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
@@ -282,11 +278,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
         <Box sx={{ width: '100%' }}>
             {paras.slice(0, visibleCount).map((para, idx) => (
                 <Box key={idx} sx={bubbleSx}>
-                    {idx === 0 && (
-                        <Typography sx={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', mb: 0.5, color: 'rgba(255,255,255,0.9)', letterSpacing: 1 }}>
-                            Astrology Guruji
-                        </Typography>
-                    )}
+                    {/* Label Removed to match Maya's bubble style */}
                     <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para }} />
 
                     {idx === paras.length - 1 && reportState === 'IDLE' && (
@@ -346,10 +338,21 @@ const Chat = () => {
     const [feedbackDrawerOpen, setFeedbackDrawerOpen] = useState(false);
 
     // Helper to format time strings
+    // Helper to format time strings
     const formatTime = (dateStr) => {
         if (!dateStr) return '';
         try {
-            const date = new Date(dateStr);
+            let date;
+            // Handle numeric timestamp (check if seconds or milliseconds)
+            if (typeof dateStr === 'number' || (typeof dateStr === 'string' && !isNaN(dateStr))) {
+                let ts = Number(dateStr);
+                // If timestamp is in seconds (e.g. 17xxxxxxxx), convert to ms
+                if (ts < 10000000000) ts *= 1000;
+                date = new Date(ts);
+            } else {
+                date = new Date(dateStr);
+            }
+
             if (isNaN(date.getTime())) return ''; // Invalid date
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
         } catch (e) {
@@ -389,76 +392,63 @@ const Chat = () => {
     useEffect(() => {
         const loadHistory = async () => {
             const mobile = localStorage.getItem('mobile');
+            console.log("DEBUG: loadHistory triggered for mobile:", mobile);
+            console.log("DEBUG: location.state:", location.state);
+
             if (mobile) {
                 try {
                     const res = await getChatHistory(mobile);
+                    console.log("DEBUG: getChatHistory response:", res.data);
+
                     if (res.data.sessions && res.data.sessions.length > 0) {
                         const mostRecentSession = res.data.sessions[0];
                         const currentLocalSid = localStorage.getItem('activeSessionId');
+                        console.log("DEBUG: mostRecentSession:", mostRecentSession.session_id);
+                        console.log("DEBUG: currentLocalSid:", currentLocalSid);
 
                         // Scenario 1: User explicitly clicked "New Consultation"
                         if (location.state?.newSession) {
+                            console.log("DEBUG: Scenario 1 - New Consultation requested");
+                            // Clear the state to prevent re-triggering on refresh
+                            navigate(location.pathname, { replace: true, state: {} });
                             handleNewChat();
                             return;
                         }
 
                         // Scenario 2: Most recent session on server is already ended
                         if (mostRecentSession.is_ended) {
-                            console.log("Most recent session on server is marked as ended.");
-                            // If our local session ID matches the ended one, we MUST start fresh
-                            if (currentLocalSid === mostRecentSession.session_id) {
-                                handleNewChat();
-                                return;
-                            }
+                            console.log("DEBUG: Scenario 2 - Most recent session on server is ended. Starting fresh.");
+                            // ALWAYS start fresh if the server says the latest session is ended
+                            handleNewChat();
+                            return;
                         }
 
-                        // Scenario 3: We have history, and it's for our current session
+                        // Scenario 3: Load history (Relaxed logic + Parsing)
                         const history = mostRecentSession.messages;
                         if (history && history.length > 0) {
-                            const lastMsg = history[history.length - 1];
-                            // Relaxed Logic: Always load the most recent session to ensure sync
-                            // We can add a larger threshold if needed (e.g. 24 hours), but for sync, always loading is safer.
-
+                            console.log("DEBUG: Scenario 3 - Resuming Session:", mostRecentSession.session_id);
+                            // Use Relaxed logic: Load it regardless of local ID mismatch
                             setSessionId(mostRecentSession.session_id);
-                            setMessages(prev => {
-                                // Only append if empty or just initial greeting
-                                if (prev.length > 2) return prev;
-
-                                const processedHistory = history.map(msg => ({
-                                    ...msg,
-                                    time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || ''
-                                }));
-                                console.log("Debug: Loaded History with Times:", processedHistory);
-
-                                return [...prev, ...processedHistory];
-                            });
-                            // If local SID matches server, load it
-                            // Or if we don't have a local SID yet (first load), adopt the server's if NOT ended
-                            if (currentLocalSid === mostRecentSession.session_id || (!currentLocalSid && !mostRecentSession.is_ended)) {
-
-                                if (!currentLocalSid) {
-                                    setSessionId(mostRecentSession.session_id);
-                                    localStorage.setItem('activeSessionId', mostRecentSession.session_id);
-                                }
-
-                                const mappedHistory = history.map(msg => {
-                                    const gJson = tryParseJson(msg.guruji_json || msg.gurujiJson) ||
-                                        (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null);
-
-                                    return {
-                                        ...msg,
-                                        gurujiJson: gJson,
-                                        mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
-                                        animating: false
-                                    };
-                                });
-
-                                setMessages(prev => {
-                                    if (prev.length > 2) return prev;
-                                    return [...prev, ...mappedHistory];
-                                });
+                            if (!currentLocalSid || currentLocalSid !== mostRecentSession.session_id) {
+                                localStorage.setItem('activeSessionId', mostRecentSession.session_id);
                             }
+
+                            const mappedHistory = history.map(msg => ({
+                                ...msg,
+                                time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
+                                gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
+                                mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                animating: false
+                            }));
+
+                            console.log("DEBUG: mappedHistory set, count:", mappedHistory.length);
+                            // Set messages to history (Replacing the initial welcome message)
+                            setMessages(mappedHistory);
+                        } else {
+                            console.log("DEBUG: No history messages found in most recent session.");
                         }
+                    } else {
+                        console.log("DEBUG: No sessions found for this user.");
                     }
                 } catch (err) {
                     console.error("Failed to load chat history:", err);
@@ -553,6 +543,8 @@ const Chat = () => {
             const mobile = localStorage.getItem('mobile');
             const res = await endChat(mobile, messages, sessionId);
             setSummary(res.data.summary);
+            // Clear local session ID so it doesn't try to resume an ended session
+            localStorage.removeItem('activeSessionId');
             if (!keepFeedback) {
                 setFeedback({ rating: 0, comment: '' });
                 setFeedbackSubmitted(false);
@@ -652,7 +644,7 @@ const Chat = () => {
             }
             const history = messages.slice(1);
             const res = await sendMessage(mobile, text, history, sessionId);
-            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json } = res.data;
+            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, timestamp } = res.data;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
@@ -667,8 +659,8 @@ const Chat = () => {
                 mayaJson: maya_json,
                 gurujiJson: guruji_json,
                 animating: true,
-                time: getCurrentTime(),
-                timestamp: new Date().toISOString()
+                time: timestamp ? formatTime(timestamp) : getCurrentTime(),
+                timestamp: timestamp || new Date().toISOString()
             }]);
         } catch (err) {
             console.error("Chat Error:", err);
@@ -985,77 +977,73 @@ const Chat = () => {
                                     </Box>
                                 )} */}
 
-                                <Box sx={{
-                                    // p: 2,
-                                    p: '16px 12px 8px 16px',
-                                    // borderRadius: msg.role === 'user' ? '20px 20px 0 20px' : '20px 20px 20px 0',
-                                    borderRadius: '10px',
-                                    bgcolor: msg.role === 'user' ? '#2f3148' : '#ff8338',
-                                    color: 'white',
-                                    boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-                                    border: 'none',
-                                    position: 'relative',
-                                    // width: 'fit-content',
-                                    maxWidth: '85%',
-                                    minWidth: '100px',
-                                    overflowWrap: "break-word",
-                                    wordBreak: "break-word",
-                                    whiteSpace: "pre-line",
-                                }}>
-                                    {msg.role === 'assistant' && (
-                                        <Typography sx={{
-                                            fontSize: '0.65rem',
-                                            fontWeight: 900,
-                                            textTransform: 'uppercase',
-                                            mb: 0.5,
-                                            color: 'rgba(255,255,255,0.9)',
-                                            letterSpacing: 1,
+                                {/* Only render bubble if there is content */}
+                                {msg.content && msg.content.trim() !== '' && (
+                                    <Box sx={{
+                                        // p: 2,
+                                        p: '16px 12px 8px 16px',
+                                        // borderRadius: msg.role === 'user' ? '20px 20px 0 20px' : '20px 20px 20px 0',
+                                        borderRadius: '10px',
+                                        bgcolor: msg.role === 'user' ? '#2f3148' : '#ff8338',
+                                        color: 'white',
+                                        boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                                        border: 'none',
+                                        position: 'relative',
+                                        // width: 'fit-content',
+                                        maxWidth: '85%',
+                                        minWidth: '100px',
+                                        overflowWrap: "break-word",
+                                        wordBreak: "break-word",
+                                        whiteSpace: "pre-line",
+                                    }}>
+                                        {msg.role === 'assistant' && msg.assistant !== 'maya' && (
+                                            <Typography sx={{
+                                                fontSize: '0.65rem',
+                                                fontWeight: 900,
+                                                textTransform: 'uppercase',
+                                                mb: 0.5,
+                                                color: 'rgba(255,255,255,0.9)',
+                                                letterSpacing: 1,
 
-                                        }}>
-                                            {msg.assistant === 'maya' ? 'Maya' : 'Astrology Guruji'}
-                                        </Typography>
-                                    )}
-
-                                    <Typography
-                                        variant="body2"
-                                        sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}
-                                        dangerouslySetInnerHTML={{ __html: msg.content }}
-                                    />
-
-                                    {/* JSON Output View (for regular messages) */}
-                                    {(msg.mayaJson && !msg.gurujiJson) && (
-                                        <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed rgba(255,255,255,0.2)' }}>
-                                            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)', mb: 0.5, textTransform: 'uppercase' }}>
-                                                Debug Data:
+                                            }}>
+                                                Astrology Guruji
                                             </Typography>
-                                            <Box sx={{ mb: 1 }}>
-                                                <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>RECEPTIONIST CLASSIFICATION</Typography>
-                                                <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: 'white' }}>
-                                                    {JSON.stringify(msg.mayaJson, null, 2)}
+                                        )}
+
+                                        <Typography
+                                            variant="body2"
+                                            sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}
+                                            dangerouslySetInnerHTML={{ __html: msg.content }}
+                                        />
+
+                                        {/* JSON Output View (for regular messages) */}
+                                        {(msg.mayaJson && !msg.gurujiJson) && (
+                                            <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed rgba(255,255,255,0.2)' }}>
+                                                <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)', mb: 0.5, textTransform: 'uppercase' }}>
+                                                    Debug Data:
+                                                </Typography>
+                                                <Box sx={{ mb: 1 }}>
+                                                    <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>RECEPTIONIST CLASSIFICATION</Typography>
+                                                    <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: 'white' }}>
+                                                        {JSON.stringify(msg.mayaJson, null, 2)}
+                                                    </Box>
                                                 </Box>
                                             </Box>
-                                        </Box>
-                                    )}
+                                        )}
 
-                                    {msg.amount > 0 && (
-                                        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                            <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#B45309', bgcolor: '#FEF3C7', px: 1, py: 0.2, borderRadius: 1 }}>
-                                                PREMIUM: -{msg.amount} coins
-                                            </Typography>
-                                        </Box>
-                                    )}
-                                    <Typography
-                                        sx={{
-                                            fontSize: 12,
-                                            opacity: 0.8,
-                                            textAlign: "right",
-                                            mt: 0.5,
-                                        }}
-                                    >
-                                        {msg.time}
-                                    </Typography>
-                                    {/* Automated chat fee label removed */}
-                                </Box>
+                                        {/* Automated chat fee label removed */}
+                                    </Box>
+                                )}
+                                <Typography
+                                    sx={{
+                                        fontSize: 12,
+                                        opacity: 0.8,
+                                        textAlign: "right",
+                                        mt: 0.5,
+                                    }}
+                                >
+                                    {msg.time}
+                                </Typography>
                             </Box>
                         </Box>
                     );
