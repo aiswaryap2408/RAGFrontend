@@ -38,38 +38,6 @@ const tryParseJson = (data) => {
     return null;
 };
 
-const MayaIntro = ({ name, content, mayaJson }) => (
-    <Box sx={{ mb: 3, px: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
-            {/* <Box sx={{
-                width: 45,
-                height: 45,
-                borderRadius: '50%',
-                bgcolor: 'white',
-                border: '3px solid #F36A2F',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-            }}>
-                <Typography sx={{ fontWeight: 900, color: '#F36A2F', fontSize: '1rem' }}>M</Typography>
-            </Box> */}
-            <Box sx={{
-                p: 2.5,
-                borderRadius: 1,
-                bgcolor: 'white',
-                color: '#333',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-                border: '1px solid #FFF',
-                maxWidth: '85%'
-            }}>
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 900, color: '#F36A2F', mb: 0.5, textTransform: 'uppercase', letterSpacing: 1 }}>
-                    Receptionist Maya
-                </Typography>
-                <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.95rem', fontWeight: 500 }}>
-                    {name && <strong>Namaste {name}, </strong>}{content}
-                </Typography>
 const MayaIntro = ({ name, content, mayaJson, rawResponse, time }) => (
     <Box sx={{ px: 3, pt: 4, pb: 1, width: "100%" }}>
         <Box sx={{
@@ -369,6 +337,8 @@ const Chat = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [feedbackDrawerOpen, setFeedbackDrawerOpen] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [dakshinaOpen, setDakshinaOpen] = useState(false);
 
     // Helper to format time strings
     // Helper to format time strings
@@ -703,8 +673,6 @@ const Chat = () => {
         }
     };
 
-    const [drawerOpen, setDrawerOpen] = React.useState(false);
-    const [dakshinaOpen, setDakshinaOpen] = useState(false);
 
 
     //   const location = useLocation();
@@ -892,6 +860,10 @@ const Chat = () => {
                 onAddDakshina={() => {
                     setFeedbackDrawerOpen(false);
                     setTimeout(() => setDakshinaOpen(true), 150);
+                }}
+                onNewJourney={() => {
+                    setFeedbackDrawerOpen(false);
+                    handleNewChat();
                 }}
             />
 
