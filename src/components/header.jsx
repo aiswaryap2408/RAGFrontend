@@ -1,11 +1,7 @@
 import React from "react";
-import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
+import { Box } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
-import HomeIcon from '@mui/icons-material/Home';
-import PersonIcon from '@mui/icons-material/Person';
-import HistoryIcon from '@mui/icons-material/History';
-import LogoutIcon from '@mui/icons-material/Logout';
-import AddCommentIcon from '@mui/icons-material/AddComment';
+
 
 const Header = ({ backgroundImage = "/svg/top_curve_light.svg" }) => {
     const [drawerOpen, setDrawerOpen] = React.useState(false);
@@ -69,7 +65,7 @@ const Header = ({ backgroundImage = "/svg/top_curve_light.svg" }) => {
             />
 
             {/* Hamburger menu - Only for logged in users on specific pages */}
-           
+
         </Box>
     );
 };
