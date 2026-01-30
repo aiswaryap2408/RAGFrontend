@@ -2,20 +2,21 @@ import React from 'react';
 import { Box, Typography, IconButton, Paper } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/header';
+import Subheader from '../components/subheader';
+
 
 const TermsAndConditions = () => {
     const navigate = useNavigate();
 
     return (
         <Box sx={{ bgcolor: '#FFF6EB', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-            <Header backgroundImage="/svg/top_curve_dark.svg" />
+            <Subheader title={"Terms and Conditions"} showBack onBack={() => navigate(-1)} />
 
-            <Box sx={{ position: 'absolute', top: 50, left: 15, zIndex: 10 }}>
+            {/* <Box sx={{ position: 'absolute', top: 50, left: 15, zIndex: 10 }}>
                 <IconButton onClick={() => navigate(-1)} sx={{ color: '#fff' }}>
                     <ArrowBackIcon />
                 </IconButton>
-            </Box>
+            </Box> */}
 
             <Box sx={{ p: 3, mt: 8, flex: 1, overflowY: 'auto' }}>
                 <Typography variant="h5" sx={{ color: '#F36A2F', fontWeight: 700, mb: 3, textAlign: 'center' }}>

@@ -119,6 +119,7 @@ function App() {
             }
           />
           <Route
+            path="/wallet/recharge"
             element={
               <ProtectedRoute>
                 <Recharge />

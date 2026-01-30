@@ -1,57 +1,107 @@
 import React from 'react';
-import { Box, Typography, IconButton, Paper } from '@mui/material';
+import { Box, Typography, IconButton, Paper, Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/header';
+import Subheader from '../components/subheader';
+import PrimaryButton from '../components/PrimaryButton';
+import KeyboardDoubleArrowRightOutlinedIcon from '@mui/icons-material/KeyboardDoubleArrowRightOutlined';
+
 
 const PrivacyPolicy = () => {
     const navigate = useNavigate();
 
     return (
         <Box sx={{ bgcolor: '#FFF6EB', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-            <Header backgroundImage="/svg/top_curve_dark.svg" />
+            <Subheader title={"Privacy Policy"} showBack onBack={() => navigate(-1)} />
 
-            <Box sx={{ position: 'absolute', top: 50, left: 15, zIndex: 10 }}>
+            {/* <Box sx={{ position: 'absolute', top: 50, left: 15, zIndex: 10 }}>
                 <IconButton onClick={() => navigate(-1)} sx={{ color: '#fff' }}>
                     <ArrowBackIcon />
                 </IconButton>
-            </Box>
+            </Box> */}
 
-            <Box sx={{ p: 3, mt: 8, flex: 1, overflowY: 'auto' }}>
-                <Typography variant="h5" sx={{ color: '#F36A2F', fontWeight: 700, mb: 3, textAlign: 'center' }}>
-                    Privacy Policy
+            <Box sx={{ p: 3, px: 5, mt: 1.5, flex: 1, overflowY: 'auto', color: '#533000' }}>
+                <Typography sx={{ color: '#000', fontWeight: 500, mb: 3, textAlign: 'center', bgcolor: '#f1d3a9', py: 2, borderRadius: 1 }}>
+                    IMPORTANT
                 </Typography>
 
-                <Paper sx={{ p: 3, borderRadius: 2, bgcolor: 'rgba(255, 255, 255, 0.7)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>1. Information Collection</Typography>
-                    <Typography variant="body2" sx={{ mb: 2, color: '#444', lineHeight: 1.6 }}>
-                        We collect personal information such as your name, email address, mobile number, and birth details (date, time, and place of birth) to provide accurate astrological services.
+                <Box >
+                    <Typography sx={{ fontWeight: 600, mb: 2 }}>Findastro is now AI powered and the option for choosing your astrologer is no longer available.</Typography>
+                    <Typography sx={{ mb: 2 }}>
+                        Our AI system (MAYA) automatically connects with the astrologer available without revealing the astrologer identity.
+                    </Typography>
+                    <Typography sx={{ mb: 2 }}>
+                        If you wish to consult with the same astrologer you previously consulted, <b>please download our Clickastro app</b>. There you'll get the same astrologers list and your wallet balance will also be retained.
                     </Typography>
 
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>2. Use of Information</Typography>
-                    <Typography variant="body2" sx={{ mb: 2, color: '#444', lineHeight: 1.6 }}>
-                        Your information is used solely to generate astrological reports, facilitate consultations with Guruji, and manage your account balance and transactions.
+                    <Typography sx={{ mb: 2 }}>
+                        If you continue in this new Findastro app, you can still use the same wallet balance.
                     </Typography>
 
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>3. Data Security</Typography>
-                    <Typography variant="body2" sx={{ mb: 2, color: '#444', lineHeight: 1.6 }}>
-                        We implement strict security measures to protect your data from unauthorized access, alteration, or disclosure. Chat histories are stored securely and are only accessible to you.
+                    <Typography sx={{ fontWeight: 600, mb: 2 }}>
+                        You'll receive this same message in your WhatsApp too.
                     </Typography>
-
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>4. Third-Party Services</Typography>
-                    <Typography variant="body2" sx={{ mb: 2, color: '#444', lineHeight: 1.6 }}>
-                        We do not sell or trade your personal information to third parties. We may use trusted third-party services to process payments or for technical support, under strict confidentiality agreements.
-                    </Typography>
-
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>5. Your Rights</Typography>
-                    <Typography variant="body2" sx={{ mb: 2, color: '#444', lineHeight: 1.6 }}>
-                        You have the right to access, correct, or delete your personal information at any time through the application settings or by contacting our support team.
-                    </Typography>
-
-                    <Typography variant="body2" sx={{ mt: 4, fontStyle: 'italic', textAlign: 'center', color: '#666' }}>
-                        Last Updated: January 2026
-                    </Typography>
-                </Paper>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center', my: 4 }}>
+                    <Box
+                        component="img"
+                        src={'/svg/guruji_illustrated.svg'}
+                        sx={{
+                            width: '55px',
+                            height: '55px',
+                            objectFit: 'contain',
+                            border: '2px solid #dc5d35',
+                            borderRadius: 10,
+                        }}
+                    />
+                    <Button
+                        fullWidth
+                        component="a"
+                        href="https://play.google.com/store/apps/details?id=com.clickastro.android.app"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                            bgcolor: '#fff',
+                            color: '#666666',
+                            textTransform: 'none',
+                            fontWeight: 500,
+                            borderRadius: 5,
+                            py: 1.5,
+                            px: 3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            width: 'auto',
+                            fontSize: 16,
+                            border: '2px solid #dc5d35',
+                            '&:hover': { bgcolor: '#e0c298' }
+                        }}
+                    >
+                        <Box component="img" src="/svg/Gplay-store.png" sx={{ width: 24, height: 24, }} alt="" />
+                        Download Clickastro app
+                    </Button>
+                </Box>
+                <PrimaryButton
+                    label="Continue to new Findastro app"
+                    fullWidth
+                    onClick={() => navigate('/chat')}
+                    sx={{
+                        borderRadius: 5,
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        px: 2,
+                        py: 0,
+                        fontSize: 16,
+                        mt: 2,
+                        width: 'auto',
+                        display: 'flex',
+                        margin: '10px auto',
+                        '& .MuiButton-endIcon svg': {
+                            fontSize: '50px'
+                        }
+                    }}
+                    endIcon={<KeyboardDoubleArrowRightOutlinedIcon />}
+                />
             </Box>
         </Box>
     );

@@ -2,23 +2,15 @@ import React, { useState, useEffect } from "react";
 import {
     Box,
     Typography,
-    IconButton,
-    Button,
-    Grid,
-    TextField,
     Drawer,
     InputBase,
-    IconButton,
-    Button,
-    Grid
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+// import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import Header from "../components/header";
 import GurujiImage from "../components/gurujiImg";
 import PrimaryButton from "../components/PrimaryButton";
-import { Margin } from "@mui/icons-material";
 
 const Dakshina = ({ open, onClose, onSuccess }) => {
     const navigate = useNavigate();
