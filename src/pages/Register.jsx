@@ -180,6 +180,7 @@ const Register = () => {
             setAuthToken(access_token);
             localStorage.setItem('token', access_token);
             localStorage.setItem('userName', details.name);
+            localStorage.setItem('userEmail', details.email);
 
             setTimeout(() => {
                 navigate('/register-success');

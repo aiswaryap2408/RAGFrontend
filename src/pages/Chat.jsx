@@ -386,6 +386,7 @@ const Chat = () => {
     const [activeCategory, setActiveCategory] = useState(null);
     const [readyReportData, setReadyReportData] = useState(null);
     const messagesEndRef = useRef(null);
+    const processedNewSession = useRef(false);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -399,6 +400,23 @@ const Chat = () => {
             console.log("DEBUG: location.state:", location.state);
 
             if (mobile) {
+                // Scenario 1: User explicitly clicked "New Consultation"
+                if (location.state?.newSession) {
+                    console.log("DEBUG: Scenario 1 - New Consultation requested");
+                    processedNewSession.current = true;
+                    // Clear the state to prevent re-triggering on refresh
+                    navigate(location.pathname, { replace: true, state: {} });
+                    handleNewChat();
+                    return;
+                }
+
+                // If we just processed a new session, skip this run (which is likely the trigger after navigate)
+                if (processedNewSession.current) {
+                    console.log("DEBUG: Skipping history load as new session was just initialized.");
+                    processedNewSession.current = false;
+                    return;
+                }
+
                 try {
                     const res = await getChatHistory(mobile);
                     console.log("DEBUG: getChatHistory response:", res.data);
@@ -408,15 +426,6 @@ const Chat = () => {
                         const currentLocalSid = localStorage.getItem('activeSessionId');
                         console.log("DEBUG: mostRecentSession:", mostRecentSession.session_id);
                         console.log("DEBUG: currentLocalSid:", currentLocalSid);
-
-                        // Scenario 1: User explicitly clicked "New Consultation"
-                        if (location.state?.newSession) {
-                            console.log("DEBUG: Scenario 1 - New Consultation requested");
-                            // Clear the state to prevent re-triggering on refresh
-                            navigate(location.pathname, { replace: true, state: {} });
-                            handleNewChat();
-                            return;
-                        }
 
                         // Scenario 2: Most recent session on server is already ended
                         if (mostRecentSession.is_ended) {
@@ -685,6 +694,7 @@ const Chat = () => {
         "/dakshina",
         "/wallet",
         "/wallet/recharge",
+        "/dashboard",
     ].includes(location.pathname);
 
     const toggleDrawer = (open) => (event) => {
@@ -857,6 +867,7 @@ const Chat = () => {
             <FeedbackDrawer
                 open={feedbackDrawerOpen}
                 onClose={() => setFeedbackDrawerOpen(false)}
+                onSubmit={handleDrawerSubmit}
                 onAddDakshina={() => {
                     setFeedbackDrawerOpen(false);
                     setTimeout(() => setDakshinaOpen(true), 150);
@@ -870,6 +881,7 @@ const Chat = () => {
             <Dakshina
                 open={dakshinaOpen}
                 onClose={() => setDakshinaOpen(false)}
+                onSuccess={handleNewChat}
             />
 
 

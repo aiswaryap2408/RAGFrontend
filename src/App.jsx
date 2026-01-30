@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Box, Typography } from '@mui/material';
 import Login from './pages/Login';
 import Verify from './pages/Verify';
 import Register from './pages/Register';
@@ -12,6 +13,9 @@ import PlaceTest from './pages/PlaceTest';
 import Dakshina from './pages/Dakshina';
 import Wallet from './pages/wallet/Wallet';
 import Recharge from './pages/wallet/Recharge';
+import RechargeHistory from './pages/wallet/RechargeHistory';
+import TermsAndConditions from './pages/TermsAndConditions';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -115,7 +119,6 @@ function App() {
             }
           />
           <Route
-            path="/wallet/recharge"
             element={
               <ProtectedRoute>
                 <Recharge />
@@ -123,9 +126,19 @@ function App() {
             }
           />
           <Route
+            path="/wallet/recharge-history"
+            element={
+              <ProtectedRoute>
+                <RechargeHistory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard"
             element={<Dashboard />}
           />
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
         </Route>
 
 

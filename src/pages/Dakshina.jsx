@@ -14,7 +14,7 @@ import GurujiImage from "../components/gurujiImg";
 import PrimaryButton from "../components/PrimaryButton";
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 
-const Dakshina = ({ open, onClose }) => {
+const Dakshina = ({ open, onClose, onSuccess }) => {
     const navigate = useNavigate();
     const [amount, setAmount] = useState("");
     const [paymentEnabled, setPaymentEnabled] = useState(true);
@@ -89,7 +89,11 @@ const Dakshina = ({ open, onClose }) => {
                         });
                         alert("Dakshina received with gratitude! 🙏");
                         onClose();
-                        navigate('/chat', { state: { newSession: true } });
+                        if (onSuccess) {
+                            onSuccess();
+                        } else {
+                            navigate('/chat', { state: { newSession: true } });
+                        }
                     } catch (err) {
                         console.error("Verification failed", err);
                         alert("Payment verification failed. Please contact support.");
