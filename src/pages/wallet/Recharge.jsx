@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, TextField, Grid, Card, CardContent, IconButton } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PaymentsIcon from '@mui/icons-material/Payments';
-import Header from '../../components/header';
+import Subheader from '../../components/subheader';
 
 const Recharge = () => {
     const [amount, setAmount] = useState('');
@@ -112,7 +112,7 @@ const Recharge = () => {
             overflow: 'hidden'
         }}>
             <Box sx={{ position: 'relative', flexShrink: 0, zIndex: 100, bgcolor: '#FFF6EB' }}>
-                <Header />
+                <subHeader />
             </Box>
 
             <Box sx={{
