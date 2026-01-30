@@ -109,10 +109,14 @@ const ChatHistory = () => {
             display: 'flex',
             flexDirection: 'column',
             bgcolor: '#F9FAFB',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            "&::-webkit-scrollbar": {
+                display: "none",
+            },
+            scrollbarWidth: "none",
         }}>
             {/* <Header /> */}
-            <Subheader />
+            <Subheader title={'History'} showBack onBack={() => navigate('/chat')} />
 
             <Box sx={{
                 flex: 1,

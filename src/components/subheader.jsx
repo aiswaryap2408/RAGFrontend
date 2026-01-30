@@ -18,7 +18,7 @@ const Subheader = ({ title, showBack = false, onBack }) => {
         <Box
             sx={{
                 width: "100%",
-                height: 56,
+                height: 75,
                 display: "flex",
                 alignItems: "center",
                 px: 2,
