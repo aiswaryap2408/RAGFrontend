@@ -9,7 +9,7 @@ const Header = ({ backgroundImage = "/svg/top_curve_light.svg" }) => {
     const location = useLocation();
 
     // Only show menu on specific pages
-    const showMenu = ['/chat', '/profile', '/history', '/dakshina', '/wallet', '/wallet/recharge'].includes(location.pathname);
+    const showMenu = ['/chat', '/profile', '/history', '/dakshina', '/wallet', '/wallet/recharge', '/dashboard'].includes(location.pathname);
 
     const toggleDrawer = (open) => (event) => {
         if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {

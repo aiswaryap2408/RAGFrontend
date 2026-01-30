@@ -106,10 +106,16 @@ const Verify = () => {
     setInfo("");
     try {
       const res = await verifyOtp(mobile, otpString);
-      const { access_token, is_new_user } = res.data;
+      const { access_token, is_new_user, user_profile } = res.data;
 
       setAuthToken(access_token);
       localStorage.setItem("token", access_token);
+
+      if (user_profile) {
+        localStorage.setItem("userName", user_profile.name || "");
+        localStorage.setItem("userEmail", user_profile.email || "");
+        localStorage.setItem("mobile", user_profile.mobile || mobile);
+      }
 
       if (is_new_user) {
         navigate("/register");
