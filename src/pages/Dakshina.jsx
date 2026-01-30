@@ -8,6 +8,9 @@ import {
     TextField,
     Drawer,
     InputBase,
+    IconButton,
+    Button,
+    Grid
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -17,25 +20,28 @@ import GurujiImage from "../components/gurujiImg";
 import PrimaryButton from "../components/PrimaryButton";
 import { Margin } from "@mui/icons-material";
 
-const Dakshina = ({ open, onClose }) => {
+const Dakshina = ({ open, onClose, onSuccess }) => {
     const navigate = useNavigate();
-    const [amount, setAmount] = useState('');
+    const [amount, setAmount] = useState("");
     const [paymentEnabled, setPaymentEnabled] = useState(true);
     const [loading, setLoading] = useState(false);
     const mobile = localStorage.getItem('mobile');
 
     useEffect(() => {
-        checkPaymentStatus();
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.async = true;
-        document.body.appendChild(script);
-        return () => {
-            if (document.body.contains(script)) {
-                document.body.removeChild(script);
-            }
-        };
-    }, []);
+        // Only run if not explicitly closed in drawer mode
+        if (open !== false) {
+            checkPaymentStatus();
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.async = true;
+            document.body.appendChild(script);
+            return () => {
+                if (document.body.contains(script)) {
+                    document.body.removeChild(script);
+                }
+            };
+        }
+    }, [open]);
 
     const checkPaymentStatus = async () => {
         try {
@@ -90,7 +96,11 @@ const Dakshina = ({ open, onClose }) => {
                         });
                         alert("Dakshina received with gratitude! 🙏");
                         if (onClose) onClose();
-                        navigate('/chat', { state: { newSession: true } });
+                        if (onSuccess) {
+                            onSuccess();
+                        } else {
+                            navigate('/chat', { state: { newSession: true } });
+                        }
                     } catch (err) {
                         console.error("Verification failed", err);
                         alert("Payment verification failed. Please contact support.");
@@ -272,3 +282,4 @@ const Dakshina = ({ open, onClose }) => {
 };
 
 export default Dakshina;
+

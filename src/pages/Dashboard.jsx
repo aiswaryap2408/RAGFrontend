@@ -32,13 +32,19 @@ const Dashboard = () => {
         setMenuOpen(false);
     };
 
-    const handleOpenProfilePopup = () => {
-        setIsProfilePopupOpen(true);
+    const handleAction = (path) => {
+        if (isLoggedIn) {
+            navigate(path);
+        } else {
+            setIsProfilePopupOpen(true);
+        }
     };
 
     const handleCloseProfilePopup = () => {
         setIsProfilePopupOpen(false);
     };
+
+    const isLoggedIn = !!localStorage.getItem("token");
 
     return (
         <><Box
@@ -78,24 +84,27 @@ const Dashboard = () => {
                 toggleDrawer={toggleDrawer}
                 handleNavigation={handleNavigation} />
 
-            <PrimaryButton
-                label="Login"
-                startIcon={<Box sx={{ display: "flex", "& svg": { fontSize: 25 } }}>
-                    <LoginOutlinedIcon />
-                </Box>}
-                sx={{
-                    bgcolor: "#54a170",
-                    color: "#fff",
-                    borderRadius: 50,
-                    width: "150px",
-                    border: "2px solid #ffffff",
-                    p: 0.5,
-                    fontSize: 16,
-                    position: "absolute",
-                    top: 140,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                }} />
+            {!isLoggedIn && (
+                <PrimaryButton
+                    label="Login"
+                    onClick={() => navigate("/")}
+                    startIcon={<Box sx={{ display: "flex", "& svg": { fontSize: 25 } }}>
+                        <LoginOutlinedIcon />
+                    </Box>}
+                    sx={{
+                        bgcolor: "#54a170",
+                        color: "#fff",
+                        borderRadius: 50,
+                        width: "150px",
+                        border: "2px solid #ffffff",
+                        p: 0.5,
+                        fontSize: 16,
+                        position: "absolute",
+                        top: 140,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                    }} />
+            )}
             <Box sx={{
                 overflowX: 'scroll', "&::-webkit-scrollbar": {
                     display: "none",
@@ -103,32 +112,32 @@ const Dashboard = () => {
                 scrollbarWidth: "none",
             }}>
                 <Box sx={{ mt: 3.5, textAlign: "center", px: 2, display: "flex", justifyContent: "space-around", flexWrap: 'wrap', gap: 2 }}>
-                    <Box onClick={handleOpenProfilePopup} sx={{ cursor: 'pointer' }}>
+                    <Box onClick={() => handleAction('/profile')} sx={{ cursor: 'pointer' }}>
                         <AccountCircleRoundedIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
                         <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
                             Edit profiles
                         </Typography>
                     </Box>
-                    <Box onClick={handleOpenProfilePopup} sx={{ cursor: 'pointer' }}>
+                    <Box onClick={() => handleAction('/wallet')} sx={{ cursor: 'pointer' }}>
                         <WalletIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
                         <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
                             Recharge
                         </Typography>
                     </Box>
-                    <Box onClick={handleOpenProfilePopup} sx={{ cursor: 'pointer' }}>
+                    <Box onClick={() => handleAction('/wallet/recharge-history')} sx={{ cursor: 'pointer' }}>
                         <DescriptionIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
                         <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
                             Payments
                         </Typography>
                     </Box>
-                    <Box onClick={handleOpenProfilePopup} sx={{ cursor: 'pointer' }}>
+                    <Box onClick={() => handleAction('/dakshina')} sx={{ cursor: 'pointer' }}>
                         <DescriptionIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
                         <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
                             Detailed Reports
                         </Typography>
                     </Box>
                 </Box>
-                <Box>
+                {/* <Box>
                     <Box sx={{ display: 'flex', flexDirection: 'column', m: 2 }}>
                         <Typography fontSize={18} fontWeight={600} m={1} color="#dc5d35">
                             Your today:
@@ -154,32 +163,7 @@ const Dashboard = () => {
                                 transform: "translateX(-50%)",
                             }} />
                     </Box>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', m: 2 }}>
-                        <Typography fontSize={18} fontWeight={600} m={1} color="#dc5d35">
-                            Your today:
-                        </Typography>
-                        <Box sx={{ bgcolor: '#fff', p: 2, borderRadius: 1, width: '100%', minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Typography fontSize={14} fontWeight={500} mt={1} textAlign={'center'} >
-                                You are logged out.<br />Login to view the predictions.
-                            </Typography>
-                        </Box>
-                        <PrimaryButton
-                            label="Log in"
-                            onClick={handleOpenProfilePopup}
-                            sx={{
-                                bgcolor: "#54a170",
-                                color: "#fff",
-                                borderRadius: 50,
-                                width: "120px",
-                                p: 0.5,
-                                fontSize: 16,
-                                position: "relative",
-                                top: "-20px",
-                                left: "80%",
-                                transform: "translateX(-50%)",
-                            }} />
-                    </Box>
-                </Box>
+                </Box> */}
             </Box>
             <ConsultFooter />
 

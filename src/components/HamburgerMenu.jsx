@@ -18,8 +18,15 @@ import HistoryIcon from "@mui/icons-material/History";
 import LogoutIcon from "@mui/icons-material/Logout";
 import CloseIcon from "@mui/icons-material/Close";
 import WalletIcon from '@mui/icons-material/Wallet';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import GavelIcon from '@mui/icons-material/Gavel';
+import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 
 const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
+  const userName = localStorage.getItem("userName") || "User";
+  const userEmail = localStorage.getItem("userEmail") || "";
+  const mobileNumber = localStorage.getItem("mobile") || "";
+
   return (
 
     <Drawer
@@ -133,19 +140,19 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
                 variant="h5"
                 sx={{ fontSize: 16, fontWeight: "bold" }}
               >
-                Varun Maniyan
+                {userName}
               </Typography>
               <Typography
                 variant="h6"
                 sx={{ fontSize: 12, color: "#b6b7bf" }}
               >
-                varun@clickastro.com
+                {userEmail}
               </Typography>
               <Typography
                 variant="h6"
                 sx={{ fontSize: 12, color: "#b6b7bf" }}
               >
-                +91 9876543210
+                {mobileNumber ? `+91 ${mobileNumber}` : ""}
               </Typography>
             </Box>
           </Box>
@@ -165,64 +172,49 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
             </ListItemButton>
           </ListItem>
 
+          <ListItem disablePadding onClick={() => handleNavigation("/dashboard")}>
+            <ListItemButton sx={{ py: 1.5 }}>
+              <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
+                <DashboardIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary="Dashboard"
+                primaryTypographyProps={{ fontWeight: 500 }}
+              />
+            </ListItemButton>
+          </ListItem>
+
           <ListItem disablePadding onClick={() => handleNavigation("/chat")}>
             <ListItemButton sx={{ py: 1.5 }}>
               <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
                 <HomeIcon />
               </ListItemIcon>
               <ListItemText
-                primary="Home"
+                primary="Chat"
                 primaryTypographyProps={{ fontWeight: 500 }}
               />
             </ListItemButton>
           </ListItem>
 
-          <ListItem
-            disablePadding
-            onClick={() => handleNavigation("/chat-new")}
-          >
+          <ListItem disablePadding onClick={() => handleNavigation("/terms")}>
             <ListItemButton sx={{ py: 1.5 }}>
               <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
-                <AddCommentIcon />
+                <GavelIcon />
               </ListItemIcon>
               <ListItemText
-                primary="New Consultation"
+                primary="Terms and Conditions"
                 primaryTypographyProps={{ fontWeight: 500 }}
               />
             </ListItemButton>
           </ListItem>
 
-          <ListItem disablePadding onClick={() => handleNavigation("/profile")}>
+          <ListItem disablePadding onClick={() => handleNavigation("/privacy")}>
             <ListItemButton sx={{ py: 1.5 }}>
               <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
-                <PersonIcon />
+                <PrivacyTipIcon />
               </ListItemIcon>
               <ListItemText
-                primary="Profile"
-                primaryTypographyProps={{ fontWeight: 500 }}
-              />
-            </ListItemButton>
-          </ListItem>
-
-          <ListItem disablePadding onClick={() => handleNavigation("/history")}>
-            <ListItemButton sx={{ py: 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
-                <HistoryIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary="History"
-                primaryTypographyProps={{ fontWeight: 500 }}
-              />
-            </ListItemButton>
-          </ListItem>
-
-          <ListItem disablePadding onClick={() => handleNavigation("/wallet")}>
-            <ListItemButton sx={{ py: 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
-                <WalletIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary="My Wallet"
+                primary="Privacy Policy"
                 primaryTypographyProps={{ fontWeight: 500 }}
               />
             </ListItemButton>
