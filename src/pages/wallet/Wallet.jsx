@@ -74,7 +74,7 @@ const Wallet = () => {
             }}>
                 <Box sx={{ mb: 3 }}>
                     <Typography sx={{ fontWeight: 700, color: '#eb3c34', fontSize: '1rem' }}>Current wallet balance:</Typography>
-                    <Typography sx={{ fontWeight: 500, my: 1, color: '#53300e', fontSize: '2.5rem' }}>1050<span style={{ fontSize: '1.5rem', fontWeight: 400 }}> pts</span></Typography>
+                    <Typography sx={{ fontWeight: 500, my: 1, color: '#53300e', fontSize: '2.5rem' }}>{balance}<span style={{ fontSize: '1.5rem', fontWeight: 400 }}> pts</span></Typography>
                 </Box>
 
                 {/* Recharge Section */}
