@@ -223,6 +223,18 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
 
         </List>
       </Box>
+      <Box>
+        <img
+          src="/svg/header_stars-white.svg"
+          alt="decorative"
+          style={{
+            width: "100%",
+            position: "absolute",
+            bottom: 30,
+            left: 0,
+          }}
+        />
+      </Box>
     </Drawer>
   );
 };

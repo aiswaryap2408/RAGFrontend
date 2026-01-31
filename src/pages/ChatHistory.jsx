@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getChatHistory } from '../api';
 import { Box, Typography, Card, CardContent, Divider, Chip, Accordion, AccordionSummary, AccordionDetails, Button, CircularProgress } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import Header from '../components/header';
+// import Header from '../components/header';
 import HistoryIcon from '@mui/icons-material/History';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
@@ -11,6 +11,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import AddCommentIcon from '@mui/icons-material/AddComment';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import Subheader from '../components/subheader';
 
 dayjs.extend(relativeTime);
 
@@ -108,9 +109,14 @@ const ChatHistory = () => {
             display: 'flex',
             flexDirection: 'column',
             bgcolor: '#F9FAFB',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            "&::-webkit-scrollbar": {
+                display: "none",
+            },
+            scrollbarWidth: "none",
         }}>
-            <Header />
+            {/* <Header /> */}
+            <Subheader title={'History'} showBack onBack={() => navigate('/chat')} />
 
             <Box sx={{
                 flex: 1,

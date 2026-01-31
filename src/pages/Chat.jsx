@@ -800,7 +800,7 @@ const Chat = () => {
                     sx={{
                         position: "absolute",
                         top: 50,
-                        left: 15,
+                        left: 20,
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",

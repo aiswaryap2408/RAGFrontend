@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, TextField, Grid, Card, CardContent, IconButton } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PaymentsIcon from '@mui/icons-material/Payments';
-import Header from '../../components/header';
+import Subheader from '../../components/subheader';
+
 
 const Recharge = () => {
     const [amount, setAmount] = useState('');
@@ -109,10 +110,11 @@ const Recharge = () => {
             display: 'flex',
             flexDirection: 'column',
             bgcolor: '#FFF6EB',
-            overflow: 'hidden'
+            overflow: 'hidden',
+
         }}>
             <Box sx={{ position: 'relative', flexShrink: 0, zIndex: 100, bgcolor: '#FFF6EB' }}>
-                <Header />
+                <Subheader title={'Recharge'} showBack onBack={() => navigate('/wallet')} />
             </Box>
 
             <Box sx={{
@@ -120,16 +122,20 @@ const Recharge = () => {
                 overflowY: 'auto',
                 position: 'relative',
                 zIndex: 10,
-                mt: -10,
                 px: 3,
-                pb: 5
+                pb: 5,
+                pt: 3,
+                "&::-webkit-scrollbar": {
+                    display: "none",
+                },
+                scrollbarWidth: "none",
             }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                {/* <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                     <IconButton onClick={() => navigate('/wallet')} sx={{ color: '#F26A2E', mr: 1 }}>
                         <ArrowBackIcon />
                     </IconButton>
                     <Typography variant="h6" sx={{ fontWeight: 800, color: '#333' }}>Add Credits</Typography>
-                </Box>
+                </Box> */}
 
                 {!paymentEnabled && (
                     <Box sx={{ mb: 2, p: 2, bgcolor: '#FFEBEE', color: '#D32F2F', borderRadius: 2, fontSize: '0.85rem', fontWeight: 700, textAlign: 'center' }}>
