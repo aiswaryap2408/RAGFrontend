@@ -20,8 +20,8 @@ import { GenderButton } from "./inputwithIcon";
 
 const BirthDetailsForm = ({ details, setDetails, error }) => {
     return (
-        <form name="frmplaceorder" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-            <Box sx={{ width: { xs: "100%", sm: "85%" } }}>
+        <form name="frmplaceorder" style={{ width: '100%', display: 'flex', justifyContent: 'left', padding: '0 10px' }}>
+            <Box sx={{ width: { xs: "100%", sm: "90%" } }}>
                 <Typography
                     sx={{
                         color: "#F26A2E",
@@ -109,6 +109,7 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                         type="time"
                         onChange={e => setDetails({ ...details, tob: e.target.value })}
                     />
+                    <Typography sx={{ fontSize: 14, color: "#757575", m: 1 }}>I don't know my time of birth, <span style={{ color: "#F26A2E" }}> help me.</span></Typography>
 
                 </Box>
                 {/* Place of birth */}

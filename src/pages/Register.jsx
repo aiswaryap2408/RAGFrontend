@@ -12,6 +12,7 @@ import PrimaryButton from "../components/PrimaryButton";
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import BirthDetailsForm from '../components/BirthDetailsForm';
+import HamburgerMenu from '../components/HamburgerMenu';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -20,8 +21,8 @@ const Register = () => {
         name: '',
         gender: 'Male',
         chart_style: 'South Indian',
-        dob: '2000-01-01',
-        tob: '12:00',
+        dob: '',
+        tob: '',
         pob: '',
         email: '',
         // Location-related hidden fields
@@ -200,8 +201,11 @@ const Register = () => {
     };
 
     return (
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
             <Header />
+
+            <HamburgerMenu />
+
 
             <Box p={2} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -211,19 +215,24 @@ const Register = () => {
                     <BirthDetailsForm details={details} setDetails={setDetails} error={error} />
                     {/* </Box> */}
 
-                    <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', width: '100%' }}>
+                    <Box sx={{ mt: 4, display: 'flex', justifyContent: 'right', width: '100%' }}>
                         <PrimaryButton
                             label={loading ? "Registering..." : "Continue"}
+                            onClick={handleDetailsSubmit}
+                            disabled={loading}
+                            endIcon={<KeyboardDoubleArrowRightIcon />}
                             sx={{
                                 p: 1.2,
                                 height: 48,
                                 borderRadius: 5,
-                                width: { xs: "60%", sm: "50%" }
+                                width: { xs: "60%", sm: "40%" },
+                                justifyContent: 'space-evenly',
+                                "& .MuiButton-endIcon svg": {
+                                    fontSize: 38,   // 👈 this WILL work
+                                },
                             }}
-                            onClick={handleDetailsSubmit}
-                            disabled={loading}
-                            endIcon={<KeyboardDoubleArrowRightIcon />}
                         />
+
                     </Box>
                 </LocalizationProvider>
             </Box>

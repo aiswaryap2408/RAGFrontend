@@ -706,6 +706,7 @@ const Chat = () => {
     //   const navigate = useNavigate();
 
 
+
     const handleReportGeneration = async (category, action) => {
         const mobile = localStorage.getItem('mobile');
         if (!mobile) return;
@@ -781,40 +782,8 @@ const Chat = () => {
             // width: '100%'
         }}>
             <Header backgroundImage="/svg/top_curve_dark.svg" />
-            {showMenu && (
-                <Box
-                    onClick={toggleDrawer(true)}
-                    sx={{
-                        position: "absolute",
-                        top: 50,
-                        left: 20,
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                        height: 20,
-                        cursor: "pointer",
-                        zIndex: 3,
-                    }}
-                >
-                    {[1, 2, 3].map((i) => (
-                        <Box
-                            key={i}
-                            sx={{
-                                width: 30,
-                                height: "0.2rem",
-                                bgcolor: "text.primary",
-                            }}
-                        />
-                    ))}
-                </Box>
-            )}
 
-            <HamburgerMenu
-                open={drawerOpen}
-                toggleDrawer={setDrawerOpen}
-                handleNavigation={handleNavigation}
-
-            />
+            <HamburgerMenu />
 
 
             <PrimaryButton
@@ -831,7 +800,7 @@ const Chat = () => {
                     width: 200,
                     height: 40,
                     borderRadius: 10,
-                    zIndex: 10
+                    zIndex: 1000
                 }}
             />
 

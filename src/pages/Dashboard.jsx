@@ -12,25 +12,8 @@ import ConsultFooter from "../components/consultFooter";
 import IntroMsg from "../components/IntroMsg";
 
 const Dashboard = () => {
-    const [menuOpen, setMenuOpen] = useState(false);
     const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
     const navigate = useNavigate();
-
-    const toggleDrawer = (open) => {
-        setMenuOpen(open);
-    };
-
-    const handleNavigation = (path) => {
-        if (path === 'logout') {
-            localStorage.clear();
-            navigate('/');
-        } else if (path === '/chat-new') {
-            navigate('/chat', { state: { newSession: true } });
-        } else {
-            navigate(path);
-        }
-        setMenuOpen(false);
-    };
 
     const handleAction = (path) => {
         if (isLoggedIn) {
@@ -59,30 +42,8 @@ const Dashboard = () => {
             <Header backgroundImage="/svg/top_curve_light.svg" />
 
             {/* Added a menu toggle button or logic since it was missing in the snippet but state was used */}
-            <Box
-                onClick={() => setMenuOpen(true)}
-                sx={{
-                    position: 'absolute',
-                    top: 40,
-                    left: 20,
-                    zIndex: 10,
-                    cursor: 'pointer',
-                    width: 30,
-                    height: 20,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                }}
-            >
-                <Box sx={{ height: 3, bgcolor: '#000', borderRadius: 1 }} />
-                <Box sx={{ height: 3, bgcolor: '#000', borderRadius: 1 }} />
-                <Box sx={{ height: 3, bgcolor: '#000', borderRadius: 1 }} />
-            </Box>
 
-            <HamburgerMenu
-                open={menuOpen}
-                toggleDrawer={toggleDrawer}
-                handleNavigation={handleNavigation} />
+            <HamburgerMenu />
 
             {!isLoggedIn && (
                 <PrimaryButton

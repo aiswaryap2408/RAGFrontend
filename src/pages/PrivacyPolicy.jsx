@@ -2,9 +2,11 @@ import React from 'react';
 import { Box, Typography, IconButton, Paper, Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
-import Subheader from '../components/subheader';
+// import Subheader from '../components/subheader';
 import PrimaryButton from '../components/PrimaryButton';
 import KeyboardDoubleArrowRightOutlinedIcon from '@mui/icons-material/KeyboardDoubleArrowRightOutlined';
+import HamburgerMenu from '../components/HamburgerMenu';
+import Header from '../components/header';
 
 
 const PrivacyPolicy = () => {
@@ -12,7 +14,8 @@ const PrivacyPolicy = () => {
 
     return (
         <Box sx={{ bgcolor: '#FFF6EB', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-            <Subheader title={"Privacy Policy"} showBack onBack={() => navigate(-1)} />
+            <Header />
+            <HamburgerMenu />
 
             {/* <Box sx={{ position: 'absolute', top: 50, left: 15, zIndex: 10 }}>
                 <IconButton onClick={() => navigate(-1)} sx={{ color: '#fff' }}>
@@ -20,7 +23,22 @@ const PrivacyPolicy = () => {
                 </IconButton>
             </Box> */}
 
-            <Box sx={{ p: 3, px: 5, mt: 1.5, flex: 1, overflowY: 'auto', color: '#533000' }}>
+            <Box sx={{
+                p: 3,
+                px: 5,
+                mt: 1.5,
+                flex: 1,
+                overflowY: 'scroll',
+                color: '#533000', "&::-webkit-scrollbar": {
+                    display: "none",
+                },
+                scrollbarWidth: "none",
+            }}>
+
+                {/* <Typography variant="h5" sx={{ color: '#F36A2F', fontWeight: 700, mb: 3, textAlign: 'center' }}>
+                    Privacy Policy
+                </Typography> */}
+
                 <Typography sx={{ color: '#000', fontWeight: 500, mb: 3, textAlign: 'center', bgcolor: '#f1d3a9', py: 2, borderRadius: 1 }}>
                     IMPORTANT
                 </Typography>
