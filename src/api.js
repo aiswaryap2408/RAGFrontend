@@ -10,6 +10,31 @@ const api = axios.create({
     },
 });
 
+// Response interceptor to handle session expiration
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        // Handle session expiration / authentication errors
+        if (error.response) {
+            const status = error.response.status;
+            const isAuthRoute = error.config?.url?.includes('/auth/');
+
+            // Redirect to login on 401, 403, or 404 from auth routes (user not found)
+            if (status === 401 || status === 403 || (status === 404 && isAuthRoute)) {
+                console.warn('Session expired or user not found. Redirecting to login...');
+
+                // Clear local storage
+                localStorage.clear();
+
+                // Redirect to login page
+                window.location.href = '/';
+            }
+        }
+
+        return Promise.reject(error);
+    }
+);
+
 export const sendOtp = (mobile) => api.post('/auth/send-otp', { mobile });
 export const verifyOtp = (mobile, otp) => api.post('/auth/verify-otp', { mobile, otp });
 export const registerUser = (data) => api.post('/auth/register', data);
