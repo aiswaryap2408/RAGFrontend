@@ -18,6 +18,7 @@ const Dakshina = ({ open, onClose, onSuccess }) => {
     const [paymentEnabled, setPaymentEnabled] = useState(true);
     const [loading, setLoading] = useState(false);
     const mobile = localStorage.getItem('mobile');
+    const userName = localStorage.getItem('userName') || 'User';
 
     useEffect(() => {
         // Only run if not explicitly closed in drawer mode
@@ -137,7 +138,7 @@ const Dakshina = ({ open, onClose, onSuccess }) => {
                 <Box sx={{ textAlign: 'center', mb: 3 }}>
                     <GurujiImage sx={{ mb: 1, width: 120, mx: 'auto' }} />
                     <Typography sx={{ mb: 1, fontSize: 16 }}>
-                        Varun, let there be happiness in your life!
+                        {userName}, let there be happiness in your life!
                     </Typography>
                 </Box>
 
