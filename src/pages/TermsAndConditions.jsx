@@ -1,8 +1,11 @@
 import React from 'react';
-import { Box, Typography, IconButton, Paper } from '@mui/material';
+import { Box, Typography, IconButton, Paper, Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
 import Subheader from '../components/subheader';
+import PrimaryButton from '../components/PrimaryButton';
+import KeyboardDoubleArrowRightOutlinedIcon from '@mui/icons-material/KeyboardDoubleArrowRightOutlined';
+
 
 
 const TermsAndConditions = () => {
@@ -18,41 +21,88 @@ const TermsAndConditions = () => {
                 </IconButton>
             </Box> */}
 
-            <Box sx={{ p: 3, mt: 8, flex: 1, overflowY: 'auto' }}>
-                <Typography variant="h5" sx={{ color: '#F36A2F', fontWeight: 700, mb: 3, textAlign: 'center' }}>
-                    Terms and Conditions
+            <Box sx={{ p: 3, px: 5, mt: 1.5, flex: 1, overflowY: 'auto', color: '#533000' }}>
+                <Typography sx={{ color: '#000', fontWeight: 500, mb: 3, textAlign: 'center', bgcolor: '#f1d3a9', py: 2, borderRadius: 1 }}>
+                    IMPORTANT
                 </Typography>
 
-                <Paper sx={{ p: 3, borderRadius: 2, bgcolor: 'rgba(255, 255, 255, 0.7)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>1. Acceptance of Terms</Typography>
-                    <Typography variant="body2" sx={{ mb: 2, color: '#444', lineHeight: 1.6 }}>
-                        By accessing and using this Astrology Guruji application, you agree to be bound by these Terms and Conditions. If you do not agree, please refrain from using the service.
+                <Box >
+                    <Typography sx={{ fontWeight: 600, mb: 2 }}>Findastro is now AI powered and the option for choosing your astrologer is no longer available.</Typography>
+                    <Typography sx={{ mb: 2 }}>
+                        Our AI system (MAYA) automatically connects with the astrologer available without revealing the astrologer identity.
+                    </Typography>
+                    <Typography sx={{ mb: 2 }}>
+                        If you wish to consult with the same astrologer you previously consulted, <b>please download our Clickastro app</b>. There you'll get the same astrologers list and your wallet balance will also be retained.
                     </Typography>
 
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>2. Nature of Service</Typography>
-                    <Typography variant="body2" sx={{ mb: 2, color: '#444', lineHeight: 1.6 }}>
-                        The readings and consultations provided are for entertainment and guidance purposes only. They do not constitute legal, financial, or medical advice. Decisions made based on these readings are the sole responsibility of the user.
+                    <Typography sx={{ mb: 2 }}>
+                        If you continue in this new Findastro app, you can still use the same wallet balance.
                     </Typography>
 
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>3. Privacy and Data</Typography>
-                    <Typography variant="body2" sx={{ mb: 2, color: '#444', lineHeight: 1.6 }}>
-                        Your personal details and birth data are kept confidential as per our Privacy Policy. We do not share your private consultation history with third parties without your consent.
+                    <Typography sx={{ fontWeight: 600, mb: 2 }}>
+                        You'll receive this same message in your WhatsApp too.
                     </Typography>
-
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>4. Payments and Refunds</Typography>
-                    <Typography variant="body2" sx={{ mb: 2, color: '#444', lineHeight: 1.6 }}>
-                        Consultations are subject to the wallet balance. Recharges are non-refundable once the service has been utilized. Any discrepancies in billing should be reported to support immediately.
-                    </Typography>
-
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>5. User Conduct</Typography>
-                    <Typography variant="body2" sx={{ mb: 2, color: '#444', lineHeight: 1.6 }}>
-                        Users agree not to use the platform for any unlawful purposes or to transmit harmful or offensive content. We reserve the right to terminate access for users who violate these guidelines.
-                    </Typography>
-
-                    <Typography variant="body2" sx={{ mt: 4, fontStyle: 'italic', textAlign: 'center', color: '#666' }}>
-                        Last Updated: January 2026
-                    </Typography>
-                </Paper>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center', my: 4 }}>
+                    <Box
+                        component="img"
+                        src={'/svg/guruji_illustrated.svg'}
+                        sx={{
+                            width: '55px',
+                            height: '55px',
+                            objectFit: 'contain',
+                            border: '2px solid #dc5d35',
+                            borderRadius: 10,
+                        }}
+                    />
+                    <Button
+                        fullWidth
+                        component="a"
+                        href="https://play.google.com/store/apps/details?id=com.clickastro.android.app"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                            bgcolor: '#fff',
+                            color: '#666666',
+                            textTransform: 'none',
+                            fontWeight: 500,
+                            borderRadius: 5,
+                            py: 1.5,
+                            px: 3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            width: 'auto',
+                            fontSize: 16,
+                            border: '2px solid #dc5d35',
+                            '&:hover': { bgcolor: '#e0c298' }
+                        }}
+                    >
+                        <Box component="img" src="/svg/Gplay-store.png" sx={{ width: 24, height: 24, }} alt="" />
+                        Download Clickastro app
+                    </Button>
+                </Box>
+                <PrimaryButton
+                    label="Continue to new Findastro app"
+                    fullWidth
+                    onClick={() => navigate('/chat')}
+                    sx={{
+                        borderRadius: 5,
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        px: 2,
+                        py: 0,
+                        fontSize: 16,
+                        mt: 2,
+                        width: 'auto',
+                        display: 'flex',
+                        margin: '10px auto',
+                        '& .MuiButton-endIcon svg': {
+                            fontSize: '50px'
+                        }
+                    }}
+                    endIcon={<KeyboardDoubleArrowRightOutlinedIcon />}
+                />
             </Box>
         </Box>
     );

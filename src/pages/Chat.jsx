@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import api, { sendMessage, endChat, getChatHistory, submitFeedback, generateReport } from '../api';
+import api, { sendMessage, endChat, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment } from '../api';
 import axios from 'axios';
 
 import {
@@ -323,7 +323,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                 <MayaTemplateBox
                     name={userName.split(' ')[0]}
                     content={`detailed predictions on ${activeCategory || 'your query'} are chargeable ₹49.`}
-                    buttonLabel="Paid for detailed answer"
+                    buttonLabel={reportState === 'CONFIRMING' ? "Pay for detailed answer" : "Paid for detailed answer"}
                     onButtonClick={() => handleReportGeneration(activeCategory, 'PAY')}
                     loading={reportState === 'PREPARING'}
                     disabled={reportState === 'PREPARING' || reportState === 'READY'}
@@ -385,7 +385,7 @@ const Chat = () => {
     const getCurrentTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
 
     const [messages, setMessages] = useState([
-        { role: 'assistant', content: "welcome! I'll connect you to our astrologer.\nYou may call him as 'Guruji'", assistant: 'maya', time: getCurrentTime(), timestamp: new Date().toISOString() }
+        { role: 'assistant', content: "Welcome! I'll connect you to our astrologer.\nYou may call him as 'Guruji'", assistant: 'maya', time: getCurrentTime(), timestamp: new Date().toISOString() }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -482,6 +482,7 @@ const Chat = () => {
                     }
                 } catch (err) {
                     console.error("Failed to load chat history:", err);
+                    // If it's a 404/401/403, the interceptor will handle redirect to login
                 }
             }
         };
@@ -534,8 +535,11 @@ const Chat = () => {
                 }
             } catch (err) {
                 console.error('Status check error:', err);
-                // Fallback to ready after a failure to unblock UI if possible
-                setUserStatus('ready');
+                // If it's a 404/401/403, the interceptor will handle redirect
+                // Otherwise, fallback to ready to unblock UI
+                if (err.response?.status !== 404 && err.response?.status !== 401 && err.response?.status !== 403) {
+                    setUserStatus('ready');
+                }
             }
         };
 
@@ -656,6 +660,19 @@ const Chat = () => {
         };
     }, [summary, showInactivityPrompt]);
 
+    // Load Razorpay script
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.body.appendChild(script);
+        return () => {
+            if (document.body.contains(script)) {
+                document.body.removeChild(script);
+            }
+        };
+    }, []);
+
     const handleSend = async (msg = null) => {
         const text = typeof msg === 'string' ? msg : input;
         if (!text.trim() || loading || userStatus !== 'ready') return;
@@ -668,8 +685,9 @@ const Chat = () => {
         try {
             const mobile = localStorage.getItem('mobile');
             if (!mobile) {
-                setMessages(prev => [...prev, { role: 'assistant', content: 'Session error. Please log in again.' }]);
-                setLoading(false);
+                // Session expired - redirect to login
+                localStorage.clear();
+                navigate('/');
                 return;
             }
             const history = messages.slice(1);
@@ -694,7 +712,11 @@ const Chat = () => {
             }]);
         } catch (err) {
             console.error("Chat Error:", err);
-            setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
+            // If it's a 404/401/403, the interceptor will handle redirect to login
+            // Only show error message for other types of errors
+            if (err.response?.status !== 404 && err.response?.status !== 401 && err.response?.status !== 403) {
+                setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
+            }
         } finally {
             setLoading(false);
         }
@@ -707,6 +729,112 @@ const Chat = () => {
 
 
 
+    // Helper function to process report with wallet deduction
+    const processReportWithWallet = async (mobile, category) => {
+        setReportState('PREPARING');
+        alert('₹49 will be deducted from your wallet. Generating your report...');
+
+        setTimeout(async () => {
+            try {
+                const res = await generateReport(mobile, category || 'general');
+
+                if (res.data.type === 'application/json') {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const result = JSON.parse(reader.result);
+                        if (result.status === 'insufficient_funds') {
+                            // Wallet was depleted between check and generation
+                            alert('Wallet balance changed. Please try again.');
+                            setReportState('CONFIRMING');
+                        }
+                    };
+                    reader.readAsText(res.data);
+                    return;
+                }
+
+                // Success
+                setReadyReportData(res.data);
+                setReportState('READY');
+
+                // Refresh balance
+                const balanceRes = await api.get(`/auth/user-status/${mobile}`);
+                if (balanceRes.data.wallet_balance !== undefined) {
+                    setWalletBalance(balanceRes.data.wallet_balance);
+                }
+            } catch (err) {
+                console.error("Report Error:", err);
+                alert("Failed to generate report. Please try again.");
+                setReportState('CONFIRMING');
+            }
+        }, 20000); // 20 seconds delay
+    };
+
+    // Helper function to process report with Razorpay payment
+    const processReportWithRazorpay = async (mobile, category) => {
+        try {
+            const amount = 49;
+
+            // Create Razorpay order
+            const orderRes = await createPaymentOrder(amount, mobile);
+            const order = orderRes.data;
+
+            // Open Razorpay
+            const options = {
+                key: order.key,
+                amount: order.amount,
+                currency: order.currency,
+                name: "Astrology Guruji",
+                description: "Detailed Report Payment",
+                order_id: order.order_id,
+                handler: async function (response) {
+                    try {
+                        // Verify payment
+                        await verifyPayment({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        });
+
+                        alert("Payment successful! Generating your report...");
+
+                        // Payment successful - refresh wallet balance
+                        const balanceRes = await api.get(`/auth/user-status/${mobile}`);
+                        if (balanceRes.data.wallet_balance !== undefined) {
+                            setWalletBalance(balanceRes.data.wallet_balance);
+                        }
+
+                        // Now generate report with updated wallet
+                        await processReportWithWallet(mobile, category);
+
+                    } catch (err) {
+                        console.error("Payment verification failed", err);
+                        alert("Payment verification failed. Please contact support.");
+                    }
+                },
+                prefill: {
+                    contact: mobile,
+                },
+                theme: {
+                    color: "#F36A2F"
+                }
+            };
+
+            if (window.Razorpay) {
+                const rzp = new window.Razorpay(options);
+                rzp.on('payment.failed', function (response) {
+                    alert("Payment Failed: " + response.error.description);
+                });
+                rzp.open();
+            } else {
+                alert("Payment gateway not loaded. Please refresh.");
+            }
+
+        } catch (error) {
+            console.error("Payment init failed:", error);
+            alert("Failed to initiate payment. Please try again.");
+        }
+    };
+
     const handleReportGeneration = async (category, action) => {
         const mobile = localStorage.getItem('mobile');
         if (!mobile) return;
@@ -718,44 +846,14 @@ const Chat = () => {
         }
 
         if (action === 'PAY') {
-            if (!window.confirm(`Do you wish to pay ₹49 for the detailed prediction?`)) return;
-
-            setReportState('PREPARING');
-
-            // Simulate 20-second report generation delay
-            setTimeout(async () => {
-                try {
-                    const res = await generateReport(mobile, category || 'general');
-
-                    if (res.data.type === 'application/json') {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                            const result = JSON.parse(reader.result);
-                            if (result.status === 'insufficient_funds') {
-                                alert(`Insufficient coins. You need ${result.required_amount} coins for this report.`);
-                                setReportState('CONFIRMING');
-                            }
-                        };
-                        reader.readAsText(res.data);
-                        return;
-                    }
-
-                    // Report is ready
-                    setReadyReportData(res.data);
-                    setReportState('READY');
-
-                    // Refresh balance
-                    const balanceRes = await api.get(`/auth/user-status/${mobile}`);
-                    if (balanceRes.data.wallet_balance !== undefined) {
-                        setWalletBalance(balanceRes.data.wallet_balance);
-                    }
-                } catch (err) {
-                    console.error("Report Error:", err);
-                    alert("Failed to generate report. Please try again.");
-                    setReportState('CONFIRMING');
-                }
-            }, 20000); // 20 seconds delay
-
+            // Check wallet balance
+            if (walletBalance >= 49) {
+                // Sufficient funds - proceed with wallet deduction
+                await processReportWithWallet(mobile, category);
+            } else {
+                // Insufficient funds - open Razorpay
+                await processReportWithRazorpay(mobile, category);
+            }
             return;
         }
 
