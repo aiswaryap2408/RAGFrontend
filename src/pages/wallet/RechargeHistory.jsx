@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Card, CardContent, Divider } from '@mui/material';
 import Subheader from '../../components/subheader';
 import PrimaryButton from '../../components/PrimaryButton';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import WalletOutlinedIcon from '@mui/icons-material/WalletOutlined';
 
 const RechargeHistory = () => {
     const [balance, setBalance] = useState(0);
@@ -63,15 +63,15 @@ const RechargeHistory = () => {
             }}>
                 {/* Balance Card */}
                 <Card sx={{
-                    borderRadius: 3,
+                    borderRadius: 1,
                     mb: 3,
                     boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                     border: '1px solid #eee'
                 }}>
                     <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 2, '&:last-child': { pb: 2 } }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <AccountBalanceWalletIcon sx={{ color: '#eb3c34', mr: 1, fontSize: 30 }} />
-                            <Typography sx={{ fontWeight: 700, color: '#eb3c34', fontSize: '1.1rem' }}>
+                            <WalletOutlinedIcon sx={{ color: '#dc5d35', mr: 1, fontSize: 30 }} />
+                            <Typography sx={{ fontWeight: 700, color: '#dc5d35', fontSize: '1rem' }}>
                                 Wallet balance: <Box component="span" sx={{ color: '#333' }}>₹{balance.toLocaleString()} </Box>
                             </Typography>
                         </Box>
@@ -84,7 +84,7 @@ const RechargeHistory = () => {
                                 borderRadius: 50,
                                 textTransform: 'none',
                                 fontWeight: 500,
-                                p: 1,
+                                p: .5,
                                 width: '130px',
                                 fontSize: '0.9rem',
                                 '&:hover': { bgcolor: '#458a5c' }
