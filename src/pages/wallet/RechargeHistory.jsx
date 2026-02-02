@@ -64,7 +64,7 @@ const RechargeHistory = () => {
                 {/* Balance Card */}
                 <Card sx={{
                     borderRadius: 1,
-                    mb: 3,
+                    mb: 1,
                     boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                     border: '1px solid #eee'
                 }}>
@@ -102,20 +102,20 @@ const RechargeHistory = () => {
                     ) : (
                         history.map((tx, index) => (
                             <Card key={index} sx={{
-                                borderRadius: 3,
-                                mb: 2,
+                                borderRadius: 1,
+                                mb: 1,
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                                 border: '1px solid #eee'
                             }}>
                                 <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                                    <Typography sx={{ fontWeight: 700, color: '#1a237e', fontSize: '1.1rem', mb: 0.5 }}>
+                                    <Typography sx={{ fontWeight: 700, color: '#000', fontSize: '1rem', mb: 0 }}>
                                         Wallet recharge
                                     </Typography>
-                                    <Typography sx={{ fontSize: '1rem', color: '#333', mb: 1, fontWeight: 500 }}>
+                                    <Typography sx={{ fontSize: '.9rem', color: '#000', mb: 1, fontWeight: 500, mt: -.3 }}>
                                         Amount: ₹{tx.amount}
                                     </Typography>
 
-                                    <Typography sx={{ fontSize: '0.9rem', color: '#666', mb: 0.5 }}>
+                                    <Typography sx={{ fontSize: '0.9rem', color: '#666', mb: 0 }}>
                                         On: {new Date(tx.timestamp * 1000).toLocaleString('en-IN', {
                                             day: '2-digit',
                                             month: 'short',
@@ -126,19 +126,19 @@ const RechargeHistory = () => {
                                         })}
                                     </Typography>
 
-                                    <Typography sx={{ fontSize: '0.9rem', color: '#666', mb: 0.5 }}>
+                                    <Typography sx={{ fontSize: '0.9rem', color: '#666', mb: 0 }}>
                                         Using email: {localStorage.getItem('userEmail') || 'N/A'}
                                     </Typography>
 
-                                    <Typography sx={{ fontSize: '0.9rem', color: '#666', mb: 0.5 }}>
+                                    {/* <Typography sx={{ fontSize: '0.9rem', color: '#666', mb: 0.5 }}>
                                         Using email: {localStorage.getItem('userEmail') || 'N/A'}
-                                    </Typography>
+                                    </Typography> */}
 
                                     <Typography sx={{
                                         fontSize: '0.9rem',
                                         color: tx.status === 'success' ? '#54a170' : tx.status === 'failed' ? '#eb3c34' : '#666',
                                         fontWeight: 600,
-                                        mb: 0.5
+                                        mb: 0
                                     }}>
                                         Status: {tx.status ? tx.status.charAt(0).toUpperCase() + tx.status.slice(1) : 'N/A'}
                                     </Typography>

@@ -144,8 +144,8 @@ const Verify = () => {
           alignItems: "center",
           textAlign: "center",
           px: 3,
-          pb: 1, // Extra padding at bottom to balance the header
-          mt: -3, // Pull up slightly to account for the large header space
+          pb: 1,
+          // mt: -3, 
         }}
       >
         <Box textAlign="center">

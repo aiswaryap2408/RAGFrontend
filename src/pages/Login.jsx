@@ -58,8 +58,8 @@ const Login = () => {
                     alignItems: 'center',
                     textAlign: 'center',
                     px: 3,
-                    pb: 5, // Extra padding at bottom to balance the header
-                    mt: -5  // Pull up slightly to account for the large header space
+                    pb: 5,
+                    // mt: -5, 
                 }}
             >
                 <Box sx={{ mb: 2.5 }}>

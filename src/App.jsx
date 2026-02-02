@@ -23,6 +23,7 @@ import Settings from './pages/admin/Settings';
 import ScrollToTop from './components/ScrollToTop';
 import Dashboard from './pages/Dashboard';
 
+
 // User Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -140,6 +141,7 @@ function App() {
           />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          {/* <Route path="/userprofile" element={<UserProfile />} /> */}
         </Route>
 
 
