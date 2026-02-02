@@ -14,7 +14,7 @@ import {
     ListItemButton,
     Button
 } from '@mui/material';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import CancelIcon from '@mui/icons-material/Cancel';
 import PrimaryButton from '../components/PrimaryButton';
 import Header from "../components/header";
@@ -22,6 +22,7 @@ import ChatInputFooter from "../components/ChatInputFooter";
 import FeedbackDrawer from '../components/FeedbackDrawer';
 import HamburgerMenu from '../components/HamburgerMenu';
 import Dakshina from '../pages/Dakshina';
+import DoneAllOutlinedIcon from '@mui/icons-material/DoneAllOutlined';
 
 const tryParseJson = (data) => {
     if (!data) return null;
@@ -89,13 +90,13 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time }) => (
 
 
 const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, disabled }) => (
-    <Box sx={{ px: 3, pt: 3, pb: 1, width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <Box sx={{ px: 0, pt: 3, mb: 2.5, pb: 1, width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Box sx={{
             position: "relative",
-            border: "1.5px solid #F36A2F",
-            borderRadius: 4,
+            border: "2px solid #F36A2F",
+            borderRadius: 2,
             p: 2.5,
-            bgcolor: "#FFF6EB",
+            bgcolor: "#fcebd3",
             width: '100%',
             maxWidth: 450
         }}>
@@ -104,8 +105,8 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
                 top: -24,
                 left: "50%",
                 transform: "translateX(-50%)",
-                width: 48,
-                height: 48,
+                width: 50,
+                height: 50,
                 borderRadius: "50%",
                 border: "3px solid #F36A2F",
                 bgcolor: "#fff",
@@ -114,11 +115,11 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
                 justifyContent: "center",
                 overflow: 'hidden'
             }}>
-                <img src="/svg/guruji_illustrated.svg" style={{ width: 38 }} alt="Maya" />
+                <img src="/svg/guruji_illustrated.svg" style={{ width: 42 }} alt="Maya" />
             </Box>
 
-            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 1, textAlign: 'left', fontWeight: 500 }}>
-                {name && <strong>{name}, </strong>}{content}
+            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 1, mb: 1, textAlign: 'left', fontWeight: 500 }}>
+                {name && name + ", "}{content}
             </Typography>
 
             {loading && (
@@ -129,22 +130,23 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
             )}
 
             {buttonLabel && !loading && (
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'right', position: 'absolute', bottom: -20, right: 10 }}>
                     <Button
                         onClick={onButtonClick}
-                        disabled={disabled}
-                        startIcon={<img src="/svg/task_alt.svg" style={{ width: 18 }} alt="icon" />}
+                        // disabled={disabled}
+                        startIcon={<DoneAllOutlinedIcon />}
                         sx={{
-                            bgcolor: disabled ? '#e0e0e0' : 'white',
-                            color: disabled ? '#999' : '#10b981',
+                            bgcolor: 'white',
+                            color: '#54a170',
                             px: 3,
                             py: 0.8,
                             borderRadius: 10,
                             textTransform: 'none',
                             fontSize: '0.9rem',
                             fontWeight: 600,
-                            border: disabled ? '1.5px solid #ccc' : '1.5px solid #10b981',
-                            '&:hover': { bgcolor: disabled ? '#e0e0e0' : '#f0fdf4' },
+                            border: '2px solid #54a170',
+                            //  border: disabled ? '2px solid #ccc' : '2px solid #54a170',
+                            // '&:hover': { bgcolor: disabled ? '#e0e0e0' : '#f0fdf4' },
                             cursor: disabled ? 'not-allowed' : 'pointer'
                         }}
                     >
@@ -157,14 +159,14 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
 );
 
 const NotificationBox = ({ content, buttonLabel, onButtonClick }) => (
-    <Box sx={{ px: 3, pt: 2, pb: 1, width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <Box sx={{ px: 0, pt: 2, pb: 1, mb: 2.5, width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Box sx={{
             position: "relative",
-            bgcolor: '#4dab7c',
-            borderRadius: 4,
+            bgcolor: '#54a170',
+            borderRadius: 2,
             p: 2.5,
             width: '100%',
-            maxWidth: 450,
+            maxWidth: '100%',
             color: 'white'
         }}>
             <Box sx={{
@@ -172,37 +174,38 @@ const NotificationBox = ({ content, buttonLabel, onButtonClick }) => (
                 top: -24,
                 left: "50%",
                 transform: "translateX(-50%)",
-                width: 48,
-                height: 48,
+                width: 50,
+                height: 50,
                 borderRadius: "50%",
-                bgcolor: '#4dab7c',
+                bgcolor: '#54a170',
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                border: '4px solid #FFF6EB'
+                border: '3px solid #FFF6EB'
             }}>
-                <PictureAsPdfIcon sx={{ color: 'white' }} />
+                <DescriptionOutlinedIcon sx={{ color: 'white' }} />
             </Box>
 
-            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, mt: 1, textAlign: 'left', fontWeight: 500 }}>
+            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, mt: 1, mb: 1, textAlign: 'left', fontWeight: 500 }}>
                 {content}
             </Typography>
 
             {buttonLabel && (
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'right', position: 'absolute', bottom: -20, right: 10 }}>
                     <Button
                         onClick={onButtonClick}
-                        startIcon={<PictureAsPdfIcon />}
+                        startIcon={<DescriptionOutlinedIcon />}
                         sx={{
                             bgcolor: 'white',
-                            color: '#4dab7c',
+                            color: '#54a170',
+                            border: '2px solid #54a170',
                             px: 3,
                             py: 0.8,
                             borderRadius: 10,
                             textTransform: 'none',
                             fontSize: '0.9rem',
                             fontWeight: 600,
-                            '&:hover': { bgcolor: '#f0fdf4' }
+                            // '&:hover': { bgcolor: '#f0fdf4' }
                         }}
                     >
                         {buttonLabel}
@@ -274,7 +277,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
         border: 'none',
         position: 'relative',
         mb: 1.5,
-        maxWidth: '100%',
+        maxWidth: '85%',
     };
 
     return (
@@ -285,9 +288,9 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                     <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para }} />
 
                     {idx === paras.length - 1 && reportState === 'IDLE' && (
-                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-start' }}>
+                        <Box sx={{ mt: 2, mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
                             <ListItemButton onClick={handleReportClick} sx={{ borderRadius: 2, bgcolor: 'rgba(255,255,255,0.2)', color: 'white', px: 2, py: 1, width: 'auto', border: '1px solid rgba(255,255,255,0.4)', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}>
-                                <PictureAsPdfIcon sx={{ fontSize: 20, mr: 1 }} />
+                                <DescriptionOutlinedIcon sx={{ fontSize: 20, mr: 1 }} />
                                 Get Detailed PDF Report
                             </ListItemButton>
                         </Box>
@@ -972,7 +975,7 @@ const Chat = () => {
                     if (gurujiData) {
                         return (
                             <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 2, width: '100%' }}>
-                                <Box sx={{
+                                {/* <Box sx={{
                                     width: 40,
                                     height: 40,
                                     borderRadius: '50%',
@@ -985,8 +988,8 @@ const Chat = () => {
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                                 }}>
                                     <img src="/svg/guruji_illustrated.svg" style={{ width: 32 }} alt="G" />
-                                </Box>
-                                <Box sx={{ flex: 1, maxWidth: '85%' }}>
+                                </Box> */}
+                                <Box sx={{ flex: 1, maxWidth: '100%' }}>
                                     <SequentialResponse
                                         gurujiJson={gurujiData}
                                         animate={msg.animating}
