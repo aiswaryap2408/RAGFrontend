@@ -66,17 +66,19 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time }) => (
                 <img src="/svg/guruji_illustrated.svg" style={{ width: 45 }} alt="Maya" />
             </Box>
 
-            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, textAlign: 'left', fontWeight: 500 }}>
+            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500 }}>
                 {name && <strong>Namaste {name}, </strong>}{content}
             </Typography>
 
             {time && (
                 <Typography sx={{
-                    fontSize: 12,
+                    fontSize: '0.75rem',
                     opacity: 0.8,
-                    textAlign: "right",
-                    mt: 0.5,
-                    color: "#666"
+                    position: 'absolute',
+                    bottom: 6,
+                    right: 12,
+                    color: "#666",
+                    fontWeight: 500
                 }}>
                     {time}
                 </Typography>
@@ -211,7 +213,7 @@ const NotificationBox = ({ content, buttonLabel, onButtonClick }) => (
     </Box>
 );
 
-const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages, handleReportGeneration, reportState, activeCategory, userName }) => {
+const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages, handleReportGeneration, reportState, activeCategory, userName, time }) => {
     const paras = [
         gurujiJson?.para1 || '',
         gurujiJson?.para2 || '',
@@ -264,7 +266,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     };
 
     const bubbleSx = {
-        p: '16px 12px 8px 16px',
+        p: '16px 12px 14px 16px',
         borderRadius: '10px',
         bgcolor: '#ff8338',
         color: 'white',
@@ -289,6 +291,22 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                                 Get Detailed PDF Report
                             </ListItemButton>
                         </Box>
+                    )}
+
+                    {time && (
+                        <Typography
+                            sx={{
+                                fontSize: '0.65rem',
+                                opacity: 0.8,
+                                position: 'absolute',
+                                bottom: 4,
+                                right: 8,
+                                color: 'rgba(255,255,255,0.9)',
+                                fontWeight: 500
+                            }}
+                        >
+                            {time}
+                        </Typography>
                     )}
                 </Box>
             ))}
@@ -941,6 +959,7 @@ const Chat = () => {
                                         reportState={reportState}
                                         activeCategory={activeCategory}
                                         userName={userName}
+                                        time={msg.time}
                                     />
                                     {/* JSON Output View for Guruji Multi-bubble */}
                                     {(gurujiData || msg.mayaJson) && (
@@ -966,9 +985,6 @@ const Chat = () => {
                                             )}
                                         </Box>
                                     )}
-                                    <Typography sx={{ fontSize: 12, opacity: 0.6, textAlign: "right", px: 1, mt: 0.5 }}>
-                                        {msg.time}
-                                    </Typography>
                                 </Box>
                             </Box>
                         );
@@ -1017,16 +1033,13 @@ const Chat = () => {
                                 {/* Only render bubble if there is content */}
                                 {msg.content && msg.content.trim() !== '' && (
                                     <Box sx={{
-                                        // p: 2,
-                                        p: '16px 12px 8px 16px',
-                                        // borderRadius: msg.role === 'user' ? '20px 20px 0 20px' : '20px 20px 20px 0',
+                                        p: '12px 12px 24px 12px',
                                         borderRadius: '10px',
                                         bgcolor: msg.role === 'user' ? '#2f3148' : '#ff8338',
                                         color: 'white',
                                         boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                         border: 'none',
                                         position: 'relative',
-                                        // width: 'fit-content',
                                         maxWidth: '85%',
                                         minWidth: '100px',
                                         overflowWrap: "break-word",
@@ -1069,18 +1082,24 @@ const Chat = () => {
                                         )}
 
                                         {/* Automated chat fee label removed */}
+
+                                        {/* Timestamp moved inside the bubble */}
+                                        <Typography
+                                            sx={{
+                                                fontSize: '0.75rem',
+                                                opacity: 0.8,
+                                                position: 'absolute',
+                                                bottom: 5,
+                                                right: 8,
+                                                color: 'rgba(255,255,255,0.9)',
+                                                fontWeight: 500,
+                                                pt: 1,
+                                            }}
+                                        >
+                                            {msg.time}
+                                        </Typography>
                                     </Box>
                                 )}
-                                <Typography
-                                    sx={{
-                                        fontSize: 12,
-                                        opacity: 0.8,
-                                        textAlign: "right",
-                                        mt: 0.5,
-                                    }}
-                                >
-                                    {msg.time}
-                                </Typography>
                             </Box>
                         </Box>
                     );

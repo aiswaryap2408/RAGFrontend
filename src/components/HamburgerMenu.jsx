@@ -98,15 +98,15 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
           </IconButton>
         </Box>
 
-        <Box sx={{ p: 2.5, pb: 2, pt: 0, display: "flex" }}>
-          <Box sx={{ width: "85px", mr: 2 }}>
+        <Box sx={{ p: 2.5, pb: 0, pt: 0, display: "flex" }}>
+          <Box sx={{ width: "80px", mr: 2 }}>
 
             <img
               src="/svg/guruji_illustrated.svg"
               alt="guruji"
               style={{
-                width: "85px",
-                height: "85px",
+                width: "80px",
+                height: "80px",
                 borderRadius: "50%",
                 border: "2px solid #ffffff",
               }}
@@ -161,61 +161,61 @@ const HamburgerMenu = ({ open, toggleDrawer, handleNavigation }) => {
 
         <List sx={{ pt: 2 }}>
           <ListItem disablePadding onClick={() => handleNavigation("logout")}>
-            <ListItemButton sx={{ py: 1.5 }}>
+            <ListItemButton sx={{ pt: 1.3 }}>
               <ListItemIcon sx={{ minWidth: 40 }}>
                 <LogoutIcon sx={{ minWidth: 40, color: "#fff" }} />
               </ListItemIcon>
               <ListItemText
                 primary="Logout"
-                primaryTypographyProps={{ fontWeight: 500 }}
+                primaryTypographyProps={{ fontWeight: 400 }}
               />
             </ListItemButton>
           </ListItem>
 
           <ListItem disablePadding onClick={() => handleNavigation("/dashboard")}>
-            <ListItemButton sx={{ py: 1.5 }}>
+            <ListItemButton sx={{ pt: 1.3 }}>
               <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
                 <DashboardIcon />
               </ListItemIcon>
               <ListItemText
                 primary="Dashboard"
-                primaryTypographyProps={{ fontWeight: 500 }}
+                primaryTypographyProps={{ fontWeight: 400 }}
               />
             </ListItemButton>
           </ListItem>
 
           <ListItem disablePadding onClick={() => handleNavigation("/chat")}>
-            <ListItemButton sx={{ py: 1.5 }}>
+            <ListItemButton sx={{ pt: 1.3 }}>
               <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
                 <HomeIcon />
               </ListItemIcon>
               <ListItemText
                 primary="Chat"
-                primaryTypographyProps={{ fontWeight: 500 }}
+                primaryTypographyProps={{ fontWeight: 400 }}
               />
             </ListItemButton>
           </ListItem>
 
           <ListItem disablePadding onClick={() => handleNavigation("/terms")}>
-            <ListItemButton sx={{ py: 1.5 }}>
+            <ListItemButton sx={{ pt: 1.3 }}>
               <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
                 <GavelIcon />
               </ListItemIcon>
               <ListItemText
                 primary="Terms and Conditions"
-                primaryTypographyProps={{ fontWeight: 500 }}
+                primaryTypographyProps={{ fontWeight: 400 }}
               />
             </ListItemButton>
           </ListItem>
 
           <ListItem disablePadding onClick={() => handleNavigation("/privacy")}>
-            <ListItemButton sx={{ py: 1.5 }}>
+            <ListItemButton sx={{ pt: 1.3 }}>
               <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
                 <PrivacyTipIcon />
               </ListItemIcon>
               <ListItemText
                 primary="Privacy Policy"
-                primaryTypographyProps={{ fontWeight: 500 }}
+                primaryTypographyProps={{ fontWeight: 400 }}
               />
             </ListItemButton>
           </ListItem>
