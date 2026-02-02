@@ -705,37 +705,6 @@ const Chat = () => {
     //   const location = useLocation();
     //   const navigate = useNavigate();
 
-    const showMenu = [
-        "/chat",
-        "/profile",
-        "/history",
-        "/dakshina",
-        "/wallet",
-        "/wallet/recharge",
-        "/dashboard",
-    ].includes(location.pathname);
-
-    const toggleDrawer = (open) => (event) => {
-        if (
-            event.type === "keydown" &&
-            (event.key === "Tab" || event.key === "Shift")
-        ) {
-            return;
-        }
-        setDrawerOpen(open);
-    };
-
-    const handleNavigation = (path) => {
-        if (path === 'logout') {
-            localStorage.clear();
-            navigate('/');
-        } else if (path === '/chat-new') {
-            navigate('/chat', { state: { newSession: true } });
-        } else {
-            navigate(path);
-        }
-        setDrawerOpen(false);
-    };
 
     const handleReportGeneration = async (category, action) => {
         const mobile = localStorage.getItem('mobile');
