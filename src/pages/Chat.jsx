@@ -901,7 +901,7 @@ const Chat = () => {
                     width: 200,
                     height: 40,
                     borderRadius: 10,
-                    zIndex: 10000
+                    zIndex: 1101
                 }}
             />
 
@@ -952,6 +952,7 @@ const Chat = () => {
                     pb: 2.5,
                     "&::-webkit-scrollbar": { display: "block" },
                     scrollbarWidth: "thin",
+                    pt: 22,
                 }}
             >
                 {messages.map((msg, i) => {

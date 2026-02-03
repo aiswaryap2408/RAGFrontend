@@ -21,7 +21,7 @@ const TermsAndConditions = () => {
                 </IconButton>
             </Box> */}
 
-            <Box sx={{ p: 3, px: 5, mt: 1.5, flex: 1, overflowY: 'auto', color: '#533000' }}>
+            <Box sx={{ p: 3, px: 5, mt: 19, flex: 1, overflowY: 'auto', color: '#533000' }}>
                 <Typography sx={{ color: '#000', fontWeight: 500, mb: 3, textAlign: 'center', bgcolor: '#f1d3a9', py: 2, borderRadius: 1 }}>
                     IMPORTANT
                 </Typography>

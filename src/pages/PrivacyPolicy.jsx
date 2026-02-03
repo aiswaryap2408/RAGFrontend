@@ -26,7 +26,7 @@ const PrivacyPolicy = () => {
             <Box sx={{
                 p: 3,
                 px: 5,
-                mt: 1.5,
+                mt: 19,
                 flex: 1,
                 overflowY: 'scroll',
                 color: '#533000', "&::-webkit-scrollbar": {
