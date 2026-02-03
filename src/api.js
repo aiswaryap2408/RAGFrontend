@@ -78,6 +78,8 @@ export const rechargeWallet = (data) => api.post('/wallet/recharge', data);
 export const generateReport = (mobile, category) => api.post('/wallet/generate-report', { mobile, category }, { responseType: 'blob' });
 export const toggleWalletSystem = (enabled) => api.post(`/wallet/toggle-system?enabled=${enabled}`);
 export const getDashboardStats = (range = '7D') => api.get(`/admin/stats?range=${range}`);
+export const getUserReports = (mobile) => api.get(`/wallet/reports/${mobile}`);
+export const downloadReportById = (reportId) => api.get(`/wallet/report/${reportId}`, { responseType: 'blob' });
 
 // Payment Module Endpoints
 export const createPaymentOrder = (amount, mobile) => api.post('/payment/create-order', { amount, mobile });
