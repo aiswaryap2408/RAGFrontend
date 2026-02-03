@@ -11,6 +11,7 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PlaceIcon from "@mui/icons-material/Place";
 import EmailIcon from "@mui/icons-material/Email";
+import PhoneIcon from "@mui/icons-material/Phone";
 import { InputField } from "./inputwithIcon";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -20,13 +21,13 @@ import { GenderButton } from "./inputwithIcon";
 
 const BirthDetailsForm = ({ details, setDetails, error }) => {
     return (
-        <form name="frmplaceorder" style={{ width: '100%', display: 'flex', justifyContent: 'left', padding: '0 10px' }}>
+        <form name="frmplaceorder" style={{ width: '100%', display: 'flex', flexDirection: 'column', padding: '0 10px' }}>
             <Box sx={{ width: { xs: "100%", sm: "90%" } }}>
                 <Typography
                     sx={{
-                        color: "#F26A2E",
+                        color: "#dc5d35",
                         fontWeight: 600,
-                        mb: 2,
+                        mb: 1,
                         fontSize: 16,
                     }}
                 >
@@ -59,7 +60,7 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                 {/* Name */}
                 <InputField
                     name="name"
-                    icon={<PersonIcon sx={{ backgroundColor: "#F26A2E", color: "#fff", borderRadius: 12, border: "5px solid #F26A2E" }} />}
+                    icon={<PersonIcon sx={{ backgroundColor: "#ff8338", color: "#fff", borderRadius: 12, border: "2px solid #ff8338" }} />}
                     placeholder="Name"
                     value={details.name}
                     onChange={e => setDetails({ ...details, name: e.target.value })}
@@ -70,7 +71,7 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                 {/* Email */}
                 <InputField
                     name="email"
-                    icon={<EmailIcon sx={{ backgroundColor: "#F26A2E", color: "#fff", borderRadius: 12, border: "5px solid #F26A2E" }} />}
+                    icon={<EmailIcon sx={{ backgroundColor: "#ff8338", color: "#fff", borderRadius: 12, border: "4px solid #ff8338" }} />}
                     placeholder="Email Address"
                     type="email"
                     value={details.email}
@@ -84,7 +85,7 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                     onChange={(_, v) => v && setDetails({ ...details, gender: v.charAt(0).toUpperCase() + v.slice(1) })}
                     sx={{
                         width: "90%",
-                        mb: 2,
+                        mb: 1.5,
                         borderRadius: 1,
                         overflow: "hidden",
                     }}
@@ -98,6 +99,7 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                     icon={<CalendarMonthIcon />}
                     placeholder="Date of birth"
                     type="date"
+                    value={details.dob}
                     onChange={e => setDetails({ ...details, dob: e.target.value })}
                 />
 
@@ -107,8 +109,10 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                         icon={<AccessTimeIcon />}
                         placeholder="Time of birth"
                         type="time"
+                        value={details.tob}
                         onChange={e => setDetails({ ...details, tob: e.target.value })}
                     />
+                    {/* <Typography sx={{ fontSize: 14, color: "#757575", m: 1 }}>I don't know my time of birth, <span style={{ color: "#dc5d35" }}> help me.</span></Typography> */}
 
                 </Box>
                 {/* Place of birth */}
@@ -120,23 +124,26 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                     value={details.pob}
                     onChange={e => setDetails({ ...details, pob: e.target.value })}
                 />
-
+            </Box>
+            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
                 {/* Chart style */}
                 <Typography
                     sx={{
-                        color: "#F26A2E",
-                        fontWeight: 600,
-                        mt: 3,
+                        color: "#dc5d35",
+                        fontWeight: 700,
+                        mt: .5,
                         mb: 0.5,
+                        fontSize: 17,
                     }}
                 >
                     Horoscope chart style preference?
                 </Typography>
 
-                <Typography fontSize={13} color="#555" mb={2}>
+                <Typography fontSize={16} color="#555" mb={2} lineHeight={1.2}>
                     The chart representations are slightly different based on regions in India.
                 </Typography>
-
+            </Box>
+            <Box sx={{ width: { xs: "100%", sm: "90%" } }}>
                 <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5, width: "90%" }}>
                     {["South Indian", "North Indian", "East Indian", "Kerala"].map((item) => (
                         <Button
