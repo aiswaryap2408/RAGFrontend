@@ -328,8 +328,8 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                     content={`detailed predictions on ${activeCategory || 'your query'} are chargeable ₹49.`}
                     buttonLabel={reportState === 'CONFIRMING' ? "Pay for detailed answer" : "Paid for detailed answer"}
                     onButtonClick={() => handleReportGeneration(activeCategory, 'PAY')}
-                    loading={reportState === 'PREPARING'}
-                    disabled={reportState === 'PREPARING' || reportState === 'READY'}
+                    loading={reportState === 'PAYING' || reportState === 'PREPARING'}
+                    disabled={reportState === 'PAYING' || reportState === 'PREPARING' || reportState === 'READY'}
                 />
             )}
 
@@ -403,7 +403,7 @@ const Chat = () => {
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
     // Multi-step report flow state
-    const [reportState, setReportState] = useState('IDLE'); // IDLE, CONFIRMING, PREPARING, READY
+    const [reportState, setReportState] = useState('IDLE'); // IDLE, CONFIRMING, PAYING, PREPARING, READY
     const [activeCategory, setActiveCategory] = useState(null);
     const [readyReportData, setReadyReportData] = useState(null);
     const messagesEndRef = useRef(null);
@@ -743,12 +743,14 @@ const Chat = () => {
 
                 if (res.data.type === 'application/json') {
                     const reader = new FileReader();
-                    reader.onload = () => {
+                    reader.onload = async () => {
                         const result = JSON.parse(reader.result);
                         if (result.status === 'insufficient_funds') {
                             // Wallet was depleted between check and generation
-                            alert('Wallet balance changed. Please try again.');
-                            setReportState('CONFIRMING');
+                            // Fallback to Razorpay
+                            alert("Insufficient wallet balance. Redirecting to payment gateway...");
+                            console.log("Insufficient funds during generation, falling back to Razorpay");
+                            await processReportWithRazorpay(mobile, category);
                         }
                     };
                     reader.readAsText(res.data);
@@ -819,6 +821,12 @@ const Chat = () => {
                 },
                 theme: {
                     color: "#F36A2F"
+                },
+                modal: {
+                    ondismiss: function () {
+                        console.log("Razorpay modal dismissed");
+                        setReportState('CONFIRMING');
+                    }
                 }
             };
 
@@ -835,6 +843,7 @@ const Chat = () => {
         } catch (error) {
             console.error("Payment init failed:", error);
             alert("Failed to initiate payment. Please try again.");
+            setReportState('CONFIRMING');
         }
     };
 
@@ -849,13 +858,29 @@ const Chat = () => {
         }
 
         if (action === 'PAY') {
-            // Check wallet balance
-            if (walletBalance >= 49) {
-                // Sufficient funds - proceed with wallet deduction
-                await processReportWithWallet(mobile, category);
-            } else {
-                // Insufficient funds - open Razorpay
-                await processReportWithRazorpay(mobile, category);
+            setReportState('PAYING');
+            // Check wallet balance in real-time
+            try {
+                const resStatus = await api.get(`/auth/user-status/${mobile}?t=${Date.now()}`);
+                const currentBalance = resStatus.data.wallet_balance || 0;
+                setWalletBalance(currentBalance);
+
+                if (currentBalance >= 49) {
+                    // Sufficient funds - proceed with wallet deduction
+                    await processReportWithWallet(mobile, category);
+                } else {
+                    // Insufficient funds - open Razorpay
+                    alert("Insufficient wallet balance. Redirecting to payment gateway...");
+                    await processReportWithRazorpay(mobile, category);
+                }
+            } catch (err) {
+                console.error("Balance check failed:", err);
+                // Fallback to existing state check if API fails
+                if (walletBalance >= 49) {
+                    await processReportWithWallet(mobile, category);
+                } else {
+                    await processReportWithRazorpay(mobile, category);
+                }
             }
             return;
         }

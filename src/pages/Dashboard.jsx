@@ -91,7 +91,7 @@ const Dashboard = () => {
                             Payments
                         </Typography>
                     </Box>
-                    <Box onClick={() => handleAction('/dakshina')} sx={{ cursor: 'pointer' }}>
+                    <Box onClick={() => handleAction('/detailed-reports')} sx={{ cursor: 'pointer' }}>
                         <DescriptionIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
                         <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
                             Detailed Reports
