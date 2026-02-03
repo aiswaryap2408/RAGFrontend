@@ -977,6 +977,7 @@ const Chat = () => {
                     pb: 2.5,
                     "&::-webkit-scrollbar": { display: "block" },
                     scrollbarWidth: "thin",
+                    pt: 22,
                 }}
             >
                 {messages.map((msg, i) => {

@@ -5,7 +5,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 const Header = ({ backgroundImage = "/svg/top_curve_light.svg" }) => {
     return (
-        <Box sx={{ minHeight: '182px' }}>
+        // <Box sx={{ minHeight: '182px' }}>
+        <Box >
+
             <Box
                 sx={{
                     position: "fixed",
@@ -16,7 +18,7 @@ const Header = ({ backgroundImage = "/svg/top_curve_light.svg" }) => {
                     zIndex: 1100,
                     minHeight: '182px',
                     overflow: "hidden",
-                    bgcolor: '#FFF6EB',
+                    bgcolor: 'transparent',
                 }}
             >
                 {/* Top Curve */}

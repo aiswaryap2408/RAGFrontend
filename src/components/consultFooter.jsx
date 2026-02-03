@@ -19,7 +19,8 @@ const ConsultFooter = ({ onConsult }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                position: 'relative',
+                // position: 'relative',
+                position: 'sticky',
             }}
         >
 
