@@ -10,7 +10,7 @@ const Header = ({ backgroundImage = "/svg/top_curve_light.svg" }) => {
                 sx={{
                     position: "fixed",
                     top: 0,
-                    width: { xs: '100%', sm: 449 },
+                    width: { xs: '100%', sm: 450 },
                     left: '50%',
                     transform: 'translateX(-50%)',
                     zIndex: 1100,

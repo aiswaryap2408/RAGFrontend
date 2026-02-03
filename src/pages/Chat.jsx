@@ -901,7 +901,7 @@ const Chat = () => {
                     width: 200,
                     height: 40,
                     borderRadius: 10,
-                    zIndex: 1000
+                    zIndex: 10000
                 }}
             />
 

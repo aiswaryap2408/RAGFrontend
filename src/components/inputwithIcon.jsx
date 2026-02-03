@@ -34,7 +34,7 @@ const InputField = ({
             className: className,
         }}
         sx={{
-            mb: 2,
+            mb: 1.5,
             bgcolor: "#fff",
             borderRadius: 1,
             "& fieldset": {
