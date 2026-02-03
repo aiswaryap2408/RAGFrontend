@@ -1,7 +1,9 @@
 import React from "react";
 import { Box, Button } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const ConsultFooter = ({ onConsult }) => {
+    const navigate = useNavigate();
     return (
         <Box
             sx={{
@@ -30,7 +32,10 @@ const ConsultFooter = ({ onConsult }) => {
 
 
             <Button
-                onClick={onConsult}
+                onClick={() => {
+                    if (onConsult) onConsult();
+                    navigate("/chat");
+                }}
                 sx={{
                     color: "#fff",
                     fontSize: '.85rem',
