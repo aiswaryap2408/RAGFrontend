@@ -109,7 +109,6 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                         type="time"
                         onChange={e => setDetails({ ...details, tob: e.target.value })}
                     />
-                    <Typography sx={{ fontSize: 14, color: "#757575", m: 1 }}>I don't know my time of birth, <span style={{ color: "#F26A2E" }}> help me.</span></Typography>
 
                 </Box>
                 {/* Place of birth */}

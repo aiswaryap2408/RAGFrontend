@@ -22,6 +22,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import Settings from './pages/admin/Settings';
 import ScrollToTop from './components/ScrollToTop';
 import Dashboard from './pages/Dashboard';
+import DetailedReports from './pages/DetailedReports';
 
 
 // User Protected Route Component
@@ -138,6 +139,14 @@ function App() {
           <Route
             path="/dashboard"
             element={<Dashboard />}
+          />
+          <Route
+            path="/detailed-reports"
+            element={
+              <ProtectedRoute>
+                <DetailedReports />
+              </ProtectedRoute>
+            }
           />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
