@@ -145,7 +145,7 @@ const Verify = () => {
           textAlign: "center",
           px: 3,
           pb: 1,
-          // mt: -3, 
+          mt: 18,
         }}
       >
         <Box textAlign="center">

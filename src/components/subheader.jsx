@@ -17,13 +17,14 @@ const Subheader = ({ title, showBack = false, onBack }) => {
     return (
         <Box
             sx={{
-                width: "100%",
+                width: { xs: '100%', sm: 450 },
                 height: 75,
                 display: "flex",
                 alignItems: "center",
                 px: 2,
 
-                position: "relative",
+                position: "fixed",
+                top: 0,
                 zIndex: 5,
                 bgcolor: "#ffdaa7",
             }}

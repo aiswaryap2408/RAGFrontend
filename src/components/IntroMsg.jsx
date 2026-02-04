@@ -12,6 +12,7 @@ const IntroMsg = ({
     footerText,
     ConsultSrc,
     paybutton,
+    onPayClick,
 
     wrapperSx,
     cardSx,
@@ -91,6 +92,7 @@ const IntroMsg = ({
             {paybutton && (
                 <Button
                     variant="contained"
+                    onClick={onPayClick}
                     sx={{
                         backgroundColor: "#54a170",
                         color: "#fff",
