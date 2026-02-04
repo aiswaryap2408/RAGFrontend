@@ -55,6 +55,8 @@ const AdminDashboard = () => {
     const [detailsLoading, setDetailsLoading] = useState(false);
     const [walletEnabled, setWalletEnabled] = useState(true);
     const [paymentEnabled, setPaymentEnabled] = useState(true);
+    const [mayaJsonEnabled, setMayaJsonEnabled] = useState(false);
+    const [gurujiJsonEnabled, setGurujiJsonEnabled] = useState(false);
 
     // RAG Tester State
     const [testFile, setTestFile] = useState(null);
@@ -147,6 +149,32 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleToggleMayaJson = async () => {
+        try {
+            const newState = !mayaJsonEnabled;
+            setMayaJsonEnabled(newState);
+            import('../../api').then(async (api) => {
+                await api.updateSystemSettings('maya_json_enabled', newState);
+            });
+        } catch (err) {
+            console.error("Failed to update Maya JSON settings", err);
+            setMayaJsonEnabled(!mayaJsonEnabled);
+        }
+    };
+
+    const handleToggleGurujiJson = async () => {
+        try {
+            const newState = !gurujiJsonEnabled;
+            setGurujiJsonEnabled(newState);
+            import('../../api').then(async (api) => {
+                await api.updateSystemSettings('guruji_json_enabled', newState);
+            });
+        } catch (err) {
+            console.error("Failed to update Guruji JSON settings", err);
+            setGurujiJsonEnabled(!gurujiJsonEnabled);
+        }
+    };
+
     const handleToggleWallet = async () => {
         try {
             const newState = !walletEnabled;
@@ -164,14 +192,11 @@ const AdminDashboard = () => {
             try {
                 const { getSystemSettings } = await import('../../api');
                 const { data } = await getSystemSettings();
-                if (data && typeof data.payment_enabled !== 'undefined') {
-                    setPaymentEnabled(data.payment_enabled);
+                if (data) {
+                    if (typeof data.payment_enabled !== 'undefined') setPaymentEnabled(data.payment_enabled);
+                    if (typeof data.maya_json_enabled !== 'undefined') setMayaJsonEnabled(data.maya_json_enabled);
+                    if (typeof data.guruji_json_enabled !== 'undefined') setGurujiJsonEnabled(data.guruji_json_enabled);
                 }
-                // Wallet status is usually part of the user check or separate, 
-                // but if we used toggleWalletSystem before, we should check its current state if possible.
-                // Since we don't have a direct endpoint for global wallet status in api.js clearly revealed,
-                // we'll assume it defaults to true or persists via the same settings API later.
-                // For now, let's leave walletEnabled as is or check if getSystemSettings has it.
             } catch (e) {
                 console.error("Failed to fetch settings", e);
             }
@@ -633,6 +658,34 @@ const AdminDashboard = () => {
                                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all ${walletEnabled ? 'bg-emerald-600' : 'bg-slate-700'}`}
                                     >
                                         <span className={`inline-block h-4 w-4 bg-white rounded-full transition-transform ${walletEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+
+                                {/* Maya JSON Toggle */}
+                                <div className="flex items-center justify-between pt-6 border-t border-slate-800/60">
+                                    <div>
+                                        <h3 className="font-black text-slate-200">Maya JSON Output</h3>
+                                        <p className="text-xs text-slate-500">Show raw JSON classification from Maya in chat bubbles</p>
+                                    </div>
+                                    <button
+                                        onClick={handleToggleMayaJson}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all ${mayaJsonEnabled ? 'bg-indigo-600' : 'bg-slate-700'}`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 bg-white rounded-full transition-transform ${mayaJsonEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+
+                                {/* Guruji JSON Toggle */}
+                                <div className="flex items-center justify-between pt-6 border-t border-slate-800/60">
+                                    <div>
+                                        <h3 className="font-black text-slate-200">Guruji JSON Output</h3>
+                                        <p className="text-xs text-slate-500">Show raw structured response from Guruji in chat bubbles</p>
+                                    </div>
+                                    <button
+                                        onClick={handleToggleGurujiJson}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all ${gurujiJsonEnabled ? 'bg-indigo-600' : 'bg-slate-700'}`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 bg-white rounded-full transition-transform ${gurujiJsonEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
                                 </div>
                             </div>

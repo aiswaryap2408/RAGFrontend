@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 const Settings = () => {
     const [paymentEnabled, setPaymentEnabled] = useState(false);
+    const [mayaJsonEnabled, setMayaJsonEnabled] = useState(false);
+    const [gurujiJsonEnabled, setGurujiJsonEnabled] = useState(false);
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState('');
     const navigate = useNavigate();
@@ -17,6 +19,8 @@ const Settings = () => {
             if (res.ok) {
                 const data = await res.json();
                 setPaymentEnabled(data.payment_enabled);
+                setMayaJsonEnabled(data.maya_json_enabled);
+                setGurujiJsonEnabled(data.guruji_json_enabled);
             }
         } catch (error) {
             console.error("Error fetching settings:", error);
@@ -25,21 +29,21 @@ const Settings = () => {
         }
     };
 
-    const togglePayment = async () => {
+    const toggleSetting = async (key, currentValue, setter, label) => {
         try {
-            const newValue = !paymentEnabled;
+            const newValue = !currentValue;
             const res = await fetch('http://localhost:8088/admin/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: 'payment_enabled', value: newValue })
+                body: JSON.stringify({ key, value: newValue })
             });
             if (res.ok) {
-                setPaymentEnabled(newValue);
-                setMsg(`Payments ${newValue ? 'Enabled' : 'Disabled'}`);
+                setter(newValue);
+                setMsg(`${label} ${newValue ? 'Enabled' : 'Disabled'}`);
                 setTimeout(() => setMsg(''), 3000);
             }
         } catch (error) {
-            console.error("Error updating settings:", error);
+            console.error(`Error updating ${key}:`, error);
         }
     };
 
@@ -70,19 +74,21 @@ const Settings = () => {
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                marginBottom: '1rem'
+                                marginBottom: '1.5rem',
+                                paddingBottom: '1.5rem',
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
                             }}>
                                 <div>
                                     <h3 style={{ color: '#FFD700', marginBottom: '0.5rem' }}>Payment Gateway</h3>
                                     <p style={{ color: '#ccc', fontSize: '0.9rem' }}>
-                                        Enable or disable global payment processing. When disabled, users cannot recharge wallet.
+                                        Enable or disable global payment processing.
                                     </p>
                                 </div>
                                 <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
                                     <input
                                         type="checkbox"
                                         checked={paymentEnabled}
-                                        onChange={togglePayment}
+                                        onChange={() => toggleSetting('payment_enabled', paymentEnabled, setPaymentEnabled, 'Payments')}
                                         style={{ opacity: 0, width: 0, height: 0 }}
                                     />
                                     <span className="slider round" style={{
@@ -92,7 +98,7 @@ const Settings = () => {
                                         left: 0,
                                         right: 0,
                                         bottom: 0,
-                                        backgroundColor: paymentEnabled ? '#FFD700' : '#ccc',
+                                        backgroundColor: paymentEnabled ? '#FFD700' : '#444',
                                         transition: '.4s',
                                         borderRadius: '34px'
                                     }}>
@@ -102,6 +108,98 @@ const Settings = () => {
                                             height: '18px',
                                             width: '18px',
                                             left: paymentEnabled ? '26px' : '4px',
+                                            bottom: '4px',
+                                            backgroundColor: 'white',
+                                            transition: '.4s',
+                                            borderRadius: '50%'
+                                        }} />
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div className="setting-item" style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '1.5rem',
+                                paddingBottom: '1.5rem',
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+                            }}>
+                                <div>
+                                    <h3 style={{ color: '#FFD700', marginBottom: '0.5rem' }}>Maya JSON Output</h3>
+                                    <p style={{ color: '#ccc', fontSize: '0.9rem' }}>
+                                        Show raw JSON classification from Maya in chat bubbles.
+                                    </p>
+                                </div>
+                                <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={mayaJsonEnabled}
+                                        onChange={() => toggleSetting('maya_json_enabled', mayaJsonEnabled, setMayaJsonEnabled, 'Maya JSON')}
+                                        style={{ opacity: 0, width: 0, height: 0 }}
+                                    />
+                                    <span className="slider round" style={{
+                                        position: 'absolute',
+                                        cursor: 'pointer',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        backgroundColor: mayaJsonEnabled ? '#FFD700' : '#444',
+                                        transition: '.4s',
+                                        borderRadius: '34px'
+                                    }}>
+                                        <span style={{
+                                            position: 'absolute',
+                                            content: "",
+                                            height: '18px',
+                                            width: '18px',
+                                            left: mayaJsonEnabled ? '26px' : '4px',
+                                            bottom: '4px',
+                                            backgroundColor: 'white',
+                                            transition: '.4s',
+                                            borderRadius: '50%'
+                                        }} />
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div className="setting-item" style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '1rem'
+                            }}>
+                                <div>
+                                    <h3 style={{ color: '#FFD700', marginBottom: '0.5rem' }}>Guruji JSON Output</h3>
+                                    <p style={{ color: '#ccc', fontSize: '0.9rem' }}>
+                                        Show raw structured response from Guruji in chat bubbles.
+                                    </p>
+                                </div>
+                                <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={gurujiJsonEnabled}
+                                        onChange={() => toggleSetting('guruji_json_enabled', gurujiJsonEnabled, setGurujiJsonEnabled, 'Guruji JSON')}
+                                        style={{ opacity: 0, width: 0, height: 0 }}
+                                    />
+                                    <span className="slider round" style={{
+                                        position: 'absolute',
+                                        cursor: 'pointer',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        backgroundColor: gurujiJsonEnabled ? '#FFD700' : '#444',
+                                        transition: '.4s',
+                                        borderRadius: '34px'
+                                    }}>
+                                        <span style={{
+                                            position: 'absolute',
+                                            content: "",
+                                            height: '18px',
+                                            width: '18px',
+                                            left: gurujiJsonEnabled ? '26px' : '4px',
                                             bottom: '4px',
                                             backgroundColor: 'white',
                                             transition: '.4s',
