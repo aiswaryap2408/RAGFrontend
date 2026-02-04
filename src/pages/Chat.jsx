@@ -235,52 +235,86 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
 
     const [visibleCount, setVisibleCount] = useState(animate ? 0 : paras.length);
     const [isBuffering, setIsBuffering] = useState(animate ? true : false);
+    const [waitMessage, setWaitMessage] = useState("");
     const textEndRef = useRef(null);
+    const hasCalledComplete = useRef(false);
+
+    const pleaseWaitMessages = [
+        "Please wait… checking your chart carefully.",
+        "One moment… ",
+        "Astrologer is typing",
+        "Please give me a moment.",
+    ];
 
     const scrollToBottom = () => {
         textEndRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     };
 
     const getDelayForText = (text) => {
-        if (!text) return 1000;
+        if (!text) return 2000;
         // Strip HTML tags to get pure text word count
         const cleanText = text.replace(/<[^>]*>/g, ' ');
         const wordCount = cleanText.trim().split(/\s+/).length;
-        // Formula: min 1.5s, max 6s, 80ms per word
-        return Math.max(1500, Math.min(6000, wordCount * 80));
+        // Formula: min 3s, max 15s, 200ms per word
+        return Math.max(3000, Math.min(15000, wordCount * 200));
     };
 
+    // Effect 1: Manage Buffering State Transitions & Completion
     useEffect(() => {
         if (!animate) {
-            if (onComplete) onComplete();
+            if (onComplete && !hasCalledComplete.current) {
+                hasCalledComplete.current = true;
+                onComplete();
+            }
             return;
         }
 
-        let currentIdx = 0;
-        const showNext = () => {
-            if (currentIdx >= paras.length) {
-                setIsBuffering(false);
-                if (onComplete) onComplete();
-                return;
+        // Cycle Complete
+        if (visibleCount >= paras.length) {
+            setIsBuffering(false);
+            if (onComplete && !hasCalledComplete.current) {
+                hasCalledComplete.current = true;
+                onComplete();
+            }
+            return;
+        }
+
+        // If not buffering and not finished, trigger next buffer phase after pause
+        if (!isBuffering) {
+            const timer = setTimeout(() => {
+                setIsBuffering(true);
+                scrollToBottom();
+            }, 1200); // Pause between bubbles
+            return () => clearTimeout(timer);
+        }
+    }, [visibleCount, isBuffering, animate, paras.length, onComplete]);
+
+    // Effect 2: Manage Typing Delay when Buffering
+    useEffect(() => {
+        if (isBuffering && animate && visibleCount < paras.length) {
+            const currentPara = paras[visibleCount];
+            const isLast = visibleCount === paras.length - 1;
+            const delay = getDelayForText(currentPara);
+
+            // Set waiting message
+            if (!isLast) {
+                const randomMsg = pleaseWaitMessages[Math.floor(Math.random() * pleaseWaitMessages.length)];
+                setWaitMessage(randomMsg);
+            } else {
+                setWaitMessage(""); // Suppress for last para
             }
 
-            const nextPara = paras[currentIdx];
-            const delay = getDelayForText(nextPara);
-
-            setIsBuffering(true);
             scrollToBottom();
 
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 setIsBuffering(false);
                 setVisibleCount(prev => prev + 1);
-                currentIdx++;
                 scrollToBottom();
-                // Brief pause between bubbles
-                setTimeout(showNext, 800);
             }, delay);
-        };
-        showNext();
-    }, [gurujiJson, animate]);
+
+            return () => clearTimeout(timer);
+        }
+    }, [isBuffering, animate, visibleCount]);
 
     useEffect(() => {
         if (reportState !== 'IDLE') {
@@ -340,10 +374,15 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
             ))}
 
             {isBuffering && (
-                <Box sx={{ display: 'flex', gap: 1, mt: 1, mb: 2, ml: 1 }}>
-                    <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite' }} />
-                    <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.2s' }} />
-                    <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.4s' }} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1, mb: 2, ml: 1 }}>
+                    <Typography sx={{ fontSize: '0.75rem', color: '#ff8338', fontWeight: 600, fontStyle: 'italic' }}>
+                        {waitMessage}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite' }} />
+                        <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.2s' }} />
+                        <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.4s' }} />
+                    </Box>
                 </Box>
             )}
 
