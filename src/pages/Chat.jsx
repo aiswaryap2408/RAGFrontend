@@ -39,64 +39,73 @@ const tryParseJson = (data) => {
     return null;
 };
 
-const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility }) => (
-    <Box sx={{ px: 3, pt: 4, pb: 1, width: "100%" }}>
-        <Box sx={{
-            position: "relative",
-            border: "2px solid #F36A2F",
-            borderRadius: 2,
-            p: 2,
-            bgcolor: "#fcebd3",
-            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-        }}>
-            {/* Avatar */}
+const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility }) => {
+    // Filter out fields we don't want to show in the UI debug block
+    const getFilteredJson = (json) => {
+        if (!json) return null;
+        const { amount, usage, ...rest } = json;
+        return rest;
+    };
+
+    return (
+        <Box sx={{ px: 3, pt: 4, pb: 1, width: "100%" }}>
             <Box sx={{
-                position: "absolute",
-                top: -28,
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                border: "5px solid #F36A2F",
-                bgcolor: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                position: "relative",
+                border: "2px solid #F36A2F",
+                borderRadius: 2,
+                p: 2,
+                bgcolor: "#fcebd3",
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
             }}>
-                <img src="/svg/guruji_illustrated.svg" style={{ width: 45 }} alt="Maya" />
-            </Box>
-
-            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500 }}>
-                {name && <strong>Namaste {name}, </strong>}{content}
-            </Typography>
-
-            {/* JSON Output View for Maya Intro */}
-            {jsonVisibility?.maya && mayaJson && (
-                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed rgba(243,106,47,0.3)' }}>
-                    <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700, mb: 0.5 }}>RECEPTIONIST CLASSIFICATION</Typography>
-                    <Box sx={{ bgcolor: 'rgba(0,0,0,0.03)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#666' }}>
-                        {JSON.stringify(mayaJson, null, 2)}
-                    </Box>
-                </Box>
-            )}
-
-            {time && (
-                <Typography sx={{
-                    fontSize: '0.75rem',
-                    opacity: 0.8,
-                    position: 'absolute',
-                    bottom: 6,
-                    right: 12,
-                    color: "#666",
-                    fontWeight: 500
+                {/* Avatar */}
+                <Box sx={{
+                    position: "absolute",
+                    top: -28,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    border: "5px solid #F36A2F",
+                    bgcolor: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                 }}>
-                    {time}
+                    <img src="/svg/guruji_illustrated.svg" style={{ width: 45 }} alt="Maya" />
+                </Box>
+
+                <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500 }}>
+                    {name && <strong>Namaste {name}, </strong>}{content}
                 </Typography>
-            )}
+
+                {/* JSON Output View for Maya Intro */}
+                {jsonVisibility?.maya && mayaJson && (
+                    <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed rgba(243,106,47,0.3)' }}>
+                        <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700, mb: 0.5 }}>RECEPTIONIST CLASSIFICATION</Typography>
+                        <Box sx={{ bgcolor: 'rgba(0,0,0,0.03)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#666' }}>
+                            {JSON.stringify(getFilteredJson(mayaJson), null, 2)}
+                        </Box>
+                    </Box>
+                )}
+
+                {time && (
+                    <Typography sx={{
+                        fontSize: '0.75rem',
+                        opacity: 0.8,
+                        position: 'absolute',
+                        bottom: 6,
+                        right: 12,
+                        color: "#666",
+                        fontWeight: 500
+                    }}>
+                        {time}
+                    </Typography>
+                )}
+            </Box>
         </Box>
-    </Box>
-);
+    );
+};
 
 
 const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, disabled }) => (
@@ -1120,7 +1129,7 @@ const Chat = () => {
                                                 <Box sx={{ mb: 1 }}>
                                                     <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700 }}>RECEPTIONIST CLASSIFICATION</Typography>
                                                     <Box sx={{ bgcolor: 'rgba(0,0,0,0.03)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#666' }}>
-                                                        {JSON.stringify(msg.mayaJson, null, 2)}
+                                                        {JSON.stringify((({ amount, usage, ...rest }) => rest)(msg.mayaJson), null, 2)}
                                                     </Box>
                                                 </Box>
                                             )}
@@ -1224,7 +1233,7 @@ const Chat = () => {
                                                 <Box sx={{ mb: 1 }}>
                                                     <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>RECEPTIONIST CLASSIFICATION</Typography>
                                                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: 'white' }}>
-                                                        {JSON.stringify(msg.mayaJson, null, 2)}
+                                                        {JSON.stringify((({ amount, usage, ...rest }) => rest)(msg.mayaJson), null, 2)}
                                                     </Box>
                                                 </Box>
                                             </Box>
