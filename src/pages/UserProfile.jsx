@@ -129,9 +129,10 @@ const UserProfile = () => {
                 overflowY: 'auto',
                 position: 'relative',
                 zIndex: 10,
-                mt: 2,
+                mt: 9,
                 px: 2,
                 pb: 5,
+                pt: 4,
                 "&::-webkit-scrollbar": {
                     display: "none",
                 },
@@ -145,7 +146,7 @@ const UserProfile = () => {
                     </Box>
                 ) : (
                     <>
-                        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'left', padding: '0 10px' }}>
+                        {/* <Box sx={{ width: '100%', display: 'flex', justifyContent: 'left', padding: '0 10px' }}>
                             <Box sx={{ width: { xs: "100%", sm: "90%" } }}>
                                 <Typography
                                     sx={{
@@ -189,7 +190,7 @@ const UserProfile = () => {
                                     ))}
                                 </TextField>
                             </Box>
-                        </Box>
+                        </Box> */}
                         <Box sx={{ width: '100%' }}>
                             <BirthDetailsForm details={details} setDetails={setDetails} error={error} />
                         </Box>
