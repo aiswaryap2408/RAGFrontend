@@ -7,7 +7,7 @@ import {
     Button,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PlaceIcon from "@mui/icons-material/Place";
 import EmailIcon from "@mui/icons-material/Email";
@@ -96,7 +96,7 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
 
                 {/* Date of birth */}
                 <InputField
-                    icon={<CalendarMonthIcon />}
+                    icon={<EventAvailableRoundedIcon />}
                     placeholder="Date of birth"
                     type="date"
                     value={details.dob}

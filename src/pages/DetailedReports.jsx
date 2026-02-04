@@ -68,7 +68,7 @@ const DetailedReports = () => {
             <Header backgroundImage="/svg/top_curve_light.svg" />
             <HamburgerMenu />
 
-            <Box sx={{ p: 3, flex: 1, maxWidth: 800, mx: "auto", width: "100%", mt: 2 }}>
+            <Box sx={{ p: 3, flex: 1, maxWidth: 800, mx: "auto", width: "100%", mt: 20 }}>
                 <Typography variant="h5" sx={{ fontWeight: 600, color: "#dc5d35", mb: 3, textAlign: "center" }}>
                     My Detailed Reports
                 </Typography>

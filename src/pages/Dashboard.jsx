@@ -64,6 +64,7 @@ const Dashboard = () => {
                         top: 140,
                         left: "50%",
                         transform: "translateX(-50%)",
+                        zIndex: 1100,
                     }} />
             )}
             <Box sx={{
@@ -71,6 +72,7 @@ const Dashboard = () => {
                     display: "none",
                 },
                 scrollbarWidth: "none",
+                mt: 22,
             }}>
                 <Box sx={{ mt: 3.5, textAlign: "center", px: 2, display: "flex", justifyContent: "space-around", flexWrap: 'wrap', gap: 2 }}>
                     <Box onClick={() => handleAction('/profile')} sx={{ cursor: 'pointer' }}>
@@ -141,7 +143,7 @@ const Dashboard = () => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        zIndex: 100,
+                        zIndex: 10000,
                         // backdropFilter: "blur(4px)",
                     }}
                     onClick={handleCloseProfilePopup}
@@ -184,6 +186,7 @@ const Dashboard = () => {
                         description="You must log in to access this feature. Please continue to log in."
                         ConsultSrc="/svg/guruji_illustrated.svg"
                         paybutton="Log in"
+                        onPayClick={() => navigate('/')}
                         footerText=""
                         wrapperSx={{ m: 2 }}
                         descriptionSx={{ pt: 1 }}
