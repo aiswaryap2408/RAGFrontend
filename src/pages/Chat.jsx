@@ -39,7 +39,7 @@ const tryParseJson = (data) => {
     return null;
 };
 
-const MayaIntro = ({ name, content, mayaJson, rawResponse, time }) => (
+const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility }) => (
     <Box sx={{ px: 3, pt: 4, pb: 1, width: "100%" }}>
         <Box sx={{
             position: "relative",
@@ -70,6 +70,16 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time }) => (
             <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500 }}>
                 {name && <strong>Namaste {name}, </strong>}{content}
             </Typography>
+
+            {/* JSON Output View for Maya Intro */}
+            {jsonVisibility?.maya && mayaJson && (
+                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed rgba(243,106,47,0.3)' }}>
+                    <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700, mb: 0.5 }}>RECEPTIONIST CLASSIFICATION</Typography>
+                    <Box sx={{ bgcolor: 'rgba(0,0,0,0.03)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#666' }}>
+                        {JSON.stringify(mayaJson, null, 2)}
+                    </Box>
+                </Box>
+            )}
 
             {time && (
                 <Typography sx={{
@@ -231,6 +241,15 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
         textEndRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     };
 
+    const getDelayForText = (text) => {
+        if (!text) return 1000;
+        // Strip HTML tags to get pure text word count
+        const cleanText = text.replace(/<[^>]*>/g, ' ');
+        const wordCount = cleanText.trim().split(/\s+/).length;
+        // Formula: min 1.5s, max 6s, 80ms per word
+        return Math.max(1500, Math.min(6000, wordCount * 80));
+    };
+
     useEffect(() => {
         if (!animate) {
             if (onComplete) onComplete();
@@ -244,15 +263,21 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                 if (onComplete) onComplete();
                 return;
             }
+
+            const nextPara = paras[currentIdx];
+            const delay = getDelayForText(nextPara);
+
             setIsBuffering(true);
             scrollToBottom();
+
             setTimeout(() => {
                 setIsBuffering(false);
                 setVisibleCount(prev => prev + 1);
                 currentIdx++;
                 scrollToBottom();
-                setTimeout(showNext, 2000);
-            }, 3000);
+                // Brief pause between bubbles
+                setTimeout(showNext, 800);
+            }, delay);
         };
         showNext();
     }, [gurujiJson, animate]);
@@ -406,6 +431,7 @@ const Chat = () => {
     const [reportState, setReportState] = useState('IDLE'); // IDLE, CONFIRMING, PAYING, PREPARING, READY
     const [activeCategory, setActiveCategory] = useState(null);
     const [readyReportData, setReadyReportData] = useState(null);
+    const [jsonVisibility, setJsonVisibility] = useState({ maya: false, guruji: false });
     const messagesEndRef = useRef(null);
     const processedNewSession = useRef(false);
 
@@ -491,6 +517,22 @@ const Chat = () => {
         };
         loadHistory();
     }, [location.state]);
+
+    useEffect(() => {
+        const fetchJsonSettings = async () => {
+            try {
+                const res = await api.get('/auth/json-settings');
+                console.log("DEBUG: JSON settings fetched:", res.data);
+                setJsonVisibility({
+                    maya: res.data.maya_json_enabled,
+                    guruji: res.data.guruji_json_enabled
+                });
+            } catch (err) {
+                console.error("Failed to fetch JSON settings:", err);
+            }
+        };
+        fetchJsonSettings();
+    }, []);
 
     useEffect(() => {
         scrollToBottom();
@@ -912,23 +954,25 @@ const Chat = () => {
             <HamburgerMenu />
 
 
-            <PrimaryButton
-                label="End Consultation"
-                onClick={() => setFeedbackDrawerOpen(true)}
-                disabled={loading || messages.length < 1}
-                startIcon={<CancelIcon sx={{ fontSize: 24 }} />}
-                sx={{
-                    position: "absolute",
-                    top: 135,
-                    left: 0,
-                    right: 0,
-                    m: "auto",
-                    width: 200,
-                    height: 40,
-                    borderRadius: 10,
-                    zIndex: 1101
-                }}
-            />
+            {messages.some(m => m.assistant === 'guruji') && (
+                <PrimaryButton
+                    label="End Consultation"
+                    onClick={() => setFeedbackDrawerOpen(true)}
+                    disabled={loading || messages.length < 1}
+                    startIcon={<CancelIcon sx={{ fontSize: 24 }} />}
+                    sx={{
+                        position: "absolute",
+                        top: 135,
+                        left: 0,
+                        right: 0,
+                        m: "auto",
+                        width: 200,
+                        height: 40,
+                        borderRadius: 10,
+                        zIndex: 1101
+                    }}
+                />
+            )}
 
             {/* <FeedbackDrawer
                 open={feedbackDrawerOpen}
@@ -992,6 +1036,7 @@ const Chat = () => {
                                 mayaJson={msg.mayaJson}
                                 rawResponse={msg.rawResponse}
                                 time={msg.time}
+                                jsonVisibility={jsonVisibility}
                             />
                         );
                     }
@@ -1027,12 +1072,12 @@ const Chat = () => {
                                         time={msg.time}
                                     />
                                     {/* JSON Output View for Guruji Multi-bubble */}
-                                    {(gurujiData || msg.mayaJson) && (
+                                    {(jsonVisibility.maya || jsonVisibility.guruji) && (msg.mayaJson || gurujiData) && (
                                         <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)' }}>
                                             <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(0,0,0,0.4)', mb: 0.5, textTransform: 'uppercase' }}>
                                                 Debug Data:
                                             </Typography>
-                                            {msg.mayaJson && (
+                                            {(msg.mayaJson && jsonVisibility.maya) && (
                                                 <Box sx={{ mb: 1 }}>
                                                     <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700 }}>RECEPTIONIST CLASSIFICATION</Typography>
                                                     <Box sx={{ bgcolor: 'rgba(0,0,0,0.03)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#666' }}>
@@ -1040,7 +1085,7 @@ const Chat = () => {
                                                     </Box>
                                                 </Box>
                                             )}
-                                            {gurujiData && (
+                                            {(gurujiData && jsonVisibility.guruji) && (
                                                 <Box>
                                                     <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700 }}>ASTROLOGER STRUCTURED RESPONSE</Typography>
                                                     <Box sx={{ bgcolor: 'rgba(243,106,47,0.05)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#444', border: '1px solid rgba(243,106,47,0.1)' }}>
@@ -1132,7 +1177,7 @@ const Chat = () => {
                                         />
 
                                         {/* JSON Output View (for regular messages) */}
-                                        {(msg.mayaJson && !msg.gurujiJson) && (
+                                        {(msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) && (
                                             <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed rgba(255,255,255,0.2)' }}>
                                                 <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)', mb: 0.5, textTransform: 'uppercase' }}>
                                                     Debug Data:
