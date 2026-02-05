@@ -13,8 +13,10 @@ const FeedbackDrawer = ({
     const [feedback, setFeedback] = useState("");
     const [submitted, setSubmitted] = useState(false);
 
+    // Reset state when drawer becomes closed to avoid flashing old data on next open
+    // or use a separate effect for individual resets if needed.
     useEffect(() => {
-        if (open) {
+        if (!open) {
             setRating(0);
             setFeedback("");
             setSubmitted(false);

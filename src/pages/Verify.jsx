@@ -149,7 +149,7 @@ const Verify = () => {
         }}
       >
         <Box textAlign="center">
-          <Typography fontSize={16} mt={1} mb={1}>
+          <Typography fontSize={16} mt={1} mb={1} sx={{ fontFamily: "'Century Gothic', sans-serif" }}>
             Welcome to{" "}
             <Typography component="span" fontWeight={600} color="#dc5d35">
               Findastro

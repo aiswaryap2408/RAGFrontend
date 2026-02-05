@@ -23,6 +23,7 @@ import FeedbackDrawer from '../components/FeedbackDrawer';
 import HamburgerMenu from '../components/HamburgerMenu';
 import Dakshina from '../pages/Dakshina';
 import DoneAllOutlinedIcon from '@mui/icons-material/DoneAllOutlined';
+import ThankYou from '../components/Thankyou';
 
 const tryParseJson = (data) => {
     if (!data) return null;
@@ -433,6 +434,17 @@ const Chat = () => {
     const [feedbackDrawerOpen, setFeedbackDrawerOpen] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [dakshinaOpen, setDakshinaOpen] = useState(false);
+    const [thankYouOpen, setThankYouOpen] = useState(false);
+    const [thankYouAction, setThankYouAction] = useState(null);
+    const [thankYouData, setThankYouData] = useState({
+        amount: 0,
+        points: 0,
+        title: 'Payment received',
+        trustMsg: 'Your new wallet balance is',
+        gratitudeMsg: ' ',
+        addedLabel: ' ',
+        showWave: true,
+    });
 
     // Helper to format time strings
     // Helper to format time strings
@@ -890,7 +902,19 @@ const Chat = () => {
                             razorpay_signature: response.razorpay_signature
                         });
 
-                        alert("Payment successful! Generating your report...");
+                        // alert("Payment successful! Generating your report...");
+                        setThankYouAction(null); // No special action on close for reports
+                        setThankYouData({
+                            amount: 49,
+                            points: 4.9,
+                            title: 'Payment received',
+                            trustMsg: 'Your new wallet balance is',
+                            gratitudeMsg: ' ',
+                            addedLabel: ' ',
+                            showWave: false,
+
+                        });
+                        setThankYouOpen(true);
 
                         // Payment successful - refresh wallet balance
                         const balanceRes = await api.get(`/auth/user-status/${mobile}`);
@@ -1055,9 +1079,24 @@ const Chat = () => {
             <Dakshina
                 open={dakshinaOpen}
                 onClose={() => setDakshinaOpen(false)}
-                onSuccess={handleNewChat}
-            />
+                onSuccess={(amt) => {
+                    const amountPaid = parseFloat(amt);
+                    const gratitudePoints = (amountPaid * 0.1).toFixed(1);
 
+                    setDakshinaOpen(false);
+                    setThankYouAction('NEW_CHAT');
+                    setThankYouData({
+                        amount: amountPaid,
+                        points: gratitudePoints,
+                        title: 'Dakshina received!',
+                        trustMsg: 'Thank you for the trust and support!',
+                        gratitudeMsg: "We've credited 10% of your Dakshina as gratitude points in your wallet",
+                        addedLabel: 'added',
+                        showWave: true
+                    });
+                    setThankYouOpen(true);
+                }}
+            />
 
 
             {/* Chat Messages Area - Scrollable segment with visible scrollbar */}
@@ -1068,7 +1107,7 @@ const Chat = () => {
                     px: 3,
                     pb: 2.5,
                     "&::-webkit-scrollbar": { display: "block" },
-                    scrollbarWidth: "thin",
+                    scrollbarWidth: "none",
                     pt: 22,
                 }}
             >
@@ -1283,7 +1322,7 @@ const Chat = () => {
 
             {/* Inactivity Prompt Overlay */}
             {showInactivityPrompt && !summary && (
-                <Box sx={{ position: 'fixed', inset: 0, bgcolor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
+                <Box sx={{ position: 'fixed', inset: 0, bgcolor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
                     <Box sx={{ bgcolor: 'white', p: 4, borderRadius: 4, textAlign: 'center', maxWidth: 400, boxShadow: '0 20px 50px rgba(0,0,0,0.2)', border: '1px solid #F36A2F' }}>
                         <Box sx={{ width: 80, height: 80, bgcolor: '#FFF6EB', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3 }}>
                             <CancelIcon sx={{ fontSize: 50, color: '#F36A2F' }} />
@@ -1405,6 +1444,23 @@ const Chat = () => {
     50% { transform: translateY(-5px); }
 }
 `}</style>
+            <ThankYou
+                open={thankYouOpen}
+                onClose={() => {
+                    setThankYouOpen(false);
+                    if (thankYouAction === 'NEW_CHAT') {
+                        handleNewChat();
+                    }
+                    setThankYouAction(null);
+                }}
+                amount={thankYouData.amount}
+                points={thankYouData.points}
+                title={thankYouData.title}
+                trustMsg={thankYouData.trustMsg}
+                gratitudeMsg={thankYouData.gratitudeMsg}
+                addedLabel={thankYouData.addedLabel}
+                showWave={thankYouData.showWave}
+            />
         </Box>
     );
 };

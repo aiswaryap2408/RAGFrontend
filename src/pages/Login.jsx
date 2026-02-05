@@ -65,7 +65,7 @@ const Login = () => {
                 <Box sx={{ mb: 2.5 }}>
                     <GurujiImage />
 
-                    <Typography fontSize={16} mt={1} color="text.primary">
+                    <Typography fontSize={16} mt={1} color="text.primary" sx={{ fontFamily: "'Century Gothic', sans-serif" }}>
                         Welcome to <strong style={{ color: "#dc5d35" }}>Findastro</strong>!
                     </Typography>
                 </Box>

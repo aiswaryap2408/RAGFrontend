@@ -46,7 +46,7 @@ const TermsAndConditions = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center', my: 4 }}>
                     <Box
                         component="img"
-                        src={'/svg/guruji_illustrated.svg'}
+                        src={'/svg/clickastro.png'}
                         sx={{
                             width: '55px',
                             height: '55px',
@@ -67,7 +67,7 @@ const TermsAndConditions = () => {
                             textTransform: 'none',
                             fontWeight: 500,
                             borderRadius: 5,
-                            py: 1.5,
+                            py: 1.3,
                             px: 3,
                             display: 'flex',
                             alignItems: 'center',
@@ -78,7 +78,7 @@ const TermsAndConditions = () => {
                             '&:hover': { bgcolor: '#e0c298' }
                         }}
                     >
-                        <Box component="img" src="/svg/Gplay-store.png" sx={{ width: 24, height: 24, }} alt="" />
+                        <Box component="img" src="/svg/google_play_icon.png" sx={{ width: 24, height: 24, }} alt="" />
                         Download Clickastro app
                     </Button>
                 </Box>
