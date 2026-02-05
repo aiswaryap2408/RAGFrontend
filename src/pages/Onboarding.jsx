@@ -179,7 +179,7 @@ const Onboarding = () => {
         <Box>
             <Header />
 
-            <Box sx={{ width: "100%", px: 3, py: 4 }}>
+            <Box sx={{ width: "100%", px: 3, py: 4, mt: 18 }}>
                 {/* Avatar */}
                 <Box
                     sx={{
@@ -192,7 +192,7 @@ const Onboarding = () => {
                 >
                     <Box
                         component="img"
-                        src="/svg/guruji_illustrated.svg"
+                        src="/svg/maya.png"
                         alt="MAYA"
                         sx={{
                             width: 120,

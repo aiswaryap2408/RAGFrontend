@@ -23,6 +23,7 @@ import FeedbackDrawer from '../components/FeedbackDrawer';
 import HamburgerMenu from '../components/HamburgerMenu';
 import Dakshina from '../pages/Dakshina';
 import DoneAllOutlinedIcon from '@mui/icons-material/DoneAllOutlined';
+import ThankYou from '../components/Thankyou';
 
 const tryParseJson = (data) => {
     if (!data) return null;
@@ -433,6 +434,17 @@ const Chat = () => {
     const [feedbackDrawerOpen, setFeedbackDrawerOpen] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [dakshinaOpen, setDakshinaOpen] = useState(false);
+    const [thankYouOpen, setThankYouOpen] = useState(false);
+    const [thankYouAction, setThankYouAction] = useState(null);
+    const [thankYouData, setThankYouData] = useState({
+        amount: 0,
+        points: 0,
+        title: 'Payment received',
+        trustMsg: 'Your new wallet balance is',
+        gratitudeMsg: ' ',
+        addedLabel: ' ',
+        showWave: true,
+    });
 
     // Helper to format time strings
     // Helper to format time strings
@@ -890,7 +902,19 @@ const Chat = () => {
                             razorpay_signature: response.razorpay_signature
                         });
 
-                        alert("Payment successful! Generating your report...");
+                        // alert("Payment successful! Generating your report...");
+                        setThankYouAction(null); // No special action on close for reports
+                        setThankYouData({
+                            amount: 49,
+                            points: 4.9,
+                            title: 'Payment received',
+                            trustMsg: 'Your new wallet balance is',
+                            gratitudeMsg: ' ',
+                            addedLabel: ' ',
+                            showWave: false,
+
+                        });
+                        setThankYouOpen(true);
 
                         // Payment successful - refresh wallet balance
                         const balanceRes = await api.get(`/auth/user-status/${mobile}`);
@@ -1055,9 +1079,24 @@ const Chat = () => {
             <Dakshina
                 open={dakshinaOpen}
                 onClose={() => setDakshinaOpen(false)}
-                onSuccess={handleNewChat}
-            />
+                onSuccess={(amt) => {
+                    const amountPaid = parseFloat(amt);
+                    const gratitudePoints = (amountPaid * 0.1).toFixed(1);
 
+                    setDakshinaOpen(false);
+                    setThankYouAction('NEW_CHAT');
+                    setThankYouData({
+                        amount: amountPaid,
+                        points: gratitudePoints,
+                        title: 'Dakshina received!',
+                        trustMsg: 'Thank you for the trust and support!',
+                        gratitudeMsg: "We've credited 10% of your Dakshina as gratitude points in your wallet",
+                        addedLabel: 'added',
+                        showWave: true
+                    });
+                    setThankYouOpen(true);
+                }}
+            />
 
 
             {/* Chat Messages Area - Scrollable segment with visible scrollbar */}
@@ -1405,6 +1444,23 @@ const Chat = () => {
     50% { transform: translateY(-5px); }
 }
 `}</style>
+            <ThankYou
+                open={thankYouOpen}
+                onClose={() => {
+                    setThankYouOpen(false);
+                    if (thankYouAction === 'NEW_CHAT') {
+                        handleNewChat();
+                    }
+                    setThankYouAction(null);
+                }}
+                amount={thankYouData.amount}
+                points={thankYouData.points}
+                title={thankYouData.title}
+                trustMsg={thankYouData.trustMsg}
+                gratitudeMsg={thankYouData.gratitudeMsg}
+                addedLabel={thankYouData.addedLabel}
+                showWave={thankYouData.showWave}
+            />
         </Box>
     );
 };

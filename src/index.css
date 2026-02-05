@@ -1,11 +1,25 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Century Gothic';
+  src: url('/font/gothic.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
-  --font-sans: "Inter", sans-serif;
+  --font-sans: "Roboto", sans-serif;
+  --font-gothic: "Century Gothic", sans-serif;
 }
 
 body {
+  font-family: "Roboto", sans-serif !important;
   @apply antialiased text-gray-900 bg-gray-50;
+}
+
+.font-gothic {
+  font-family: "Century Gothic", sans-serif !important;
 }
 
 /* Astrological Table & List Styling for Chat */

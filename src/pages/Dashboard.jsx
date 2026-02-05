@@ -16,6 +16,8 @@ const Dashboard = () => {
     const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
     const navigate = useNavigate();
 
+    const isLoggedIn = !!localStorage.getItem("token");
+
     const handleAction = (path) => {
         if (isLoggedIn) {
             navigate(path);
@@ -23,12 +25,6 @@ const Dashboard = () => {
             setIsProfilePopupOpen(true);
         }
     };
-
-    const handleCloseProfilePopup = () => {
-        setIsProfilePopupOpen(false);
-    };
-
-    const isLoggedIn = !!localStorage.getItem("token");
 
 
     return (

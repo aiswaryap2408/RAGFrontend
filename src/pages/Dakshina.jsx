@@ -87,10 +87,10 @@ const Dakshina = ({ open, onClose, onSuccess }) => {
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature
                         });
-                        alert("Dakshina received with gratitude! 🙏");
+                        // alert("Dakshina received with gratitude! 🙏");
                         if (onClose) onClose();
                         if (onSuccess) {
-                            onSuccess();
+                            onSuccess(amount);
                         } else {
                             navigate('/chat', { state: { newSession: true } });
                         }

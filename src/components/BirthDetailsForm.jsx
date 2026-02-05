@@ -3,7 +3,6 @@ import {
     Box,
     Typography,
     ToggleButtonGroup,
-    ToggleButton,
     Button,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
@@ -11,12 +10,7 @@ import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PlaceIcon from "@mui/icons-material/Place";
 import EmailIcon from "@mui/icons-material/Email";
-import PhoneIcon from "@mui/icons-material/Phone";
 import { InputField } from "./inputwithIcon";
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import dayjs from 'dayjs';
-import PrimaryButton from "./PrimaryButton";
 import { GenderButton } from "./inputwithIcon";
 
 const BirthDetailsForm = ({ details, setDetails, error }) => {
