@@ -44,6 +44,7 @@ const AdminProtectedRoute = ({ children }) => {
 };
 
 import Layout from './components/Layout';
+import ThankYou from './components/Thankyou';
 
 const MobileLayout = () => {
   return (
@@ -150,7 +151,7 @@ function App() {
           />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
-          {/* <Route path="/userprofile" element={<UserProfile />} /> */}
+          <Route path="/thankyou" element={<ThankYou />} />
         </Route>
 
 
