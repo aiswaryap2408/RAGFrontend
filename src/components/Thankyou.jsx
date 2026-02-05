@@ -54,15 +54,15 @@ const ThankYou = () => {
 
                 <Box >
                     <Box sx={{ p: 3, pt: 10, bgcolor: '#fff', color: '#696969', borderRadius: ' 20px 20px 0 0' }}>
-                        <Typography variant="h6" color="#5FA777" fontWeight={600}>
+                        <Typography fontSize={20} color="#5FA777" fontWeight={500}>
                             Dakshina credited!
                         </Typography>
 
-                        <Typography mt={2}>
+                        <Typography mt={2} fontSize={16} fontWeight={500}>
                             We've received payment amount of:
                         </Typography>
 
-                        <Typography variant="h4" fontWeight={700}>
+                        <Typography fontSize={24} fontWeight={700}>
                             ₹400
                         </Typography>
 
@@ -74,7 +74,7 @@ const ThankYou = () => {
                             CAEN1718873032141
                         </Typography>
                     </Box>
-                    <Box sx={{ lineHeight: 0 }}>
+                    <Box sx={{ lineHeight: 0, position: 'relative', top: '-16px' }}>
                         <svg
                             viewBox="0 0 500 80"
                             preserveAspectRatio="none"
