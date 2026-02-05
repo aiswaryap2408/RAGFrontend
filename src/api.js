@@ -50,6 +50,7 @@ export const getAllUsers = () => api.get('/admin/users');
 export const getUserDetails = (mobile) => api.get(`/admin/user-details/${mobile}`);
 export const getSystemPrompt = () => api.get('/admin/system-prompt');
 export const updateSystemPrompt = (prompt) => api.post('/admin/system-prompt', { prompt });
+export const getLoginLogs = (params) => api.get('/admin/login-logs', { params });
 
 export const getMayaPrompt = () => api.get('/admin/maya-prompt');
 export const updateMayaPrompt = (prompt) => api.post('/admin/maya-prompt', { prompt });
