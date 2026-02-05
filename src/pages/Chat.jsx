@@ -39,64 +39,73 @@ const tryParseJson = (data) => {
     return null;
 };
 
-const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility }) => (
-    <Box sx={{ px: 3, pt: 4, pb: 1, width: "100%" }}>
-        <Box sx={{
-            position: "relative",
-            border: "2px solid #F36A2F",
-            borderRadius: 2,
-            p: 2,
-            bgcolor: "#fcebd3",
-            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-        }}>
-            {/* Avatar */}
+const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility }) => {
+    // Filter out fields we don't want to show in the UI debug block
+    const getFilteredJson = (json) => {
+        if (!json) return null;
+        const { amount, usage, ...rest } = json;
+        return rest;
+    };
+
+    return (
+        <Box sx={{ px: 3, pt: 4, pb: 1, width: "100%" }}>
             <Box sx={{
-                position: "absolute",
-                top: -28,
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                border: "5px solid #F36A2F",
-                bgcolor: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                position: "relative",
+                border: "2px solid #F36A2F",
+                borderRadius: 2,
+                p: 2,
+                bgcolor: "#fcebd3",
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
             }}>
-                <img src="/svg/guruji_illustrated.svg" style={{ width: 45 }} alt="Maya" />
-            </Box>
-
-            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500 }}>
-                {name && <strong>Namaste {name}, </strong>}{content}
-            </Typography>
-
-            {/* JSON Output View for Maya Intro */}
-            {jsonVisibility?.maya && mayaJson && (
-                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed rgba(243,106,47,0.3)' }}>
-                    <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700, mb: 0.5 }}>RECEPTIONIST CLASSIFICATION</Typography>
-                    <Box sx={{ bgcolor: 'rgba(0,0,0,0.03)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#666' }}>
-                        {JSON.stringify(mayaJson, null, 2)}
-                    </Box>
-                </Box>
-            )}
-
-            {time && (
-                <Typography sx={{
-                    fontSize: '0.75rem',
-                    opacity: 0.8,
-                    position: 'absolute',
-                    bottom: 6,
-                    right: 12,
-                    color: "#666",
-                    fontWeight: 500
+                {/* Avatar */}
+                <Box sx={{
+                    position: "absolute",
+                    top: -28,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    border: "5px solid #F36A2F",
+                    bgcolor: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                 }}>
-                    {time}
+                    <img src="/svg/guruji_illustrated.svg" style={{ width: 45 }} alt="Maya" />
+                </Box>
+
+                <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500 }}>
+                    {name && <strong>Namaste {name}, </strong>}{content}
                 </Typography>
-            )}
+
+                {/* JSON Output View for Maya Intro */}
+                {jsonVisibility?.maya && mayaJson && (
+                    <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed rgba(243,106,47,0.3)' }}>
+                        <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700, mb: 0.5 }}>RECEPTIONIST CLASSIFICATION</Typography>
+                        <Box sx={{ bgcolor: 'rgba(0,0,0,0.03)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#666' }}>
+                            {JSON.stringify(getFilteredJson(mayaJson), null, 2)}
+                        </Box>
+                    </Box>
+                )}
+
+                {time && (
+                    <Typography sx={{
+                        fontSize: '0.75rem',
+                        opacity: 0.8,
+                        position: 'absolute',
+                        bottom: 6,
+                        right: 12,
+                        color: "#666",
+                        fontWeight: 500
+                    }}>
+                        {time}
+                    </Typography>
+                )}
+            </Box>
         </Box>
-    </Box>
-);
+    );
+};
 
 
 const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, disabled }) => (
@@ -235,52 +244,86 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
 
     const [visibleCount, setVisibleCount] = useState(animate ? 0 : paras.length);
     const [isBuffering, setIsBuffering] = useState(animate ? true : false);
+    const [waitMessage, setWaitMessage] = useState("");
     const textEndRef = useRef(null);
+    const hasCalledComplete = useRef(false);
+
+    const pleaseWaitMessages = [
+        "Please wait… checking your chart carefully.",
+        "One moment… ",
+        "Astrologer is typing",
+        "Please give me a moment.",
+    ];
 
     const scrollToBottom = () => {
         textEndRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     };
 
     const getDelayForText = (text) => {
-        if (!text) return 1000;
+        if (!text) return 2000;
         // Strip HTML tags to get pure text word count
         const cleanText = text.replace(/<[^>]*>/g, ' ');
         const wordCount = cleanText.trim().split(/\s+/).length;
-        // Formula: min 1.5s, max 6s, 80ms per word
-        return Math.max(1500, Math.min(6000, wordCount * 80));
+        // Formula: min 3s, max 15s, 200ms per word
+        return Math.max(3000, Math.min(15000, wordCount * 200));
     };
 
+    // Effect 1: Manage Buffering State Transitions & Completion
     useEffect(() => {
         if (!animate) {
-            if (onComplete) onComplete();
+            if (onComplete && !hasCalledComplete.current) {
+                hasCalledComplete.current = true;
+                onComplete();
+            }
             return;
         }
 
-        let currentIdx = 0;
-        const showNext = () => {
-            if (currentIdx >= paras.length) {
-                setIsBuffering(false);
-                if (onComplete) onComplete();
-                return;
+        // Cycle Complete
+        if (visibleCount >= paras.length) {
+            setIsBuffering(false);
+            if (onComplete && !hasCalledComplete.current) {
+                hasCalledComplete.current = true;
+                onComplete();
+            }
+            return;
+        }
+
+        // If not buffering and not finished, trigger next buffer phase after pause
+        if (!isBuffering) {
+            const timer = setTimeout(() => {
+                setIsBuffering(true);
+                scrollToBottom();
+            }, 1200); // Pause between bubbles
+            return () => clearTimeout(timer);
+        }
+    }, [visibleCount, isBuffering, animate, paras.length, onComplete]);
+
+    // Effect 2: Manage Typing Delay when Buffering
+    useEffect(() => {
+        if (isBuffering && animate && visibleCount < paras.length) {
+            const currentPara = paras[visibleCount];
+            const isLast = visibleCount === paras.length - 1;
+            const delay = getDelayForText(currentPara);
+
+            // Set waiting message
+            if (!isLast) {
+                const randomMsg = pleaseWaitMessages[Math.floor(Math.random() * pleaseWaitMessages.length)];
+                setWaitMessage(randomMsg);
+            } else {
+                setWaitMessage(""); // Suppress for last para
             }
 
-            const nextPara = paras[currentIdx];
-            const delay = getDelayForText(nextPara);
-
-            setIsBuffering(true);
             scrollToBottom();
 
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 setIsBuffering(false);
                 setVisibleCount(prev => prev + 1);
-                currentIdx++;
                 scrollToBottom();
-                // Brief pause between bubbles
-                setTimeout(showNext, 800);
             }, delay);
-        };
-        showNext();
-    }, [gurujiJson, animate]);
+
+            return () => clearTimeout(timer);
+        }
+    }, [isBuffering, animate, visibleCount]);
 
     useEffect(() => {
         if (reportState !== 'IDLE') {
@@ -340,10 +383,15 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
             ))}
 
             {isBuffering && (
-                <Box sx={{ display: 'flex', gap: 1, mt: 1, mb: 2, ml: 1 }}>
-                    <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite' }} />
-                    <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.2s' }} />
-                    <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.4s' }} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1, mb: 2, ml: 1 }}>
+                    <Typography sx={{ fontSize: '0.75rem', color: '#ff8338', fontWeight: 600, fontStyle: 'italic' }}>
+                        {waitMessage}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite' }} />
+                        <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.2s' }} />
+                        <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.4s' }} />
+                    </Box>
                 </Box>
             )}
 
@@ -1081,7 +1129,7 @@ const Chat = () => {
                                                 <Box sx={{ mb: 1 }}>
                                                     <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700 }}>RECEPTIONIST CLASSIFICATION</Typography>
                                                     <Box sx={{ bgcolor: 'rgba(0,0,0,0.03)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#666' }}>
-                                                        {JSON.stringify(msg.mayaJson, null, 2)}
+                                                        {JSON.stringify((({ amount, usage, ...rest }) => rest)(msg.mayaJson), null, 2)}
                                                     </Box>
                                                 </Box>
                                             )}
@@ -1185,7 +1233,7 @@ const Chat = () => {
                                                 <Box sx={{ mb: 1 }}>
                                                     <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>RECEPTIONIST CLASSIFICATION</Typography>
                                                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: 'white' }}>
-                                                        {JSON.stringify(msg.mayaJson, null, 2)}
+                                                        {JSON.stringify((({ amount, usage, ...rest }) => rest)(msg.mayaJson), null, 2)}
                                                     </Box>
                                                 </Box>
                                             </Box>
