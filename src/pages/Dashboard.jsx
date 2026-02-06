@@ -13,11 +13,14 @@ import IntroMsg from "../components/IntroMsg";
 import { getDailyPrediction } from "../api";
 import { useEffect } from "react";
 
+
 const Dashboard = () => {
     const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
     const [prediction, setPrediction] = useState(null);
     const [loadingPrediction, setLoadingPrediction] = useState(false);
     const navigate = useNavigate();
+
+    const isLoggedIn = !!localStorage.getItem("token");
 
     const handleAction = (path) => {
         if (isLoggedIn) {
@@ -27,11 +30,6 @@ const Dashboard = () => {
         }
     };
 
-    const handleCloseProfilePopup = () => {
-        setIsProfilePopupOpen(false);
-    };
-
-    const isLoggedIn = !!localStorage.getItem("token");
 
     useEffect(() => {
         if (isLoggedIn) {
@@ -80,74 +78,76 @@ const Dashboard = () => {
     };
 
     return (
-        <><Box
-            sx={{
-                bgcolor: "#fff4e5",
-                display: "flex",
-                flexDirection: "column",
-                height: "100vh",
-                position: "relative",
-            }}
-        >
-            <Header backgroundImage="/svg/top_curve_light.svg" />
+        <>
+            <Box
+                sx={{
+                    bgcolor: "#fff4e5",
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "100vh",
+                    position: "relative",
+                }}
+            >
+                <Header backgroundImage="/svg/top_curve_light.svg" />
 
-            {/* Added a menu toggle button or logic since it was missing in the snippet but state was used */}
+                {/* Added a menu toggle button or logic since it was missing in the snippet but state was used */}
 
-            <HamburgerMenu />
+                <HamburgerMenu />
 
-            {!isLoggedIn && (
-                <PrimaryButton
-                    label="Login"
-                    onClick={() => navigate("/")}
-                    startIcon={<Box sx={{ display: "flex", "& svg": { fontSize: 25 } }}>
-                        <LoginOutlinedIcon />
-                    </Box>}
-                    sx={{
-                        bgcolor: "#54a170",
-                        color: "#fff",
-                        borderRadius: 50,
-                        width: "150px",
-                        border: "2px solid #ffffff",
-                        p: 0.5,
-                        fontSize: 16,
-                        position: "absolute",
-                        top: 140,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        zIndex: 1100,
-                    }} />
-            )}
-            <Box sx={{
-                overflowX: 'scroll', "&::-webkit-scrollbar": {
-                    display: "none",
-                },
-                scrollbarWidth: "none",
-                mt: 22,
-            }}>
-                <Box sx={{ mt: 3.5, textAlign: "center", px: 2, display: "flex", justifyContent: "space-around", flexWrap: 'wrap', gap: 2 }}>
-                    <Box onClick={() => handleAction('/profile')} sx={{ cursor: 'pointer' }}>
-                        <AccountCircleRoundedIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
-                        <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
-                            Edit profiles
-                        </Typography>
-                    </Box>
-                    <Box onClick={() => handleAction('/wallet')} sx={{ cursor: 'pointer' }}>
-                        <WalletIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
-                        <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
-                            Recharge
-                        </Typography>
-                    </Box>
-                    <Box onClick={() => handleAction('/wallet/recharge-history')} sx={{ cursor: 'pointer' }}>
-                        <DescriptionIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
-                        <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
-                            Payments
-                        </Typography>
-                    </Box>
-                    <Box onClick={() => handleAction('/detailed-reports')} sx={{ cursor: 'pointer' }}>
-                        <DescriptionIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
-                        <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
-                            Detailed Reports
-                        </Typography>
+                {!isLoggedIn && (
+                    <PrimaryButton
+                        label="Login"
+                        onClick={() => navigate("/")}
+                        startIcon={<Box sx={{ display: "flex", "& svg": { fontSize: 25 } }}>
+                            <LoginOutlinedIcon />
+                        </Box>}
+                        sx={{
+                            bgcolor: "#54a170",
+                            color: "#fff",
+                            borderRadius: 50,
+                            width: "150px",
+                            border: "2px solid #ffffff",
+                            p: 0.5,
+                            fontSize: 16,
+                            position: "absolute",
+                            top: 140,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            zIndex: 1100,
+                        }} />
+                )}
+                <Box sx={{
+                    overflowX: 'scroll', "&::-webkit-scrollbar": {
+                        display: "none",
+                    },
+                    scrollbarWidth: "none",
+                    mt: 22,
+                }}>
+                    <Box sx={{ mt: 3.5, textAlign: "center", px: 2, display: "flex", justifyContent: "space-around", flexWrap: 'wrap', gap: 2 }}>
+                        <Box onClick={() => handleAction('/profile')} sx={{ cursor: 'pointer' }}>
+                            <AccountCircleRoundedIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
+                            <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
+                                Edit profiles
+                            </Typography>
+                        </Box>
+                        <Box onClick={() => handleAction('/wallet')} sx={{ cursor: 'pointer' }}>
+                            <WalletIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
+                            <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
+                                Recharge
+                            </Typography>
+                        </Box>
+                        <Box onClick={() => handleAction('/wallet/recharge-history')} sx={{ cursor: 'pointer' }}>
+                            <DescriptionIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
+                            <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
+                                Payments
+                            </Typography>
+                        </Box>
+                        <Box onClick={() => handleAction('/detailed-reports')} sx={{ cursor: 'pointer' }}>
+                            <DescriptionIcon sx={{ fontSize: 65, color: "#dc5d35", bgcolor: "#ffdaa7", borderRadius: 1, p: 1 }} />
+                            <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
+                                Detailed Reports
+                            </Typography>
+                        </Box>
                     </Box>
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', m: 2 }}>
@@ -196,28 +196,28 @@ const Dashboard = () => {
                             }} />
                     </Box>
                 </Box> */}
-            </Box>
-            <ConsultFooter />
+                </Box>
+                <ConsultFooter />
 
-            {/* Internal Popup Overlay */}
-            {isProfilePopupOpen && (
-                <Box
-                    sx={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        bgcolor: "rgba(0, 0, 0, 0.7)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 10000,
-                        // backdropFilter: "blur(4px)",
-                    }}
-                    onClick={handleCloseProfilePopup}
-                >
-                    {/* <Box
+                {/* Internal Popup Overlay */}
+                {isProfilePopupOpen && (
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            bgcolor: "rgba(0, 0, 0, 0.7)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 10000,
+                            // backdropFilter: "blur(4px)",
+                        }}
+                        onClick={handleCloseProfilePopup}
+                    >
+                        {/* <Box
                         sx={{
                             width: "85%",
                             maxWidth: 400,
@@ -249,21 +249,22 @@ const Dashboard = () => {
                             </Button>
                         </Box>
                     </Box> */}
-                    <IntroMsg
-                        name=""
-                        title=""
-                        description="You must log in to access this feature. Please continue to log in."
-                        ConsultSrc="/svg/guruji_illustrated.svg"
-                        paybutton="Log in"
-                        onPayClick={() => navigate('/')}
-                        footerText=""
-                        wrapperSx={{ m: 2 }}
-                        descriptionSx={{ pt: 1 }}
-                        payButtonSx={{ border: '1px solid #fff', p: 1 }}
-                    />
-                </Box>
-            )}
-        </Box>
+                        <IntroMsg
+                            name=""
+                            title=""
+                            description="You must log in to access this feature. Please continue to log in."
+                            ConsultSrc="/svg/guruji_illustrated.svg"
+                            paybutton="Log in"
+                            onPayClick={() => navigate('/')}
+                            footerText=""
+                            wrapperSx={{ m: 2 }}
+                            descriptionSx={{ pt: 1 }}
+                            payButtonSx={{ border: '1px solid #fff', p: 1 }}
+                        />
+                    </Box>
+                )}
+            </Box>
+
         </>
     );
 };

@@ -20,19 +20,19 @@ const RegisterSuccess = () => {
     return (
         <>
             <Header />
-            <GurujiImage />
+
             <Box
                 sx={{
                     mx: "auto",
-                    pt: 3,
+                    pt: 1,
                     px: 5,
                     pb: 1,
-
+                    mt: 18,
                 }}
             >
-
+                <GurujiImage />
                 {/* Greeting */}
-                <Typography sx={{ fontSize: 18, mb: 2 }}>
+                <Typography sx={{ fontSize: 18, mt: 3, mb: 2, fontFamily: "'Century Gothic', sans-serif" }}>
                     Namaste{" "}
                     <Box component="span" sx={{ color: "#F05A28", fontWeight: 600 }}>
                         {name}
@@ -86,7 +86,7 @@ const RegisterSuccess = () => {
                 sx={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
+                    justifyContent: "flex-end",
                     px: 3,
                     pl: 5,
                 }}
