@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Box, Typography, Card, CardContent, Divider, Grid, MenuItem, TextField } from '@mui/material';
+import { Box, Typography, Card, CardContent, Divider, Grid, MenuItem, TextField, Alert, Snackbar } from '@mui/material';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import Subheader from '../components/subheader';
+import { updateProfile } from '../api';
 
 // import { InputField } from '../components/inputwithIcon';
 import BirthDetailsForm from '../components/BirthDetailsForm';
@@ -21,6 +22,7 @@ const UserProfile = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
+    const [successMsg, setSuccessMsg] = useState('');
 
     const formatDate = (dateString) => {
         if (!dateString) return '';
@@ -98,15 +100,94 @@ const UserProfile = () => {
         };
 
         fetchProfile();
+
+        // Initialize Places API logic (Synced with Register.jsx)
+        const initPlaces = () => {
+            const birthPlaceInput = document.getElementById('birth_place');
+            if (birthPlaceInput && window.clickastro && window.clickastro.places) {
+                const capac = new window.clickastro.places.Autocomplete(birthPlaceInput, { types: ['(cities)'] });
+                capac.inputId = 'capac_' + birthPlaceInput.id;
+                capac.addListener('place_changed', function () {
+                    const place = this.getPlace();
+                    if (place && place.formatted_address) {
+                        setDetails(prev => ({ ...prev, pob: place.formatted_address }));
+                    }
+                });
+            }
+        };
+
+        window.CAPACInitListener = initPlaces;
+
+        if (window.clickastro && window.clickastro.places) {
+            initPlaces();
+        }
+
+        // Load scripts in sequence to ensure proper initialization
+        const jqueryScript = document.createElement('script');
+        jqueryScript.src = 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js';
+        jqueryScript.onload = () => {
+            const solarScript = document.createElement('script');
+            solarScript.src = '/solar.js';
+            solarScript.onload = () => {
+                const capacScript = document.createElement('script');
+                capacScript.src = 'https://placesapis.clickastro.com/capac/api/?key=AJSjkshjjSDkjhKDJDhjdjdklDldld&callback=initAutocomplete';
+                document.body.appendChild(capacScript);
+            };
+            document.body.appendChild(solarScript);
+        };
+        document.body.appendChild(jqueryScript);
+
+        return () => {
+            const scriptsToRemove = [
+                'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js',
+                'https://placesapis.clickastro.com/capac/api/'
+            ];
+            scriptsToRemove.forEach(src => {
+                const scripts = document.querySelectorAll(`script[src^="${src}"]`);
+                scripts.forEach(script => {
+                    if (document.body.contains(script)) {
+                        document.body.removeChild(script);
+                    }
+                });
+            });
+            delete window.CAPACInitListener;
+        };
     }, [navigate]);
 
     const handleSave = async () => {
         setSaving(true);
+        setError('');
         try {
-            alert("Update functionality to be implemented/verified with backend.");
+            // Get location details from hidden inputs (populated by solar.js)
+            const locationFields = {
+                country: document.getElementById('country')?.value || '',
+                state: document.getElementById('state')?.value || '',
+                region_dist: document.getElementById('region_dist')?.value || '',
+                txt_place_search: document.getElementById('txt_place_search')?.value || '',
+                longdeg: document.getElementById('longdeg')?.value || '',
+                longmin: document.getElementById('longmin')?.value || '',
+                longdir: document.getElementById('longdir')?.value || '',
+                latdeg: document.getElementById('latdeg')?.value || '',
+                latmin: document.getElementById('latmin')?.value || '',
+                latdir: document.getElementById('latdir')?.value || '',
+                timezone: document.getElementById('timezone')?.value || '0',
+                timezone_name: document.getElementById('timezone_name')?.value || '',
+                latitude_google: document.getElementById('latitude_google')?.value || '',
+                longitude_google: document.getElementById('longitude_google')?.value || '',
+                correction: document.getElementById('correction')?.value || '0'
+            };
+
+            const payload = { ...details, ...locationFields };
+            await updateProfile(payload);
+            setSuccessMsg("Profile updated successfully! Your report is being regenerated.");
+
+            // Optional: Update local storage if name/email changed
+            localStorage.setItem('userName', details.name);
+            localStorage.setItem('userEmail', details.email);
+
         } catch (err) {
             console.error(err);
-            alert("Failed to update profile.");
+            setError(err.response?.data?.detail || "Failed to update profile.");
         } finally {
             setSaving(false);
         }
@@ -220,7 +301,27 @@ const UserProfile = () => {
                 )}
             </Box>
 
+            <Snackbar
+                open={!!successMsg}
+                autoHideDuration={6000}
+                onClose={() => setSuccessMsg('')}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setSuccessMsg('')} severity="success" sx={{ width: '100%' }}>
+                    {successMsg}
+                </Alert>
+            </Snackbar>
 
+            <Snackbar
+                open={!!error && !loading}
+                autoHideDuration={6000}
+                onClose={() => setError('')}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setError('')} severity="error" sx={{ width: '100%' }}>
+                    {error}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

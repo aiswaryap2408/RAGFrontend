@@ -17,6 +17,7 @@ import { useEffect } from "react";
 const Dashboard = () => {
     const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
     const [prediction, setPrediction] = useState(null);
+    const [signName, setSignName] = useState("");
     const [loadingPrediction, setLoadingPrediction] = useState(false);
     const navigate = useNavigate();
 
@@ -60,13 +61,30 @@ const Dashboard = () => {
             const predData = response.data;
             const clickAstro = predData.prediction;
 
+            if (predData.sign_name) {
+                setSignName(predData.sign_name);
+            }
+
             if (clickAstro) {
+                let pText = "";
                 if (typeof clickAstro === 'string') {
-                    setPrediction(clickAstro);
-                } else if (clickAstro.sunsign) {
-                    setPrediction(clickAstro.sunsign);
-                } else if (clickAstro.data && clickAstro.data.sun_sign_prediction) {
-                    setPrediction(clickAstro.data.sun_sign_prediction);
+                    pText = clickAstro;
+                } else {
+                    // Try to find the prediction text in various possible keys
+                    pText = clickAstro.moonsign ||
+                        clickAstro.moonsign_prediction ||
+                        clickAstro.sunsign ||
+                        clickAstro.sun_sign_prediction ||
+                        (clickAstro.data && (clickAstro.data.moonsign_prediction || clickAstro.data.sun_sign_prediction || clickAstro.data.moonsign));
+
+                    // If we found an object instead of a string, try one level deeper
+                    if (pText && typeof pText === 'object') {
+                        pText = pText.moonsign || pText.moonsign_prediction || pText.sunsign || pText.text || "";
+                    }
+                }
+
+                if (pText && typeof pText === 'string') {
+                    setPrediction(pText);
                 } else {
                     setPrediction("Your daily prediction is being prepared. Please check back shortly.");
                 }
@@ -160,7 +178,7 @@ const Dashboard = () => {
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', m: 2, mt: 1 }}>
                     <Typography fontSize={18} fontWeight={600} m={1} color="#dc5d35">
-                        Your today:
+                        Your today {signName ? `(${signName})` : ""}:
                     </Typography>
                     <Box sx={{ bgcolor: '#fff', p: 3, borderRadius: 2, width: '100%', minHeight: 150, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                         {loadingPrediction ? (
@@ -169,8 +187,8 @@ const Dashboard = () => {
                             <Typography
                                 fontSize={15}
                                 fontWeight={500}
-                                color={prediction && prediction.includes("log") ? "text.secondary" : "#444"}
-                                textAlign={prediction && prediction.includes("log") ? 'center' : 'justify'}
+                                color={prediction && (prediction.includes("log") || prediction.includes("prepared")) ? "text.secondary" : "#444"}
+                                textAlign={prediction && (prediction.includes("log") || prediction.includes("prepared")) ? 'center' : 'justify'}
                                 lineHeight={1.6}
                                 dangerouslySetInnerHTML={{ __html: prediction || (isLoggedIn ? "Fetching your prediction..." : "Login to view predictions") }}
                             />
@@ -270,7 +288,7 @@ const Dashboard = () => {
                         />
                     </Box>
                 )}
-            </Box >
+            </Box>
 
         </>
     );

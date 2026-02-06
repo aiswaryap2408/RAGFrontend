@@ -38,6 +38,8 @@ api.interceptors.response.use(
 export const sendOtp = (mobile) => api.post('/auth/send-otp', { mobile });
 export const verifyOtp = (mobile, otp) => api.post('/auth/verify-otp', { mobile, otp });
 export const registerUser = (data) => api.post('/auth/register', data);
+export const updateProfile = (data) => api.post('/auth/update-profile', data);
+
 
 export const sendMessage = (mobile, message, history, sessionId) => api.post('/auth/chat', { mobile, message, history, session_id: sessionId });
 export const endChat = (mobile, history, sessionId) => api.post('/auth/end-chat', { mobile, history, session_id: sessionId });

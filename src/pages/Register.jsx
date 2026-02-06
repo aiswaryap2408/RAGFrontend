@@ -61,10 +61,14 @@ const Register = () => {
 
         // Initialize Places API
         const initPlaces = () => {
-            const myPlaceAutoComplete = document.getElementById('myPlaceAutoComplete');
-            if (myPlaceAutoComplete && window.clickastro && window.clickastro.places) {
-                const capac = new window.clickastro.places.Autocomplete(myPlaceAutoComplete, { types: ['(cities)'] });
-                capac.inputId = 'capac_' + myPlaceAutoComplete.id;
+            // const myPlaceAutoComplete = document.getElementById('myPlaceAutoComplete');
+            // if (myPlaceAutoComplete && window.clickastro && window.clickastro.places) {
+            //     const capac = new window.clickastro.places.Autocomplete(myPlaceAutoComplete, { types: ['(cities)'] });
+            //     capac.inputId = 'capac_' + myPlaceAutoComplete.id;
+            const birthPlaceInput = document.getElementById('birth_place');
+            if (birthPlaceInput && window.clickastro && window.clickastro.places) {
+                const capac = new window.clickastro.places.Autocomplete(birthPlaceInput, { types: ['(cities)'] });
+                capac.inputId = 'capac_' + birthPlaceInput.id;
                 capac.addListener('place_changed', function () {
                     const place = this.getPlace();
                     if (place && place.formatted_address) {
