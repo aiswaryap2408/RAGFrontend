@@ -30,6 +30,14 @@ const Dashboard = () => {
         }
     };
 
+    const handleOpenProfilePopup = () => {
+        setIsProfilePopupOpen(true);
+    };
+
+    const handleCloseProfilePopup = () => {
+        setIsProfilePopupOpen(false);
+    };
+
 
     useEffect(() => {
         if (isLoggedIn) {
@@ -150,7 +158,7 @@ const Dashboard = () => {
                         </Box>
                     </Box>
                 </Box>
-                <Box sx={{ display: 'flex', flexDirection: 'column', m: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', m: 2, mt: 1 }}>
                     <Typography fontSize={18} fontWeight={600} m={1} color="#dc5d35">
                         Your today:
                     </Typography>
@@ -196,7 +204,6 @@ const Dashboard = () => {
                             }} />
                     </Box>
                 </Box> */}
-                </Box>
                 <ConsultFooter />
 
                 {/* Internal Popup Overlay */}
@@ -263,7 +270,7 @@ const Dashboard = () => {
                         />
                     </Box>
                 )}
-            </Box>
+            </Box >
 
         </>
     );
