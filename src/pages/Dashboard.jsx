@@ -10,9 +10,13 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import { useNavigate } from "react-router-dom";
 import ConsultFooter from "../components/consultFooter";
 import IntroMsg from "../components/IntroMsg";
+import { getDailyPrediction } from "../api";
+import { useEffect } from "react";
 
 const Dashboard = () => {
     const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
+    const [prediction, setPrediction] = useState(null);
+    const [loadingPrediction, setLoadingPrediction] = useState(false);
     const navigate = useNavigate();
 
     const handleAction = (path) => {
@@ -28,6 +32,52 @@ const Dashboard = () => {
     };
 
     const isLoggedIn = !!localStorage.getItem("token");
+
+    useEffect(() => {
+        if (isLoggedIn) {
+            const mobile = localStorage.getItem("mobile");
+            if (mobile) {
+                fetchPrediction(mobile);
+            } else {
+                setPrediction("Please log in to view your daily prediction.");
+            }
+        } else {
+            setPrediction("You are currently logged out. Login to view your daily horoscope.");
+        }
+    }, [isLoggedIn]);
+
+    const fetchPrediction = async (mobile) => {
+        try {
+            setLoadingPrediction(true);
+            const response = await getDailyPrediction(mobile);
+            console.log("Daily Prediction Full JSON:", response.data);
+            const predData = response.data;
+            const clickAstro = predData.prediction;
+
+            if (clickAstro) {
+                if (typeof clickAstro === 'string') {
+                    setPrediction(clickAstro);
+                } else if (clickAstro.sunsign) {
+                    setPrediction(clickAstro.sunsign);
+                } else if (clickAstro.data && clickAstro.data.sun_sign_prediction) {
+                    setPrediction(clickAstro.data.sun_sign_prediction);
+                } else {
+                    setPrediction("Your daily prediction is being prepared. Please check back shortly.");
+                }
+            } else {
+                setPrediction("Your daily prediction is being prepared. Please check back shortly.");
+            }
+        } catch (error) {
+            console.error("Error fetching daily prediction:", error);
+            if (error.response && error.response.status === 404) {
+                setPrediction("Please complete your profile details to view daily predictions.");
+            } else {
+                setPrediction("Unable to load daily prediction at this time.");
+            }
+        } finally {
+            setLoadingPrediction(false);
+        }
+    };
 
     return (
         <><Box
@@ -98,6 +148,25 @@ const Dashboard = () => {
                         <Typography fontSize={14} fontWeight={500} mt={1} width={75} margin={'auto'}>
                             Detailed Reports
                         </Typography>
+                    </Box>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', m: 2 }}>
+                    <Typography fontSize={18} fontWeight={600} m={1} color="#dc5d35">
+                        Your today:
+                    </Typography>
+                    <Box sx={{ bgcolor: '#fff', p: 3, borderRadius: 2, width: '100%', minHeight: 150, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                        {loadingPrediction ? (
+                            <Typography fontSize={14} color="text.secondary">Loading your daily prediction...</Typography>
+                        ) : (
+                            <Typography
+                                fontSize={15}
+                                fontWeight={500}
+                                color={prediction && prediction.includes("log") ? "text.secondary" : "#444"}
+                                textAlign={prediction && prediction.includes("log") ? 'center' : 'justify'}
+                                lineHeight={1.6}
+                                dangerouslySetInnerHTML={{ __html: prediction || (isLoggedIn ? "Fetching your prediction..." : "Login to view predictions") }}
+                            />
+                        )}
                     </Box>
                 </Box>
                 {/* <Box>
