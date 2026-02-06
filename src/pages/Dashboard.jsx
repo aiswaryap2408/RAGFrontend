@@ -270,7 +270,7 @@ const Dashboard = () => {
                         />
                     </Box>
                 )}
-            </Box >
+            </Box>
 
         </>
     );
