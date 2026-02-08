@@ -3,7 +3,7 @@ import { Box } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 
 
-const Header = ({ backgroundImage = "/svg/top_curve_light.svg" }) => {
+const Header = ({ backgroundImage = "/svg/top_curve_light.svg", hscrollsx = {} }) => {
     return (
         // <Box sx={{ minHeight: '182px' }}>
         <Box >
@@ -19,6 +19,7 @@ const Header = ({ backgroundImage = "/svg/top_curve_light.svg" }) => {
                     minHeight: '182px',
                     overflow: "hidden",
                     bgcolor: 'transparent',
+                    ...hscrollsx
                 }}
             >
                 {/* Top Curve */}
