@@ -49,7 +49,7 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility 
     };
 
     return (
-        <Box sx={{ px: 3, pt: 4, pb: 1, width: "100%" }}>
+        <Box sx={{ pt: 4, pb: 1, width: "100%" }}>
             <Box sx={{
                 position: "relative",
                 border: "2px solid #F36A2F",
@@ -61,19 +61,19 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility 
                 {/* Avatar */}
                 <Box sx={{
                     position: "absolute",
-                    top: -28,
+                    top: -33,
                     left: "50%",
                     transform: "translateX(-50%)",
-                    width: 56,
-                    height: 56,
+                    width: 50,
+                    height: 50,
                     borderRadius: "50%",
-                    border: "5px solid #F36A2F",
+                    border: "3px solid #F36A2F",
                     bgcolor: "#fff",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                 }}>
-                    <img src="/svg/guruji_illustrated.svg" style={{ width: 45 }} alt="Maya" />
+                    <img src="/svg/maya.png" style={{ width: 50 }} alt="Maya" />
                 </Box>
 
                 <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500 }}>
@@ -135,7 +135,7 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
                 justifyContent: "center",
                 overflow: 'hidden'
             }}>
-                <img src="/svg/guruji_illustrated.svg" style={{ width: 42 }} alt="Maya" />
+                <img src="/svg/maya.png" style={{ width: 42 }} alt="Maya" />
             </Box>
 
             <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 1, mb: 1, textAlign: 'left', fontWeight: 500 }}>
@@ -225,7 +225,7 @@ const NotificationBox = ({ content, buttonLabel, onButtonClick }) => (
                             textTransform: 'none',
                             fontSize: '0.9rem',
                             fontWeight: 600,
-                            // '&:hover': { bgcolor: '#f0fdf4' }
+                            '&:hover': { transform: 'translateY(-2px)', '& svg': { transform: 'rotate(-10deg)' } }
                         }}
                     >
                         {buttonLabel}
@@ -251,8 +251,8 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
 
     const pleaseWaitMessages = [
         "Please wait… checking your chart carefully.",
-        "One moment… ",
-        "Astrologer is typing",
+        "One moment... ",
+        "Astrologer is typing...",
         "Please give me a moment.",
     ];
 
@@ -357,9 +357,31 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                     <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para }} />
 
                     {idx === paras.length - 1 && reportState === 'IDLE' && (
-                        <Box sx={{ mt: 2, mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
-                            <ListItemButton onClick={handleReportClick} sx={{ borderRadius: 2, bgcolor: 'rgba(255,255,255,0.2)', color: 'white', px: 2, py: 1, width: 'auto', border: '1px solid rgba(255,255,255,0.4)', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}>
-                                <DescriptionOutlinedIcon sx={{ fontSize: 20, mr: 1 }} />
+                        <Box sx={{ mt: 2, mb: 2, display: 'flex', justifyContent: 'flex-start', position: 'relative' }}>
+                            <ListItemButton
+                                onClick={handleReportClick}
+                                sx={{
+                                    borderRadius: 2,
+                                    bgcolor: '#fff',
+                                    color: '#ff8338',
+                                    px: 2,
+                                    py: 1,
+                                    width: 'auto',
+                                    border: '1px solid #ff8338',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    '&:hover': {
+                                        bgcolor: '#fff',
+                                        color: '#ff8338',
+                                        transform: 'translateY(-2px)',
+                                        boxShadow: '0 6px 20px rgba(255,131,56,0.3)',
+                                        '& svg': { transform: 'rotate(-10deg)' }
+                                    },
+                                    position: 'absolute',
+                                    bottom: -48,
+                                    right: 0,
+                                }}
+                            >
+                                <DescriptionOutlinedIcon sx={{ fontSize: 20, mr: 1, transition: 'transform 0.3s' }} />
                                 Get Detailed PDF Report
                             </ListItemButton>
                         </Box>
@@ -368,10 +390,10 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                     {time && (
                         <Typography
                             sx={{
-                                fontSize: '0.65rem',
+                                fontSize: '0.75rem',
                                 opacity: 0.8,
                                 position: 'absolute',
-                                bottom: 4,
+                                bottom: (idx === paras.length - 1 && reportState === 'IDLE') ? 32 : 4,
                                 right: 8,
                                 color: 'rgba(255,255,255,0.9)',
                                 fontWeight: 500
@@ -384,15 +406,29 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
             ))}
 
             {isBuffering && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1, mb: 2, ml: 1 }}>
-                    <Typography sx={{ fontSize: '0.75rem', color: '#ff8338', fontWeight: 600, fontStyle: 'italic' }}>
+                <Box sx={{
+                    position: 'fixed',
+                    bottom: 80,
+                    left: 0,
+                    right: 0,
+                    mx: 'auto',
+                    width: { xs: '90%', sm: 400 },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    zIndex: 10,
+                    pointerEvents: 'none'
+                }}>
+                    <Typography sx={{ fontSize: '0.8rem', color: '#a19b93', fontWeight: 'normal', textShadow: '0 1px 2px rgba(255,255,255,0.8)' }}>
                         {waitMessage}
                     </Typography>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    {/* <Box sx={{ display: 'flex', gap: 1 }}>
                         <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite' }} />
                         <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.2s' }} />
                         <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.4s' }} />
-                    </Box>
+                    </Box> */}
                 </Box>
             )}
 
@@ -444,6 +480,7 @@ const Chat = () => {
         gratitudeMsg: ' ',
         addedLabel: ' ',
         showWave: true,
+        referenceId: ''
     });
 
     // Helper to format time strings
@@ -912,7 +949,7 @@ const Chat = () => {
                             gratitudeMsg: ' ',
                             addedLabel: ' ',
                             showWave: false,
-
+                            referenceId: response.razorpay_order_id
                         });
                         setThankYouOpen(true);
 
@@ -984,7 +1021,7 @@ const Chat = () => {
                     await processReportWithWallet(mobile, category);
                 } else {
                     // Insufficient funds - open Razorpay
-                    alert("Insufficient wallet balance. Redirecting to payment gateway...");
+                    // alert("Insufficient wallet balance. Redirecting to payment gateway...");
                     await processReportWithRazorpay(mobile, category);
                 }
             } catch (err) {
@@ -1020,30 +1057,42 @@ const Chat = () => {
             height: "100vh",
             position: 'relative',
             // width: '100%'
+            overflowY: "auto",
+            "&::-webkit-scrollbar": { display: "block" },
+            scrollbarWidth: "none",
         }}>
-            <Header backgroundImage="/svg/top_curve_dark.svg" />
+            <Header backgroundImage="/svg/top_curve_dark.svg" hscrollsx={{ position: 'relative' }} />
 
-            <HamburgerMenu />
+            <HamburgerMenu menubarsx={{ position: 'absolute' }} />
 
 
             {messages.some(m => m.assistant === 'guruji') && (
-                <PrimaryButton
-                    label="End Consultation"
-                    onClick={() => setFeedbackDrawerOpen(true)}
-                    disabled={loading || messages.length < 1}
-                    startIcon={<CancelIcon sx={{ fontSize: 24 }} />}
-                    sx={{
-                        position: "absolute",
-                        top: 135,
-                        left: 0,
-                        right: 0,
-                        m: "auto",
-                        width: 200,
-                        height: 40,
-                        borderRadius: 10,
-                        zIndex: 1101
-                    }}
-                />
+                <Box sx={{
+                    position: 'sticky',
+                    top: 20,
+                    zIndex: 1101,
+                    height: 0,
+                    overflow: 'visible',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    mt: -5,
+                    mb: 10,
+                    pointerEvents: 'none'
+                }}>
+                    <Box sx={{ pointerEvents: 'auto' }}>
+                        <PrimaryButton
+                            label="End Consultation"
+                            onClick={() => setFeedbackDrawerOpen(true)}
+                            disabled={loading || messages.length < 1}
+                            startIcon={<CancelIcon sx={{ fontSize: 24 }} />}
+                            sx={{
+                                width: 200,
+                                height: 40,
+                                borderRadius: 10,
+                            }}
+                        />
+                    </Box>
+                </Box>
             )}
 
             {/* <FeedbackDrawer
@@ -1092,7 +1141,8 @@ const Chat = () => {
                         trustMsg: 'Thank you for the trust and support!',
                         gratitudeMsg: "We've credited 10% of your Dakshina as gratitude points in your wallet",
                         addedLabel: 'added',
-                        showWave: true
+                        showWave: true,
+                        referenceId: response.referenceId
                     });
                     setThankYouOpen(true);
                 }}
@@ -1103,12 +1153,11 @@ const Chat = () => {
             <Box
                 sx={{
                     flex: 1,
-                    overflowY: "auto",
+                    // overflowY: "auto",
                     px: 3,
-                    pb: 2.5,
-                    "&::-webkit-scrollbar": { display: "block" },
-                    scrollbarWidth: "none",
-                    pt: 22,
+                    pb: 10,
+
+                    // pt: 22,
                 }}
             >
                 {messages.map((msg, i) => {
@@ -1460,6 +1509,7 @@ const Chat = () => {
                 gratitudeMsg={thankYouData.gratitudeMsg}
                 addedLabel={thankYouData.addedLabel}
                 showWave={thankYouData.showWave}
+                referenceId={thankYouData.referenceId}
             />
         </Box>
     );

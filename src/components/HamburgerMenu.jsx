@@ -22,7 +22,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import GavelIcon from '@mui/icons-material/Gavel';
 import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 
-const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handleNavigation: externalHandleNav }) => {
+const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handleNavigation: externalHandleNav, menubarsx = {} }) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const containerRef = useRef(null);
   const navigate = useNavigate();
@@ -83,6 +83,7 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
             height: 20,
             cursor: "pointer",
             zIndex: 1200,
+            ...menubarsx
           }}
         >
           {[1, 2, 3].map((i) => (
