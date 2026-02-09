@@ -49,7 +49,7 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility 
     };
 
     return (
-        <Box sx={{ pt: 4, pb: 1, width: "100%" }}>
+        <Box sx={{ pt: 4, pb: 3, width: "100%" }}>
             <Box sx={{
                 position: "relative",
                 border: "2px solid #F36A2F",
@@ -108,17 +108,18 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility 
     );
 };
 
-const TranslationIndicator = ({ text }) => (
+const TranslationIndicator = ({ text, sx }) => (
     <Box sx={{
         display: 'inline-block',
-        backgroundColor: '#90EE90',
-        color: '#2d5016',
+        backgroundColor: '#b0f88d',
+        color: '#76c15b',
         padding: '4px 12px',
-        borderRadius: '8px',
+        // borderRadius: '8px',
         fontSize: '0.75rem',
         fontWeight: 500,
-        marginTop: '10px',
-        marginBottom: '8px'
+        marginTop: '3px',
+        marginBottom: '8px',
+        ...sx
     }}>
         {text}
     </Box>
@@ -1254,6 +1255,7 @@ const Chat = () => {
                                         msg.mayaJson.category === 'PROCEED' && (
                                             <TranslationIndicator
                                                 text={`Translated from English to ${msg.mayaJson.language_detected} for the user`}
+                                                sx={{ mt: reportState === 'IDLE' ? '8px' : '3px' }}
                                             />
                                         )}
                                 </Box>
