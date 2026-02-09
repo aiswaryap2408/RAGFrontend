@@ -250,8 +250,8 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     const hasCalledComplete = useRef(false);
 
     const pleaseWaitMessages = [
-        "Please wait… checking your chart carefully.",
-        "One moment... ",
+        // "Please wait… checking your chart carefully.",
+        // "One moment... ",
         "Astrologer is typing...",
         "Please give me a moment.",
     ];
@@ -1161,13 +1161,11 @@ const Chat = () => {
                 }}
             >
                 {messages.map((msg, i) => {
-                    const isFirstMaya = i === 0 && msg.assistant === 'maya';
-
-                    if (isFirstMaya) {
+                    if (msg.assistant === 'maya' && msg.content && msg.content.trim() !== '') {
                         return (
                             <MayaIntro
                                 key={i}
-                                name={userName}
+                                name={i === 0 ? userName : null}
                                 content={msg.content}
                                 mayaJson={msg.mayaJson}
                                 rawResponse={msg.rawResponse}
@@ -1179,7 +1177,7 @@ const Chat = () => {
 
                     const gurujiData = msg.gurujiJson || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null);
 
-                    if (gurujiData) {
+                    if (gurujiData && msg.assistant === 'guruji') {
                         return (
                             <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 2, width: '100%' }}>
                                 {/* <Box sx={{
@@ -1350,13 +1348,6 @@ const Chat = () => {
                         </Box>
                     );
                 })}
-                {loading && (
-                    <Box sx={{ display: 'flex', gap: 1, p: 2, bgcolor: 'white', borderRadius: '15px 15px 15px 0', width: 'fit-content', border: '1px solid #FFEDD5' }}>
-                        <Box sx={{ width: 8, height: 8, bgcolor: '#F36A2F', borderRadius: '50%', animation: 'bounce 1s infinite' }} />
-                        <Box sx={{ width: 8, height: 8, bgcolor: '#F36A2F', borderRadius: '50%', animation: 'bounce 1s infinite 0.2s' }} />
-                        <Box sx={{ width: 8, height: 8, bgcolor: '#F36A2F', borderRadius: '50%', animation: 'bounce 1s infinite 0.4s' }} />
-                    </Box>
-                )}
                 <div ref={messagesEndRef} />
             </Box>
 
