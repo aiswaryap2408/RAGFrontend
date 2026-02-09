@@ -108,6 +108,22 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility 
     );
 };
 
+const TranslationIndicator = ({ text }) => (
+    <Box sx={{
+        display: 'inline-block',
+        backgroundColor: '#90EE90',
+        color: '#2d5016',
+        padding: '4px 12px',
+        borderRadius: '8px',
+        fontSize: '0.75rem',
+        fontWeight: 500,
+        marginTop: '10px',
+        marginBottom: '8px'
+    }}>
+        {text}
+    </Box>
+);
+
 
 const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, disabled }) => (
     <Box sx={{ px: 0, pt: 3, mb: 2.5, pb: 1, width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -250,8 +266,8 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     const hasCalledComplete = useRef(false);
 
     const pleaseWaitMessages = [
-        "Please wait… checking your chart carefully.",
-        "One moment... ",
+        // "Please wait… checking your chart carefully.",
+        // "One moment... ",
         "Astrologer is typing...",
         "Please give me a moment.",
     ];
@@ -307,12 +323,8 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
             const delay = getDelayForText(currentPara);
 
             // Set waiting message
-            if (!isLast) {
-                const randomMsg = pleaseWaitMessages[Math.floor(Math.random() * pleaseWaitMessages.length)];
-                setWaitMessage(randomMsg);
-            } else {
-                setWaitMessage(""); // Suppress for last para
-            }
+            const randomMsg = pleaseWaitMessages[Math.floor(Math.random() * pleaseWaitMessages.length)];
+            setWaitMessage(randomMsg);
 
             scrollToBottom();
 
@@ -529,6 +541,7 @@ const Chat = () => {
     const [activeCategory, setActiveCategory] = useState(null);
     const [readyReportData, setReadyReportData] = useState(null);
     const [jsonVisibility, setJsonVisibility] = useState({ maya: false, guruji: false });
+    const [mayaWaiting, setMayaWaiting] = useState(false);
     const messagesEndRef = useRef(null);
     const processedNewSession = useRef(false);
 
@@ -823,6 +836,7 @@ const Chat = () => {
         setMessages(prev => [...prev, userMsg]);
         if (typeof msg !== 'string') setInput('');
         setLoading(true);
+        setMayaWaiting(true);
 
         try {
             const mobile = localStorage.getItem('mobile');
@@ -861,6 +875,7 @@ const Chat = () => {
             }
         } finally {
             setLoading(false);
+            setMayaWaiting(false);
         }
     };
 
@@ -1161,13 +1176,11 @@ const Chat = () => {
                 }}
             >
                 {messages.map((msg, i) => {
-                    const isFirstMaya = i === 0 && msg.assistant === 'maya';
-
-                    if (isFirstMaya) {
+                    if (msg.assistant === 'maya' && msg.content && msg.content.trim() !== '') {
                         return (
                             <MayaIntro
                                 key={i}
-                                name={userName}
+                                name={i === 0 ? userName : null}
                                 content={msg.content}
                                 mayaJson={msg.mayaJson}
                                 rawResponse={msg.rawResponse}
@@ -1179,7 +1192,7 @@ const Chat = () => {
 
                     const gurujiData = msg.gurujiJson || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null);
 
-                    if (gurujiData) {
+                    if (gurujiData && msg.assistant === 'guruji') {
                         return (
                             <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 2, width: '100%' }}>
                                 {/* <Box sx={{
@@ -1231,10 +1244,27 @@ const Chat = () => {
                                             )}
                                         </Box>
                                     )}
+
+                                    {/* Translation Indicator for Guruji Response */}
+                                    {msg.mayaJson?.language_detected &&
+                                        msg.mayaJson.language_detected.toLowerCase() !== 'english' &&
+                                        msg.mayaJson.category === 'PROCEED' && (
+                                            <TranslationIndicator
+                                                text={`Translated from English to ${msg.mayaJson.language_detected} for the user`}
+                                            />
+                                        )}
                                 </Box>
                             </Box>
                         );
                     }
+
+                    // Check for translation indicators
+                    const nextMsg = messages[i + 1];
+                    const langDetected = msg.role === 'user' ? nextMsg?.mayaJson?.language_detected : msg.mayaJson?.language_detected;
+                    const category = msg.role === 'user' ? nextMsg?.mayaJson?.category : msg.mayaJson?.category;
+                    const showTranslationIndicator = langDetected &&
+                        langDetected.toLowerCase() !== 'english' &&
+                        category === 'PROCEED';
 
                     return (
                         <Box
@@ -1347,16 +1377,43 @@ const Chat = () => {
                                     </Box>
                                 )}
                             </Box>
+
+                            {/* Translation Indicator */}
+                            {showTranslationIndicator && (
+                                <TranslationIndicator
+                                    text={msg.role === 'user'
+                                        ? `${langDetected} detected, translated to English for astrologer.`
+                                        : `Translated from English to ${langDetected} for the user`
+                                    }
+                                />
+                            )}
                         </Box>
                     );
                 })}
-                {loading && (
-                    <Box sx={{ display: 'flex', gap: 1, p: 2, bgcolor: 'white', borderRadius: '15px 15px 15px 0', width: 'fit-content', border: '1px solid #FFEDD5' }}>
-                        <Box sx={{ width: 8, height: 8, bgcolor: '#F36A2F', borderRadius: '50%', animation: 'bounce 1s infinite' }} />
-                        <Box sx={{ width: 8, height: 8, bgcolor: '#F36A2F', borderRadius: '50%', animation: 'bounce 1s infinite 0.2s' }} />
-                        <Box sx={{ width: 8, height: 8, bgcolor: '#F36A2F', borderRadius: '50%', animation: 'bounce 1s infinite 0.4s' }} />
+
+                {/* Maya Please Wait Message */}
+                {mayaWaiting && (
+                    <Box sx={{
+                        position: 'fixed',
+                        bottom: 80,
+                        left: 0,
+                        right: 0,
+                        mx: 'auto',
+                        width: { xs: '90%', sm: 400 },
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        zIndex: 10,
+                        pointerEvents: 'none'
+                    }}>
+                        <Typography sx={{ fontSize: '0.8rem', color: '#a19b93', fontWeight: 'normal', textShadow: '0 1px 2px rgba(255,255,255,0.8)' }}>
+                            Please wait...
+                        </Typography>
                     </Box>
                 )}
+
                 <div ref={messagesEndRef} />
             </Box>
 
