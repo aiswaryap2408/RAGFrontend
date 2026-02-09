@@ -28,7 +28,7 @@ const ConsultFooter = ({ onConsult }) => {
                 component="img"
                 src="/svg/guruji_illustrated.svg"
                 alt="Guruji"
-                sx={{ width: 65, position: 'absolute', top: '-38px' }}
+                sx={{ width: 65, position: 'absolute', bottom: 32 }}
             />
 
 
