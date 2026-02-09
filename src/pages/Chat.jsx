@@ -541,7 +541,8 @@ const Chat = () => {
     const [activeCategory, setActiveCategory] = useState(null);
     const [readyReportData, setReadyReportData] = useState(null);
     const [jsonVisibility, setJsonVisibility] = useState({ maya: false, guruji: false });
-    const [mayaWaiting, setMayaWaiting] = useState(false);
+    const [isBuffering, setIsBuffering] = useState(false);
+    const [waitMessage, setWaitMessage] = useState("");
     const messagesEndRef = useRef(null);
     const processedNewSession = useRef(false);
 
@@ -836,7 +837,8 @@ const Chat = () => {
         setMessages(prev => [...prev, userMsg]);
         if (typeof msg !== 'string') setInput('');
         setLoading(true);
-        setMayaWaiting(true);
+        setIsBuffering(true);
+        setWaitMessage("Please wait...");
 
         try {
             const mobile = localStorage.getItem('mobile');
@@ -875,7 +877,8 @@ const Chat = () => {
             }
         } finally {
             setLoading(false);
-            setMayaWaiting(false);
+            setIsBuffering(false);
+            setWaitMessage("");
         }
     };
 
@@ -1391,8 +1394,8 @@ const Chat = () => {
                     );
                 })}
 
-                {/* Maya Please Wait Message */}
-                {mayaWaiting && (
+                {/* Global Wait Message (for both Maya and Guruji) */}
+                {isBuffering && waitMessage && (
                     <Box sx={{
                         position: 'fixed',
                         bottom: 80,
@@ -1409,7 +1412,7 @@ const Chat = () => {
                         pointerEvents: 'none'
                     }}>
                         <Typography sx={{ fontSize: '0.8rem', color: '#a19b93', fontWeight: 'normal', textShadow: '0 1px 2px rgba(255,255,255,0.8)' }}>
-                            Please wait...
+                            {waitMessage}
                         </Typography>
                     </Box>
                 )}
