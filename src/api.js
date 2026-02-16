@@ -39,6 +39,8 @@ export const sendOtp = (mobile) => api.post('/auth/send-otp', { mobile });
 export const verifyOtp = (mobile, otp) => api.post('/auth/verify-otp', { mobile, otp });
 export const registerUser = (data) => api.post('/auth/register', data);
 export const updateProfile = (data) => api.post('/auth/update-profile', data);
+export const getUserStatus = (mobile) => api.get(`/auth/user-status/${mobile}`);
+export const regenerateReport = (mobile) => api.post(`/auth/regenerate-report/${mobile}`);
 
 
 export const sendMessage = (mobile, message, history, sessionId) => api.post('/auth/chat', { mobile, message, history, session_id: sessionId });
@@ -79,7 +81,7 @@ export const getWalletStatus = () => api.get('/wallet/status');
 export const getBalance = (mobile) => api.get(`/wallet/balance/${mobile}`);
 export const getTransactionHistory = (mobile) => api.get(`/wallet/history/${mobile}`);
 export const rechargeWallet = (data) => api.post('/wallet/recharge', data);
-export const generateReport = (mobile, category) => api.post('/wallet/generate-report', { mobile, category }, { responseType: 'blob' });
+export const generateReport = (mobile, category, question = null, sessionId = null, messageId = null) => api.post('/wallet/generate-report', { mobile, category, question, session_id: sessionId, message_id: messageId }, { responseType: 'blob' });
 export const toggleWalletSystem = (enabled) => api.post(`/wallet/toggle-system?enabled=${enabled}`);
 export const getDashboardStats = (range = '7D') => api.get(`/admin/stats?range=${range}`);
 export const getUserReports = (mobile) => api.get(`/wallet/reports/${mobile}`);

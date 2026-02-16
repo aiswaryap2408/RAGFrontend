@@ -253,7 +253,11 @@ const NotificationBox = ({ content, buttonLabel, onButtonClick }) => (
     </Box>
 );
 
-const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages, handleReportGeneration, reportState, activeCategory, userName, time }) => {
+const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages, handleReportGeneration, reportState, activeCategory, userName, time, index, activeReportIndex }) => {
+    const msgObj = messages[index] || {};
+    const isThisActiveReport = index === activeReportIndex;
+    const hasReport = msgObj.report_generated || false;
+    const reportId = msgObj.report_id || null;
     const paras = [
         gurujiJson?.para1 || '',
         gurujiJson?.para2 || '',
@@ -346,8 +350,17 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     }, [reportState]);
 
     const handleReportClick = () => {
-        const lastMsg = messages[messages.length - 1];
-        handleReportGeneration(lastMsg?.mayaJson?.category || 'general', 'START');
+        // Find the user question that led to this response
+        let question = null;
+        for (let i = index - 1; i >= 0; i--) {
+            if (messages[i].role === 'user') {
+                question = messages[i].content;
+                break;
+            }
+        }
+
+        const currentMsg = messages[index];
+        handleReportGeneration(currentMsg?.mayaJson?.category || 'general', index, question);
     };
 
     const bubbleSx = {
@@ -369,7 +382,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                     {/* Label Removed to match Maya's bubble style */}
                     <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para }} />
 
-                    {idx === paras.length - 1 && reportState === 'IDLE' && (
+                    {idx === paras.length - 1 && !hasReport && (!isThisActiveReport || reportState === 'IDLE') && (
                         <Box sx={{ mt: 2, mb: 2, display: 'flex', justifyContent: 'flex-start', position: 'relative' }}>
                             <ListItemButton
                                 onClick={handleReportClick}
@@ -406,7 +419,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                                 fontSize: '0.75rem',
                                 opacity: 0.8,
                                 position: 'absolute',
-                                bottom: (idx === paras.length - 1 && reportState === 'IDLE') ? 32 : 4,
+                                bottom: (idx === paras.length - 1 && !hasReport && (!isThisActiveReport || reportState === 'IDLE')) ? 32 : 4,
                                 right: 8,
                                 color: 'rgba(255,255,255,0.9)',
                                 fontWeight: 500
@@ -445,7 +458,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                 </Box>
             )}
 
-            {(reportState === 'CONFIRMING' || reportState === 'PREPARING' || reportState === 'READY') && (
+            {isThisActiveReport && (reportState === 'CONFIRMING' || reportState === 'PREPARING' || reportState === 'READY') && (
                 <MayaTemplateBox
                     name={userName.split(' ')[0]}
                     content={`detailed predictions on ${activeCategory || 'your query'} are chargeable ₹49.`}
@@ -456,18 +469,24 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                 />
             )}
 
-            {(reportState === 'PREPARING' || reportState === 'READY') && (
+            {isThisActiveReport && (reportState === 'PREPARING' || reportState === 'READY') && (
                 <MayaTemplateBox
                     content={<>The detailed answer will be available in the <strong>"Detailed Reports"</strong> section of your home screen.<br /><br />Once prepared you'll be notified here.</>}
                     loading={reportState === 'PREPARING'}
                 />
             )}
 
-            {reportState === 'READY' && (
+            {(hasReport || (isThisActiveReport && reportState === 'READY')) && (
                 <NotificationBox
-                    content={`The detailed answer on ${activeCategory || 'your query'} is ready.`}
+                    content={hasReport ? `The detailed answer on ${msgObj.report_category || 'your query'} is ready.` : `The detailed answer on ${activeCategory || 'your query'} is ready.`}
                     buttonLabel="Download Report"
-                    onButtonClick={() => handleReportGeneration(activeCategory, 'DOWNLOAD')}
+                    onButtonClick={() => {
+                        if (hasReport && reportId) {
+                            handleReportGeneration(msgObj.report_category, 'DOWNLOAD_EXISTING', null, reportId);
+                        } else {
+                            handleReportGeneration(activeCategory, 'DOWNLOAD');
+                        }
+                    }}
                 />
             )}
 
@@ -543,6 +562,8 @@ const Chat = () => {
     const [reportState, setReportState] = useState('IDLE'); // IDLE, CONFIRMING, PAYING, PREPARING, READY
     const [activeCategory, setActiveCategory] = useState(null);
     const [readyReportData, setReadyReportData] = useState(null);
+    const [activeQuestion, setActiveQuestion] = useState(null);
+    const [activeReportIndex, setActiveReportIndex] = useState(null);
     const [jsonVisibility, setJsonVisibility] = useState({ maya: false, guruji: false });
     const [isBuffering, setIsBuffering] = useState(false);
     const [waitMessage, setWaitMessage] = useState("");
@@ -856,6 +877,17 @@ const Chat = () => {
         const userMsg = { role: 'user', content: text, time: getCurrentTime(), timestamp: new Date().toISOString() };
         setMessages(prev => [...prev, userMsg]);
         if (typeof msg !== 'string') setInput('');
+
+        // Reset global report state for the new interaction ONLY if not preparing a report
+        // If a report is preparing, we keep the state to show the preparation status for the old message
+        if (reportState === 'IDLE' || reportState === 'READY') {
+            setReportState('IDLE');
+            setReadyReportData(null);
+            setActiveCategory(null);
+            setActiveQuestion(null);
+            setActiveReportIndex(null);
+        }
+
         setLoading(true);
         setIsBuffering(true);
         setWaitMessage("Please wait...");
@@ -870,7 +902,7 @@ const Chat = () => {
             }
             const history = messages.slice(1);
             const res = await sendMessage(mobile, text, history, sessionId);
-            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, timestamp } = res.data;
+            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, timestamp, message_id } = res.data;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
@@ -885,6 +917,7 @@ const Chat = () => {
                 mayaJson: maya_json,
                 gurujiJson: guruji_json,
                 animating: true,
+                message_id: message_id,
                 time: timestamp ? formatTime(timestamp) : getCurrentTime(),
                 timestamp: timestamp || new Date().toISOString()
             }]);
@@ -910,13 +943,17 @@ const Chat = () => {
 
 
     // Helper function to process report with wallet deduction
-    const processReportWithWallet = async (mobile, category) => {
+    const processReportWithWallet = async (mobile, category, question = null, reportIndex = null) => {
         setReportState('PREPARING');
-        alert('₹49 will be deducted from your wallet. Generating your report...');
+        // alert('₹49 will be deducted from your wallet. Generating your report...');
 
         setTimeout(async () => {
             try {
-                const res = await generateReport(mobile, category || 'general');
+                const currentMsg = messages[reportIndex];
+                const msgId = currentMsg?.message_id;
+                console.log("DEBUG: Generating report for message_id:", msgId);
+
+                const res = await generateReport(mobile, category || 'general', question, sessionId, msgId);
 
                 if (res.data.type === 'application/json') {
                     const reader = new FileReader();
@@ -927,7 +964,7 @@ const Chat = () => {
                             // Fallback to Razorpay
                             alert("Insufficient wallet balance. Redirecting to payment gateway...");
                             console.log("Insufficient funds during generation, falling back to Razorpay");
-                            await processReportWithRazorpay(mobile, category);
+                            await processReportWithRazorpay(mobile, category, question, reportIndex);
                         }
                     };
                     reader.readAsText(res.data);
@@ -935,10 +972,27 @@ const Chat = () => {
                 }
 
                 // Success
-                setReadyReportData(res.data);
+                const pdfData = res.data;
+                const report_id = res.headers ? res.headers['x-report-id'] : null;
+
+                setReadyReportData(pdfData);
                 setReportState('READY');
 
-                // Refresh balance
+                // Update the message in history to persist its status
+                if (reportIndex !== null) {
+                    setMessages(prev => {
+                        const newMsgs = [...prev];
+                        if (newMsgs[reportIndex]) {
+                            newMsgs[reportIndex] = {
+                                ...newMsgs[reportIndex],
+                                report_generated: true,
+                                report_id: report_id,
+                                report_category: category
+                            };
+                        }
+                        return newMsgs;
+                    });
+                }
                 const balanceRes = await api.get(`/auth/user-status/${mobile}`);
                 if (balanceRes.data.wallet_balance !== undefined) {
                     setWalletBalance(balanceRes.data.wallet_balance);
@@ -952,7 +1006,7 @@ const Chat = () => {
     };
 
     // Helper function to process report with Razorpay payment
-    const processReportWithRazorpay = async (mobile, category) => {
+    const processReportWithRazorpay = async (mobile, category, question = null, reportIndex = null) => {
         try {
             const amount = 49;
 
@@ -998,7 +1052,7 @@ const Chat = () => {
                         }
 
                         // Now generate report with updated wallet
-                        await processReportWithWallet(mobile, category);
+                        await processReportWithWallet(mobile, category, question, reportIndex);
 
                     } catch (err) {
                         console.error("Payment verification failed", err);
@@ -1036,12 +1090,44 @@ const Chat = () => {
         }
     };
 
-    const handleReportGeneration = async (category, action) => {
+    const handleReportGeneration = async (category, action, question = null, existingReportId = null) => {
         const mobile = localStorage.getItem('mobile');
         if (!mobile) return;
 
+        if (action === 'DOWNLOAD_EXISTING') {
+            try {
+                const res = await api.get(`/wallet/report/${existingReportId}`, { responseType: 'blob' });
+                const url = window.URL.createObjectURL(new Blob([res.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `Astrology_Report_${category}_${Date.now()}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            } catch (error) {
+                console.error("Download failed:", error);
+                alert("Failed to download report. Please try again.");
+            }
+            return;
+        }
+
         if (action === 'START') {
             setActiveCategory(category);
+            setActiveQuestion(question);
+            // We need to know which message index this is for
+            // The index is passed from the SequentialResponse's handleReportClick calling this
+            // But we need to update handleReportClick to pass the index too.
+            // Wait, I already added index to SequentialResponse.
+            // Let's use a temporary hack or better, pass index to START.
+            return;
+        }
+
+        // Handle the START with index
+        if (typeof action === 'number') {
+            const reportIndex = action;
+            setActiveCategory(category);
+            setActiveQuestion(question);
+            setActiveReportIndex(reportIndex);
             setReportState('CONFIRMING');
             return;
         }
@@ -1056,19 +1142,19 @@ const Chat = () => {
 
                 if (currentBalance >= 49) {
                     // Sufficient funds - proceed with wallet deduction
-                    await processReportWithWallet(mobile, category);
+                    await processReportWithWallet(mobile, category, activeQuestion, activeReportIndex);
                 } else {
                     // Insufficient funds - open Razorpay
                     // alert("Insufficient wallet balance. Redirecting to payment gateway...");
-                    await processReportWithRazorpay(mobile, category);
+                    await processReportWithRazorpay(mobile, category, activeQuestion, activeReportIndex);
                 }
             } catch (err) {
                 console.error("Balance check failed:", err);
                 // Fallback to existing state check if API fails
                 if (walletBalance >= 49) {
-                    await processReportWithWallet(mobile, category);
+                    await processReportWithWallet(mobile, category, activeQuestion, activeReportIndex);
                 } else {
-                    await processReportWithRazorpay(mobile, category);
+                    await processReportWithRazorpay(mobile, category, activeQuestion, activeReportIndex);
                 }
             }
             return;
@@ -1265,6 +1351,8 @@ const Chat = () => {
                                         activeCategory={activeCategory}
                                         userName={userName}
                                         time={msg.time}
+                                        index={i}
+                                        activeReportIndex={activeReportIndex}
                                     />
                                     {/* JSON Output View for Guruji Multi-bubble */}
                                     {(jsonVisibility.maya || jsonVisibility.guruji) && (msg.mayaJson || gurujiData) && (
@@ -1615,6 +1703,32 @@ const Chat = () => {
                 showWave={thankYouData.showWave}
                 referenceId={thankYouData.referenceId}
             />
+
+            {/* Initial Loading / Processing Overlay */}
+            {userStatus === 'processing' && (
+                <Box sx={{
+                    position: 'fixed',
+                    inset: 0,
+                    bgcolor: 'rgba(255,255,255,0.9)',
+                    backdropFilter: 'blur(10px)',
+                    zIndex: 20000,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    p: 4,
+                    textAlign: 'center'
+                }}>
+                    <CircularProgress sx={{ color: '#F36A2F', mb: 4, size: 60 }} />
+                    <Typography variant="h5" sx={{ fontWeight: 800, color: '#333', mb: 2 }}>
+                        Connecting with the Cosmos
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: '#666', maxWidth: 400 }}>
+                        Guruji is currently preparing your personalized astrological charts.
+                        Please wait a moment as we align your stars...
+                    </Typography>
+                </Box>
+            )}
         </Box>
     );
 };
