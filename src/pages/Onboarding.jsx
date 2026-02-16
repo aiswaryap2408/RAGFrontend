@@ -1,27 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Modal, CircularProgress } from '@mui/material';
 import Header from '../components/header';
 import PrimaryButton from '../components/PrimaryButton';
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
+import { getUserStatus } from '../api';
 
 const Onboarding = () => {
     const navigate = useNavigate();
     const [activeDot, setActiveDot] = useState(0);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [error, setError] = useState(null);
 
     // Retrieve user name from local storage or set default
     const name = localStorage.getItem('userName') || "User";
+    const mobile = localStorage.getItem('userMobile');
 
     const handleBack = () => {
         setActiveDot((prev) => Math.max(prev - 1, 0));
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (activeDot < 2) {
             setActiveDot((prev) => prev + 1);
         } else {
-            console.log("Onboarding completed");
-            navigate('/chat');
+            console.log("Onboarding completed, checking status...");
+            if (!mobile) {
+                navigate('/chat');
+                return;
+            }
+
+            setIsProcessing(true);
+            try {
+                const res = await getUserStatus(mobile);
+                if (res.data.status === 'ready') {
+                    navigate('/chat');
+                } else if (res.data.status === 'failed') {
+                    setError("We encountered an issue while generating your report. Please contact support.");
+                    setIsProcessing(false);
+                } else {
+                    // Start polling
+                    const pollInterval = setInterval(async () => {
+                        try {
+                            const pollRes = await getUserStatus(mobile);
+                            if (pollRes.data.status === 'ready') {
+                                clearInterval(pollInterval);
+                                navigate('/chat');
+                            } else if (pollRes.data.status === 'failed') {
+                                clearInterval(pollInterval);
+                                setError("Failed to generate report.");
+                                setIsProcessing(false);
+                            }
+                        } catch (err) {
+                            console.error("Polling error", err);
+                        }
+                    }, 3000);
+                }
+            } catch (err) {
+                console.error("Status check failed", err);
+                // Fallback to chat, it has its own polling
+                navigate('/chat');
+            }
         }
     };
 
@@ -303,6 +342,60 @@ const Onboarding = () => {
                     />
                 </Box>
             </Box>
+
+            {/* Loading Modal */}
+            <Modal
+                open={isProcessing}
+                onClose={() => { }} // Block closing
+                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+                <Box sx={{
+                    bgcolor: 'white',
+                    p: 4,
+                    borderRadius: 4,
+                    textAlign: 'center',
+                    maxWidth: 300,
+                    width: '80%',
+                    boxShadow: 24,
+                    outline: 'none'
+                }}>
+                    <CircularProgress sx={{ color: '#F36A2F', mb: 3 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                        Preparing your journey
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#666' }}>
+                        Generating your personalized horoscope report and preparing the astrological context...
+                    </Typography>
+                </Box>
+            </Modal>
+
+            {/* Error Display */}
+            {error && (
+                <Modal
+                    open={!!error}
+                    onClose={() => setError(null)}
+                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                    <Box sx={{
+                        bgcolor: 'white',
+                        p: 4,
+                        borderRadius: 4,
+                        textAlign: 'center',
+                        maxWidth: 300,
+                        width: '80%',
+                        boxShadow: 24,
+                        outline: 'none'
+                    }}>
+                        <Typography variant="h6" sx={{ color: 'red', fontWeight: 600, mb: 2 }}>
+                            Oops!
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#333', mb: 3 }}>
+                            {error}
+                        </Typography>
+                        <PrimaryButton label="Retry" onClick={() => setError(null)} sx={{ width: '100%' }} />
+                    </Box>
+                </Modal>
+            )}
         </Box>
     );
 };
