@@ -72,7 +72,11 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
                         fullWidth
                         multiline
                         // maxRows={4}
-                        placeholder={userStatus === 'ready' ? "Type your message..." : "Preparing..."}
+                        placeholder={
+                            userStatus === 'ready' ? "Type your message..." :
+                                userStatus === 'failed' ? "Registration failed. Please re-register." :
+                                    "Preparing..."
+                        }
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         onKeyPress={(e) => {
