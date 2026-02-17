@@ -250,6 +250,104 @@ const AdminDashboard = () => {
         }, 1000);
     };
 
+    const handleExportSession = (session, format) => {
+        if (!session || !session.chats) return;
+
+        const sanitize = (html) => {
+            if (!html) return '';
+            return html.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+        };
+
+        const cleanMessage = (content, role) => {
+            if (!content) return '';
+            let text = content.toString();
+
+            if ((role === 'guruji' || role === 'maya') && text.includes('{')) {
+                try {
+                    let cleanJson = text.trim();
+                    if (cleanJson.startsWith('```')) {
+                        const match = cleanJson.match(/```(?:json)?\s*(\{.*?\})\s*```/s);
+                        if (match) cleanJson = match[1];
+                        else cleanJson = cleanJson.replace(/^```(json)?\s*|\s*```$/g, '');
+                    }
+                    const parsed = JSON.parse(cleanJson);
+                    if (role === 'guruji') {
+                        text = [parsed.para1, parsed.para2, parsed.para3].filter(Boolean).join('\n\n');
+                        if (parsed.follow_up || parsed.followup) {
+                            text += `\n\n${parsed.follow_up || parsed.followup}`;
+                        }
+                    } else if (role === 'maya') {
+                        text = parsed.message || '';
+                    }
+                } catch (e) { }
+            }
+            return sanitize(text);
+        };
+
+        const fileName = `session_${session.session_id}_${new Date().toISOString().split('T')[0]}`;
+        let content = '';
+        let mimeType = '';
+
+        if (format === 'json') {
+            const data = session.chats.map(chat => {
+                const usage = chat.usage || chat.maya_usage || {};
+                return {
+                    role: chat.role || 'bot',
+                    timestamp: chat.timestamp,
+                    message: cleanMessage(chat.message || chat.user_message || chat.bot_response, chat.role),
+                    input_tokens: usage.prompt_tokens || 0,
+                    output_tokens: usage.completion_tokens || 0,
+                    total_tokens: usage.total_tokens || 0
+                };
+            }).filter(m => m.message);
+            content = JSON.stringify(data, null, 2);
+            mimeType = 'application/json';
+        } else if (format === 'csv') {
+            const headers = ['Timestamp', 'Role', 'Message', 'Input Tokens', 'Output Tokens'];
+            const rows = session.chats.map(chat => {
+                const msg = cleanMessage(chat.message || chat.user_message || chat.bot_response, chat.role);
+                if (!msg) return null;
+                const usage = chat.usage || chat.maya_usage || {};
+                return [
+                    new Date(chat.timestamp * (chat.timestamp > 10000000000 ? 1 : 1000)).toLocaleString(),
+                    chat.role || 'bot',
+                    `"${msg.replace(/"/g, '""')}"`,
+                    usage.prompt_tokens || 0,
+                    usage.completion_tokens || 0
+                ];
+            }).filter(Boolean);
+            content = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            mimeType = 'text/csv';
+        } else if (format === 'txt') {
+            const userId = userDetails.user?.mobile || 'user';
+            const lines = session.chats.map(chat => {
+                const msg = cleanMessage(chat.message || chat.user_message || chat.bot_response, chat.role);
+                if (!msg) return null;
+
+                let label = chat.role || 'bot';
+                if (label === 'user') label = `user-${userId}`;
+                else if (label === 'guruji') label = 'astrologer';
+                else if (label === 'maya') label = 'maya';
+
+                const usage = chat.usage || chat.maya_usage || {};
+                const tokenStr = usage.total_tokens ? ` [Tokens: In=${usage.prompt_tokens || 0}, Out=${usage.completion_tokens || 0}, Total=${usage.total_tokens || 0}]` : '';
+
+                return `${label}: ${msg}${tokenStr}`;
+            }).filter(Boolean);
+            content = lines.join('\n\n');
+            mimeType = 'text/plain';
+        }
+
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${fileName}.${format}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const processedSessions = [...(userDetails.sessions || [])]
         .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
         .reduce((acc, s) => {
@@ -525,6 +623,32 @@ const AdminDashboard = () => {
                                                 <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
                                                     {selectedSessionId && processedSessions[selectedSessionId] ? (
                                                         <>
+                                                            <div className="flex justify-between items-center mb-6 bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
+                                                                <div>
+                                                                    <h3 className="text-lg font-black text-white">Session Detail</h3>
+                                                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{processedSessions[selectedSessionId].chats.length} interactions</p>
+                                                                </div>
+                                                                <div className="flex space-x-2">
+                                                                    <button
+                                                                        onClick={() => handleExportSession(processedSessions[selectedSessionId], 'csv')}
+                                                                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[10px] font-black uppercase tracking-widest text-indigo-400 rounded-xl transition-all border border-slate-700"
+                                                                    >
+                                                                        Export CSV
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleExportSession(processedSessions[selectedSessionId], 'json')}
+                                                                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[10px] font-black uppercase tracking-widest text-emerald-400 rounded-xl transition-all border border-slate-700"
+                                                                    >
+                                                                        Export JSON
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleExportSession(processedSessions[selectedSessionId], 'txt')}
+                                                                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[10px] font-black uppercase tracking-widest text-orange-400 rounded-xl transition-all border border-slate-700"
+                                                                    >
+                                                                        Export TXT
+                                                                    </button>
+                                                                </div>
+                                                            </div>
                                                             <div className="space-y-6">
                                                                 {processedSessions[selectedSessionId].chats.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)).map((chat, i) => {
                                                                     const isUser = chat.role === 'user';
