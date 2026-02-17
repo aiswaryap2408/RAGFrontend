@@ -36,8 +36,8 @@ const Onboarding = () => {
                 if (res.data.status === 'ready') {
                     navigate('/chat');
                 } else if (res.data.status === 'failed') {
-                    setError("We encountered an issue while generating your report. Please contact support.");
-                    setIsProcessing(false);
+                    console.error("Processing failed, redirecting to register...");
+                    navigate('/register');
                 } else {
                     // Start polling
                     const pollInterval = setInterval(async () => {
@@ -48,8 +48,8 @@ const Onboarding = () => {
                                 navigate('/chat');
                             } else if (pollRes.data.status === 'failed') {
                                 clearInterval(pollInterval);
-                                setError("Failed to generate report.");
-                                setIsProcessing(false);
+                                console.error("Polling: Processing failed, redirecting to register...");
+                                navigate('/register');
                             }
                         } catch (err) {
                             console.error("Polling error", err);
