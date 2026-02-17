@@ -178,6 +178,13 @@ const Register = () => {
                 correction: document.getElementById('correction')?.value || '0'
             };
 
+            if (!locationFields.longdeg || !locationFields.latdeg || locationFields.longdeg === '0' || locationFields.latdeg === '0') {
+                setError('Please select a valid birth place from the suggestions dropdown.');
+                setLoading(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
             const payload = { ...details, ...locationFields, mobile };
             const res = await registerUser(payload);
             const { access_token } = res.data;
