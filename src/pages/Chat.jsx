@@ -497,6 +497,8 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
 
 
 const Chat = () => {
+    const [showHeader, setShowHeader] = useState(true);
+    const lastScrollTop = useRef(0);
     const navigate = useNavigate();
     const location = useLocation();
     const [feedbackDrawerOpen, setFeedbackDrawerOpen] = useState(false);
@@ -571,6 +573,23 @@ const Chat = () => {
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
+
+    const handleScroll = (e) => {
+        const scrollTop = e.target.scrollTop;
+        // Don't trigger for small scrolls
+        if (Math.abs(scrollTop - lastScrollTop.current) < 10) return;
+
+        if (scrollTop <= 10) {
+            setShowHeader(true);
+        } else if (scrollTop > lastScrollTop.current) {
+            // Scrolling down (towards bottom/newer) -> SHOW header
+            setShowHeader(false);
+        } else {
+            // Scrolling up (towards top/older) -> HIDE header
+            setShowHeader(true);
+        }
+        lastScrollTop.current = scrollTop <= 0 ? 0 : scrollTop;
+    };
 
     // Load Chat History (Smart Resume Logic)
     useEffect(() => {
@@ -1154,35 +1173,58 @@ const Chat = () => {
     };
 
     return (
-        <Box sx={{
-            // minHeight: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            bgcolor: '#FFF6EB',
-            height: "100vh",
-            position: 'relative',
-            // width: '100%'
-            overflowY: "auto",
-            "&::-webkit-scrollbar": { display: "block" },
-            scrollbarWidth: "none",
-        }}>
-            <Header backgroundImage="/svg/top_curve_dark.svg" hscrollsx={{ position: 'relative' }} />
+        <Box
+            onScroll={handleScroll}
+            sx={{
+                // minHeight: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                bgcolor: '#FFF6EB',
+                height: "100vh",
+                position: 'relative',
+                // width: '100%'
+                overflowY: "auto",
+                "&::-webkit-scrollbar": { display: "block" },
+                scrollbarWidth: "none",
+            }}
+        >
+            <Header
+                backgroundImage="/svg/top_curve_dark.svg"
+                hscrollsx={{
+                    position: 'fixed',
+                    transition: 'transform 0.3s ease-in-out',
+                    transform: showHeader ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-100%)',
+                    left: '50%',
+                    pointerEvents: showHeader ? 'auto' : 'none',
+                    zIndex: 1200
+                }}
+            />
 
-            <HamburgerMenu menubarsx={{ position: 'absolute' }} />
+            <HamburgerMenu
+                menubarsx={{
+                    position: 'fixed',
+                    top: 25,
+                    transition: 'transform 0.3s ease-in-out',
+                    transform: showHeader ? 'translateY(0)' : 'translateY(-100px)',
+                    zIndex: 1210,
+                    pointerEvents: showHeader ? 'auto' : 'none',
+                }}
+            />
 
 
             {messages.some(m => m.assistant === 'guruji') && (
                 <Box sx={{
                     position: 'sticky',
-                    top: 20,
-                    zIndex: 1101,
+                    top: showHeader ? 140 : 20,
+                    zIndex: 1200,
                     height: 0,
                     overflow: 'visible',
                     display: 'flex',
                     justifyContent: 'center',
                     mt: -5,
                     mb: 10,
-                    pointerEvents: 'none'
+                    pointerEvents: 'none',
+                    transition: 'top 0.3s ease-in-out'
                 }}>
                     <Box sx={{ pointerEvents: 'auto' }}>
                         <PrimaryButton
@@ -1262,7 +1304,7 @@ const Chat = () => {
                     px: 3,
                     pb: 10,
 
-                    // pt: 22,
+                    pt: showHeader ? 19 : 12,
                 }}
             >
                 {messages.map((msg, i) => {
@@ -1409,7 +1451,7 @@ const Chat = () => {
                                         boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                         border: 'none',
                                         position: 'relative',
-                                        maxWidth: '85%',
+                                        maxWidth: '325px',
                                         minWidth: '100px',
                                         overflowWrap: "break-word",
                                         wordBreak: "break-word",

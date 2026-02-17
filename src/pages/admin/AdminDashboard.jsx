@@ -289,22 +289,31 @@ const AdminDashboard = () => {
         let mimeType = '';
 
         if (format === 'json') {
-            const data = session.chats.map(chat => ({
-                role: chat.role || 'bot',
-                timestamp: chat.timestamp,
-                message: cleanMessage(chat.message || chat.user_message || chat.bot_response, chat.role)
-            })).filter(m => m.message);
+            const data = session.chats.map(chat => {
+                const usage = chat.usage || chat.maya_usage || {};
+                return {
+                    role: chat.role || 'bot',
+                    timestamp: chat.timestamp,
+                    message: cleanMessage(chat.message || chat.user_message || chat.bot_response, chat.role),
+                    input_tokens: usage.prompt_tokens || 0,
+                    output_tokens: usage.completion_tokens || 0,
+                    total_tokens: usage.total_tokens || 0
+                };
+            }).filter(m => m.message);
             content = JSON.stringify(data, null, 2);
             mimeType = 'application/json';
         } else if (format === 'csv') {
-            const headers = ['Timestamp', 'Role', 'Message'];
+            const headers = ['Timestamp', 'Role', 'Message', 'Input Tokens', 'Output Tokens'];
             const rows = session.chats.map(chat => {
                 const msg = cleanMessage(chat.message || chat.user_message || chat.bot_response, chat.role);
                 if (!msg) return null;
+                const usage = chat.usage || chat.maya_usage || {};
                 return [
                     new Date(chat.timestamp * (chat.timestamp > 10000000000 ? 1 : 1000)).toLocaleString(),
                     chat.role || 'bot',
-                    `"${msg.replace(/"/g, '""')}"`
+                    `"${msg.replace(/"/g, '""')}"`,
+                    usage.prompt_tokens || 0,
+                    usage.completion_tokens || 0
                 ];
             }).filter(Boolean);
             content = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -320,7 +329,10 @@ const AdminDashboard = () => {
                 else if (label === 'guruji') label = 'astrologer';
                 else if (label === 'maya') label = 'maya';
 
-                return `${label}: ${msg}`;
+                const usage = chat.usage || chat.maya_usage || {};
+                const tokenStr = usage.total_tokens ? ` [Tokens: In=${usage.prompt_tokens || 0}, Out=${usage.completion_tokens || 0}, Total=${usage.total_tokens || 0}]` : '';
+
+                return `${label}: ${msg}${tokenStr}`;
             }).filter(Boolean);
             content = lines.join('\n\n');
             mimeType = 'text/plain';
