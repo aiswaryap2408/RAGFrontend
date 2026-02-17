@@ -21,6 +21,9 @@ import WalletIcon from '@mui/icons-material/Wallet';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import GavelIcon from '@mui/icons-material/Gavel';
 import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
+import CookieIcon from '@mui/icons-material/Cookie';
+import KeyIcon from '@mui/icons-material/Lock';
+import InfoIcon from '@mui/icons-material/Info';
 
 const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handleNavigation: externalHandleNav, menubarsx = {} }) => {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -61,7 +64,8 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
     "/dashboard",
     "/register",
     "/terms",
-    "/privacy"
+    "/privacy",
+    "/cookie"
   ].includes(location.pathname.toLowerCase().replace(/\/$/, ""));
 
   const userName = localStorage.getItem("userName") || "User";
@@ -226,10 +230,12 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
                   </ListItemButton>
                 </ListItem>
 
+
+
                 <ListItem disablePadding onClick={() => handleNavigation("/dashboard")}>
                   <ListItemButton sx={{ pt: 1.3 }}>
                     <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
-                      <DashboardIcon />
+                      <HomeIcon />
                     </ListItemIcon>
                     <ListItemText
                       primary="Dashboard"
@@ -238,7 +244,7 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
                   </ListItemButton>
                 </ListItem>
 
-                <ListItem disablePadding onClick={() => handleNavigation("/chat")}>
+                {/* <ListItem disablePadding onClick={() => handleNavigation("/chat")}>
                   <ListItemButton sx={{ pt: 1.3 }}>
                     <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
                       <HomeIcon />
@@ -248,12 +254,12 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
                       primaryTypographyProps={{ fontWeight: 400 }}
                     />
                   </ListItemButton>
-                </ListItem>
+                </ListItem> */}
 
                 <ListItem disablePadding onClick={() => handleNavigation("/terms")}>
                   <ListItemButton sx={{ pt: 1.3 }}>
                     <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
-                      <GavelIcon />
+                      <InfoIcon />
                     </ListItemIcon>
                     <ListItemText
                       primary="Terms and Conditions"
@@ -261,14 +267,24 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
                     />
                   </ListItemButton>
                 </ListItem>
-
                 <ListItem disablePadding onClick={() => handleNavigation("/privacy")}>
                   <ListItemButton sx={{ pt: 1.3 }}>
                     <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
-                      <PrivacyTipIcon />
+                      <KeyIcon />
                     </ListItemIcon>
                     <ListItemText
                       primary="Privacy Policy"
+                      primaryTypographyProps={{ fontWeight: 400 }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding onClick={() => handleNavigation("/cookie")}>
+                  <ListItemButton sx={{ pt: 1.3 }}>
+                    <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
+                      <CookieIcon />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Cookie Policy"
                       primaryTypographyProps={{ fontWeight: 400 }}
                     />
                   </ListItemButton>
