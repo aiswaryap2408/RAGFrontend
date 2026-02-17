@@ -9,15 +9,13 @@ import HamburgerMenu from '../components/HamburgerMenu';
 import Header from '../components/header';
 
 
-const TermsAndConditions = () => {
+const CookiePolicy = () => {
     const navigate = useNavigate();
 
     return (
         <Box sx={{ bgcolor: '#FFF6EB', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Header />
             <HamburgerMenu />
-            {/* <Box sx={{ bgcolor: '#FFF6EB', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-                <Subheader title={"Terms and Conditions"} showBack onBack={() => navigate(-1)} /> */}
 
             {/* <Box sx={{ position: 'absolute', top: 50, left: 15, zIndex: 10 }}>
                 <IconButton onClick={() => navigate(-1)} sx={{ color: '#fff' }}>
@@ -25,10 +23,24 @@ const TermsAndConditions = () => {
                 </IconButton>
             </Box> */}
 
+            <Box sx={{
+                p: 3,
+                px: 5,
+                mt: 19,
+                flex: 1,
+                overflowY: 'scroll',
+                color: '#533000', "&::-webkit-scrollbar": {
+                    display: "none",
+                },
+                scrollbarWidth: "none",
+            }}>
 
-            <Box sx={{ p: 3, px: 5, mt: 19, flex: 1, overflowY: 'scroll', color: '#533000', "&::-webkit-scrollbar": { display: "none" }, scrollbarWidth: "none", }}>
+                {/* <Typography variant="h5" sx={{ color: '#F36A2F', fontWeight: 700, mb: 3, textAlign: 'center' }}>
+                    Privacy Policy
+                </Typography> */}
+
                 <Typography sx={{ color: '#000', fontWeight: 500, mb: 3, textAlign: 'center', bgcolor: '#f1d3a9', py: 2, borderRadius: 1 }}>
-                    Terms & Conditions
+                    Cookie Policy
                 </Typography>
 
                 <Box >
@@ -72,7 +84,7 @@ const TermsAndConditions = () => {
                             textTransform: 'none',
                             fontWeight: 500,
                             borderRadius: 5,
-                            py: 1.3,
+                            py: 1,
                             px: 3,
                             display: 'flex',
                             alignItems: 'center',
@@ -83,7 +95,7 @@ const TermsAndConditions = () => {
                             '&:hover': { bgcolor: '#e0c298' }
                         }}
                     >
-                        <Box component="img" src="/svg/google_play_icon.png" sx={{ width: 24, height: 24, }} alt="" />
+                        <Box component="img" src="/svg/google_play_icon.png" sx={{ width: 28, height: 28, }} alt="" />
                         Download Clickastro app
                     </Button>
                 </Box>
@@ -113,4 +125,4 @@ const TermsAndConditions = () => {
     );
 };
 
-export default TermsAndConditions;
+export default CookiePolicy;

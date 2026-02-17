@@ -16,6 +16,7 @@ import Recharge from './pages/wallet/Recharge';
 import RechargeHistory from './pages/wallet/RechargeHistory';
 import TermsAndConditions from './pages/TermsAndConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import CookiePolicy from './pages/Cookie';
 
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -151,6 +152,7 @@ function App() {
           />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/cookie" element={<CookiePolicy />} />
           <Route path="/thankyou" element={<ThankYou />} />
         </Route>
 

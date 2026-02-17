@@ -40,7 +40,7 @@ const PrivacyPolicy = () => {
                 </Typography> */}
 
                 <Typography sx={{ color: '#000', fontWeight: 500, mb: 3, textAlign: 'center', bgcolor: '#f1d3a9', py: 2, borderRadius: 1 }}>
-                    IMPORTANT
+                    Privacy Policy
                 </Typography>
 
                 <Box >
