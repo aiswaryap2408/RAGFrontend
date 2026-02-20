@@ -12,8 +12,13 @@ import {
     TextField,
     Divider,
     ListItemButton,
-    Button
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import CancelIcon from '@mui/icons-material/Cancel';
 import PrimaryButton from '../components/PrimaryButton';
@@ -40,7 +45,7 @@ const tryParseJson = (data) => {
     return null;
 };
 
-const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility }) => {
+const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility, onLabelClick }) => {
     // Filter out fields we don't want to show in the UI debug block
     const getFilteredJson = (json) => {
         if (!json) return null;
@@ -82,11 +87,21 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility 
 
                 {/* JSON Output View for Maya Intro */}
                 {jsonVisibility?.maya && mayaJson && (
-                    <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed rgba(243,106,47,0.3)' }}>
-                        <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700, mb: 0.5 }}>RECEPTIONIST CLASSIFICATION</Typography>
-                        <Box sx={{ bgcolor: 'rgba(0,0,0,0.03)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#666' }}>
-                            {JSON.stringify(getFilteredJson(mayaJson), null, 2)}
-                        </Box>
+                    <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(243,106,47,0.3)', textAlign: 'center' }}>
+                        <Typography
+                            onClick={() => onLabelClick?.(mayaJson, 'RECEPTIONIST CLASSIFICATION')}
+                            sx={{
+                                fontSize: '0.65rem',
+                                color: '#F36A2F',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                textTransform: 'uppercase',
+                                textDecoration: 'underline',
+                                '&:hover': { opacity: 0.8 }
+                            }}
+                        >
+                            View Maya JSON
+                        </Typography>
                     </Box>
                 )}
 
@@ -382,7 +397,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                     {/* Label Removed to match Maya's bubble style */}
                     <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para }} />
 
-                    {idx === paras.length - 1 && !hasReport && (!isThisActiveReport || reportState === 'IDLE') && (
+                    {/* {idx === paras.length - 1 && !hasReport && (!isThisActiveReport || reportState === 'IDLE') && (
                         <Box sx={{ mt: 2, mb: 2, display: 'flex', justifyContent: 'flex-start', position: 'relative' }}>
                             <ListItemButton
                                 onClick={handleReportClick}
@@ -411,7 +426,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                                 Get Detailed PDF Report
                             </ListItemButton>
                         </Box>
-                    )}
+                    )} */}
 
                     {time && (
                         <Typography
@@ -565,6 +580,9 @@ const Chat = () => {
     const [activeQuestion, setActiveQuestion] = useState(null);
     const [activeReportIndex, setActiveReportIndex] = useState(null);
     const [jsonVisibility, setJsonVisibility] = useState({ maya: false, guruji: false });
+    const [jsonModal, setJsonModal] = useState({ open: false, data: null, title: '' });
+    const [chatPaymentState, setChatPaymentState] = useState('IDLE'); // IDLE, REQUIRED, PAYING, COMPLETE
+    const [pendingMessageId, setPendingMessageId] = useState(null);
     const [isBuffering, setIsBuffering] = useState(false);
     const [waitMessage, setWaitMessage] = useState("");
     const messagesEndRef = useRef(null);
@@ -655,6 +673,14 @@ const Chat = () => {
                             console.log("DEBUG: mappedHistory set, count:", mappedHistory.length);
                             // Set messages to history (Replacing the initial welcome message)
                             setMessages(mappedHistory);
+
+                            // Check for unpaid chat messages to resume state
+                            const unpaidMsg = mappedHistory.find(m => m.requires_chat_payment && !m.is_paid);
+                            if (unpaidMsg) {
+                                setChatPaymentState('REQUIRED');
+                                setPendingMessageId(unpaidMsg.message_id);
+                                setActiveQuestion(unpaidMsg.content);
+                            }
                         } else {
                             console.log("DEBUG: No history messages found in most recent session.");
                         }
@@ -835,6 +861,14 @@ const Chat = () => {
         }
     };
 
+    const handleLabelClick = (data, title) => {
+        setJsonModal({
+            open: true,
+            data: data,
+            title: title || 'JSON DATA'
+        });
+    };
+
     useEffect(() => {
         if (summary || showInactivityPrompt) return;
         const timer = setTimeout(() => {
@@ -890,6 +924,7 @@ const Chat = () => {
 
         setLoading(true);
         setIsBuffering(true);
+        scrollToBottom()
         setWaitMessage("Please wait...");
 
         try {
@@ -902,6 +937,34 @@ const Chat = () => {
             }
             const history = messages.slice(1);
             const res = await sendMessage(mobile, text, history, sessionId);
+            if (res.data.requires_payment) {
+                setLoading(false);
+                setIsBuffering(false);
+                setWaitMessage("");
+
+                // Update the last user message with payment flags
+                setMessages(prev => {
+                    const next = [...prev];
+                    const lastIdx = next.length - 1;
+                    if (next[lastIdx].role === 'user') {
+                        next[lastIdx] = {
+                            ...next[lastIdx],
+                            requires_chat_payment: true,
+                            chat_payment_amount: res.data.amount,
+                            is_paid: false,
+                            message_id: res.data.message_id,
+                            mayaJson: res.data.maya_json
+                        };
+                    }
+                    return next;
+                });
+
+                setChatPaymentState('REQUIRED');
+                setPendingMessageId(res.data.message_id);
+                setActiveQuestion(text);
+                return;
+            }
+
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, timestamp, message_id } = res.data;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
@@ -1133,30 +1196,7 @@ const Chat = () => {
         }
 
         if (action === 'PAY') {
-            setReportState('PAYING');
-            // Check wallet balance in real-time
-            try {
-                const resStatus = await api.get(`/auth/user-status/${mobile}?t=${Date.now()}`);
-                const currentBalance = resStatus.data.wallet_balance || 0;
-                setWalletBalance(currentBalance);
-
-                if (currentBalance >= 49) {
-                    // Sufficient funds - proceed with wallet deduction
-                    await processReportWithWallet(mobile, category, activeQuestion, activeReportIndex);
-                } else {
-                    // Insufficient funds - open Razorpay
-                    // alert("Insufficient wallet balance. Redirecting to payment gateway...");
-                    await processReportWithRazorpay(mobile, category, activeQuestion, activeReportIndex);
-                }
-            } catch (err) {
-                console.error("Balance check failed:", err);
-                // Fallback to existing state check if API fails
-                if (walletBalance >= 49) {
-                    await processReportWithWallet(mobile, category, activeQuestion, activeReportIndex);
-                } else {
-                    await processReportWithRazorpay(mobile, category, activeQuestion, activeReportIndex);
-                }
-            }
+            processReportWithRazorpay(localStorage.getItem('mobile'), category, question, activeReportIndex);
             return;
         }
 
@@ -1169,6 +1209,110 @@ const Chat = () => {
             document.body.appendChild(link);
             link.click();
             link.remove();
+        }
+    };
+
+    const handleChatPayment = async (amount, mobile) => {
+        setChatPaymentState('PAYING');
+        try {
+            const orderRes = await createPaymentOrder(amount, mobile);
+            const { order_id, key } = orderRes.data;
+
+            const options = {
+                key,
+                amount: amount * 100,
+                currency: "INR",
+                name: "Astrology Consultation",
+                description: "Payment for personalized answer",
+                order_id,
+                handler: async (response) => {
+                    try {
+                        const verifyRes = await verifyPayment({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        });
+
+                        setChatPaymentState('COMPLETE');
+                        setThankYouAction('CHAT_PAYMENT');
+                        setThankYouData({
+                            amount: amount,
+                            points: 0,
+                            title: 'Payment successful',
+                            trustMsg: 'Guruji is now analyzing your chart...',
+                            gratitudeMsg: 'Thank you for your patience.',
+                            showWave: true,
+                            referenceId: response.razorpay_payment_id
+                        });
+                        setThankYouOpen(true);
+
+                        // Proceed to process the message after payment
+                        const lastUserMsg = messages.find(m => m.message_id === pendingMessageId);
+                        const mobile = localStorage.getItem('mobile');
+                        const history = messages.slice(1, messages.findIndex(m => m.message_id === pendingMessageId));
+
+                        const chatRes = await api.post('/auth/chat', {
+                            mobile,
+                            message: lastUserMsg.content,
+                            history,
+                            session_id: sessionId,
+                            payment_id: response.razorpay_payment_id
+                        });
+
+                        const { answer, metrics, context, assistant, wallet_balance, amount: cost, maya_json, guruji_json, timestamp, message_id } = chatRes.data;
+
+                        if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
+
+                        setMessages(prev => {
+                            const next = [...prev];
+                            // Mark the user message as paid
+                            const userIdx = next.findIndex(m => m.message_id === pendingMessageId);
+                            if (userIdx !== -1) {
+                                next[userIdx].is_paid = true;
+                                next[userIdx].payment_id = response.razorpay_payment_id;
+                            }
+
+                            // Add Guruji's response
+                            return [...next, {
+                                role: 'assistant',
+                                content: answer,
+                                assistant: assistant || 'guruji',
+                                metrics,
+                                context,
+                                amount: cost,
+                                mayaJson: maya_json,
+                                gurujiJson: guruji_json,
+                                animating: true,
+                                message_id: message_id,
+                                time: timestamp ? formatTime(timestamp) : getCurrentTime(),
+                                timestamp: timestamp || new Date().toISOString()
+                            }];
+                        });
+                        setChatPaymentState('IDLE');
+                        setPendingMessageId(null);
+                    } catch (err) {
+                        console.error("Chat payment verification failed:", err);
+                        alert("Payment verification failed. Please contact support.");
+                        setChatPaymentState('REQUIRED');
+                    }
+                },
+                modal: {
+                    ondismiss: () => {
+                        setChatPaymentState('REQUIRED');
+                    }
+                },
+                prefill: {
+                    contact: mobile
+                },
+                theme: {
+                    color: "#F36A2F"
+                }
+            };
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+        } catch (err) {
+            console.error("Order creation failed:", err);
+            setChatPaymentState('REQUIRED');
         }
     };
 
@@ -1308,6 +1452,8 @@ const Chat = () => {
                 }}
             >
                 {messages.map((msg, i) => {
+                    const idx = i; // Use idx for the current message index
+
                     if (msg.assistant === 'maya' && msg.content && msg.content.trim() !== '') {
                         return (
                             <MayaIntro
@@ -1318,6 +1464,7 @@ const Chat = () => {
                                 rawResponse={msg.rawResponse}
                                 time={msg.time}
                                 jsonVisibility={jsonVisibility}
+                                onLabelClick={handleLabelClick}
                             />
                         );
                     }
@@ -1356,25 +1503,70 @@ const Chat = () => {
                                     />
                                     {/* JSON Output View for Guruji Multi-bubble */}
                                     {(jsonVisibility.maya || jsonVisibility.guruji) && (msg.mayaJson || gurujiData) && (
-                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)' }}>
-                                            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(0,0,0,0.4)', mb: 0.5, textTransform: 'uppercase' }}>
-                                                Debug Data:
-                                            </Typography>
+                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)', display: 'flex', gap: 2, justifyContent: 'center' }}>
                                             {(msg.mayaJson && jsonVisibility.maya) && (
-                                                <Box sx={{ mb: 1 }}>
-                                                    <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700 }}>RECEPTIONIST CLASSIFICATION</Typography>
-                                                    <Box sx={{ bgcolor: 'rgba(0,0,0,0.03)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#666' }}>
-                                                        {JSON.stringify((({ amount, usage, ...rest }) => rest)(msg.mayaJson), null, 2)}
-                                                    </Box>
-                                                </Box>
+                                                <Typography
+                                                    onClick={() => handleLabelClick(msg.mayaJson, 'RECEPTIONIST CLASSIFICATION')}
+                                                    sx={{
+                                                        fontSize: '0.65rem',
+                                                        color: 'rgba(0,0,0,0.4)',
+                                                        fontWeight: 800,
+                                                        cursor: 'pointer',
+                                                        textTransform: 'uppercase',
+                                                        textDecoration: 'underline',
+                                                        '&:hover': { color: '#F36A2F' }
+                                                    }}
+                                                >
+                                                    Maya JSON
+                                                </Typography>
                                             )}
                                             {(gurujiData && jsonVisibility.guruji) && (
-                                                <Box>
-                                                    <Typography sx={{ fontSize: '0.6rem', color: '#999', fontWeight: 700 }}>ASTROLOGER STRUCTURED RESPONSE</Typography>
-                                                    <Box sx={{ bgcolor: 'rgba(243,106,47,0.05)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#444', border: '1px solid rgba(243,106,47,0.1)' }}>
-                                                        {JSON.stringify(gurujiData, null, 2)}
-                                                    </Box>
-                                                </Box>
+                                                <Typography
+                                                    onClick={() => handleLabelClick(gurujiData, 'ASTROLOGER STRUCTURED RESPONSE')}
+                                                    sx={{
+                                                        fontSize: '0.65rem',
+                                                        color: '#F36A2F',
+                                                        fontWeight: 800,
+                                                        cursor: 'pointer',
+                                                        textTransform: 'uppercase',
+                                                        textDecoration: 'underline',
+                                                        '&:hover': { opacity: 0.8 }
+                                                    }}
+                                                >
+                                                    Guruji JSON
+                                                </Typography>
+                                            )}
+                                            {(msg.context && jsonVisibility.guruji) && (
+                                                <Typography
+                                                    onClick={() => handleLabelClick(msg.context, 'RAG CHUNKS')}
+                                                    sx={{
+                                                        fontSize: '0.65rem',
+                                                        color: 'rgba(0,0,0,0.4)',
+                                                        fontWeight: 800,
+                                                        cursor: 'pointer',
+                                                        textTransform: 'uppercase',
+                                                        textDecoration: 'underline',
+                                                        '&:hover': { color: '#F36A2F' }
+                                                    }}
+                                                >
+                                                    RAG
+                                                </Typography>
+                                            )}
+                                            {(msg.metrics && jsonVisibility.guruji) && (
+                                                <Typography
+                                                    onClick={() => handleLabelClick(msg.metrics, 'MODELLING METRICS')}
+                                                    sx={{
+                                                        fontSize: '0.65rem',
+                                                        color: '#F36A2F',
+                                                        fontWeight: 800,
+                                                        cursor: 'pointer',
+                                                        textTransform: 'uppercase',
+                                                        textDecoration: 'underline',
+                                                        '&:hover': { opacity: 0.8 }
+                                                    }}
+                                                >
+                                                    Modelling %
+                                                </Typography>
                                             )}
                                         </Box>
                                     )}
@@ -1401,6 +1593,45 @@ const Chat = () => {
                         langDetected.toLowerCase() !== 'english' &&
                         category === 'PROCEED';
 
+                    if (msg.role === 'user' && msg.requires_chat_payment && !msg.is_paid) {
+                        return (
+                            <Box key={i} sx={{ width: '100%', mb: 2 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 2 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
+                                        <Box sx={{
+                                            p: '12px 12px 24px 12px',
+                                            borderRadius: '10px',
+                                            bgcolor: '#2f3148',
+                                            color: 'white',
+                                            boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                                            position: 'relative',
+                                            maxWidth: '325px',
+                                            minWidth: '100px',
+                                            overflowWrap: "break-word",
+                                            wordBreak: "break-word",
+                                            whiteSpace: "pre-line",
+                                        }}>
+                                            <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}>
+                                                {msg.content}
+                                            </Typography>
+                                            <Typography sx={{ fontSize: '0.75rem', opacity: 0.8, position: 'absolute', bottom: 5, right: 8, color: 'rgba(255,255,255,0.9)', fontWeight: 500, pt: 1 }}>
+                                                {msg.time}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                                <MayaTemplateBox
+                                    name={userName.split(' ')[0]}
+                                    content={`personalized answer to your concern is chargeable ₹39.`}
+                                    buttonLabel={chatPaymentState === 'REQUIRED' || chatPaymentState === 'IDLE' ? "Pay ₹39 to get answer" : "Processing..."}
+                                    onButtonClick={() => handleChatPayment(39, localStorage.getItem('mobile'))}
+                                    loading={chatPaymentState === 'PAYING'}
+                                    disabled={chatPaymentState === 'PAYING' || chatPaymentState === 'COMPLETE'}
+                                />
+                            </Box>
+                        );
+                    }
+
                     return (
                         <Box
                             key={i}
@@ -1420,28 +1651,7 @@ const Chat = () => {
                                 maxWidth: '90%',
 
                             }}>
-                                {/* {msg.role === 'assistant' && (
-                                    <Box sx={{
-                                        width: 40,
-                                        height: 40,
-                                        borderRadius: '50%',
-                                        bgcolor: 'white',
-                                        border: '3px solid #F36A2F',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        flexShrink: 0,
-                                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                                    }}>
-                                        {msg.assistant === 'maya' ? (
-                                            <Typography sx={{ fontWeight: 800, color: '#F36A2F', fontSize: '0.9rem' }}>M</Typography>
-                                        ) : (
-                                            <img src="/svg/guruji_illustrated.svg" style={{ width: 32 }} alt="G" />
-                                        )}
-                                    </Box>
-                                )} */}
-
-                                {/* Only render bubble if there is content */}
+                                {/* ... message contents ... */}
                                 {msg.content && msg.content.trim() !== '' && (
                                     <Box sx={{
                                         p: '12px 12px 24px 12px',
@@ -1479,20 +1689,61 @@ const Chat = () => {
 
                                         {/* JSON Output View (for regular messages) */}
                                         {(msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) && (
-                                            <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed rgba(255,255,255,0.2)' }}>
-                                                <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: '#000000', mb: 0.5, textTransform: 'uppercase' }}>
-                                                    Debug Data:
+                                            <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)', textAlign: 'right' }}>
+                                                <Typography
+                                                    onClick={() => handleLabelClick(msg.mayaJson, 'RECEPTIONIST CLASSIFICATION')}
+                                                    sx={{
+                                                        fontSize: '0.65rem',
+                                                        color: '#F36A2F',
+                                                        fontWeight: 800,
+                                                        cursor: 'pointer',
+                                                        textTransform: 'uppercase',
+                                                        textDecoration: 'underline',
+                                                        '&:hover': { opacity: 0.8 }
+                                                    }}
+                                                >
+                                                    Maya JSON
                                                 </Typography>
-                                                <Box sx={{ mb: 1 }}>
-                                                    <Typography sx={{ fontSize: '0.6rem', color: '#000000', fontWeight: 700 }}>RECEPTIONIST CLASSIFICATION</Typography>
-                                                    <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: 'white' }}>
-                                                        {JSON.stringify((({ amount, usage, ...rest }) => rest)(msg.mayaJson), null, 2)}
-                                                    </Box>
-                                                </Box>
                                             </Box>
                                         )}
 
-                                        {/* Automated chat fee label removed */}
+                                        {/* Additional Debug Labels for Regular Guruji Bubble */}
+                                        {(msg.assistant === 'guruji' && jsonVisibility.guruji) && (
+                                            <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(255,255,255,0.2)', display: 'flex', gap: 1.5, justifyContent: 'flex-end' }}>
+                                                {msg.context && (
+                                                    <Typography
+                                                        onClick={() => handleLabelClick(msg.context, 'RAG CHUNKS')}
+                                                        sx={{
+                                                            fontSize: '0.65rem',
+                                                            color: 'rgba(255,255,255,0.7)',
+                                                            fontWeight: 800,
+                                                            cursor: 'pointer',
+                                                            textTransform: 'uppercase',
+                                                            textDecoration: 'underline',
+                                                            '&:hover': { color: 'white' }
+                                                        }}
+                                                    >
+                                                        RAG
+                                                    </Typography>
+                                                )}
+                                                {msg.metrics && (
+                                                    <Typography
+                                                        onClick={() => handleLabelClick(msg.metrics, 'MODELLING METRICS')}
+                                                        sx={{
+                                                            fontSize: '0.65rem',
+                                                            color: 'rgba(255,255,255,0.8)',
+                                                            fontWeight: 800,
+                                                            cursor: 'pointer',
+                                                            textTransform: 'uppercase',
+                                                            textDecoration: 'underline',
+                                                            '&:hover': { color: 'white' }
+                                                        }}
+                                                    >
+                                                        Modelling %
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        )}
 
                                         {/* Timestamp moved inside the bubble */}
                                         <Typography
@@ -1503,6 +1754,7 @@ const Chat = () => {
                                                 bottom: 5,
                                                 right: 8,
                                                 color: '#000000',
+
                                                 fontWeight: 500,
                                                 pt: 1,
                                             }}
@@ -1729,6 +1981,50 @@ const Chat = () => {
                     </Typography>
                 </Box>
             )}
+            {/* Full JSON Modal */}
+            <Dialog
+                open={jsonModal.open}
+                onClose={() => setJsonModal({ ...jsonModal, open: false })}
+                fullWidth
+                maxWidth="md"
+                PaperProps={{
+                    sx: { borderRadius: 3, bgcolor: '#fbfbfb' }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 800, color: '#333', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {jsonModal.title}
+                    <IconButton onClick={() => setJsonModal({ ...jsonModal, open: false })}>
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Box sx={{
+                        bgcolor: '#1e1e1e',
+                        color: '#d4d4d4',
+                        p: 2,
+                        borderRadius: 2,
+                        fontFamily: 'monospace',
+                        fontSize: '0.85rem',
+                        whiteSpace: 'pre-wrap',
+                        boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)'
+                    }}>
+                        {JSON.stringify(jsonModal.data, null, 4)}
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button
+                        onClick={() => {
+                            navigator.clipboard.writeText(JSON.stringify(jsonModal.data, null, 2));
+                        }}
+                        sx={{ textTransform: 'none', color: '#F36A2F' }}
+                    >
+                        Copy JSON
+                    </Button>
+                    <Button onClick={() => setJsonModal({ ...jsonModal, open: false })} sx={{ textTransform: 'none', color: '#666' }}>
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
