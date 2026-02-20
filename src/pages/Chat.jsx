@@ -52,10 +52,10 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility 
         <Box sx={{ pt: 4, pb: 3, width: "100%" }}>
             <Box sx={{
                 position: "relative",
-                border: "2px solid #F36A2F",
+                // border: "2px solid #F36A2F",
                 borderRadius: 2,
                 p: 2,
-                bgcolor: "#fcebd3",
+                bgcolor: "#fece8d",
                 boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
             }}>
                 {/* Avatar */}
@@ -130,10 +130,10 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
     <Box sx={{ px: 0, pt: 3, mb: 2.5, pb: 1, width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Box sx={{
             position: "relative",
-            border: "2px solid #F36A2F",
+            // border: "2px solid #F36A2F",
             borderRadius: 2,
             p: 2.5,
-            bgcolor: "#fcebd3",
+            bgcolor: "#fece8d",
             width: '100%',
             maxWidth: 450
         }}>
@@ -366,8 +366,8 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     const bubbleSx = {
         p: '16px 12px 14px 16px',
         borderRadius: '10px',
-        bgcolor: '#ff8338',
-        color: 'white',
+        bgcolor: '#f1f1f1',
+        color: '#000000',
         boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
         border: 'none',
         position: 'relative',
@@ -421,7 +421,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                                 position: 'absolute',
                                 bottom: (idx === paras.length - 1 && !hasReport && (!isThisActiveReport || reportState === 'IDLE')) ? 32 : 4,
                                 right: 8,
-                                color: 'rgba(255,255,255,0.9)',
+                                color: '#000000',
                                 fontWeight: 500
                             }}
                         >
@@ -1179,7 +1179,7 @@ const Chat = () => {
                 // minHeight: '100vh',
                 display: 'flex',
                 flexDirection: 'column',
-                bgcolor: '#FFF6EB',
+                bgcolor: '#FFFFFF',
                 height: "100vh",
                 position: 'relative',
                 // width: '100%'
@@ -1446,8 +1446,8 @@ const Chat = () => {
                                     <Box sx={{
                                         p: '12px 12px 24px 12px',
                                         borderRadius: '10px',
-                                        bgcolor: msg.role === 'user' ? '#2f3148' : '#ff8338',
-                                        color: 'white',
+                                        bgcolor: msg.role === 'user' ? '#e2e2e2' : '#f1f1f1',
+                                        color: '#000000',
                                         boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                         border: 'none',
                                         position: 'relative',
@@ -1463,7 +1463,7 @@ const Chat = () => {
                                                 fontWeight: 900,
                                                 textTransform: 'uppercase',
                                                 mb: 0.5,
-                                                color: 'rgba(255,255,255,0.9)',
+                                                color: '#000000',
                                                 letterSpacing: 1,
 
                                             }}>
@@ -1480,11 +1480,11 @@ const Chat = () => {
                                         {/* JSON Output View (for regular messages) */}
                                         {(msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) && (
                                             <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed rgba(255,255,255,0.2)' }}>
-                                                <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)', mb: 0.5, textTransform: 'uppercase' }}>
+                                                <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: '#000000', mb: 0.5, textTransform: 'uppercase' }}>
                                                     Debug Data:
                                                 </Typography>
                                                 <Box sx={{ mb: 1 }}>
-                                                    <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>RECEPTIONIST CLASSIFICATION</Typography>
+                                                    <Typography sx={{ fontSize: '0.6rem', color: '#000000', fontWeight: 700 }}>RECEPTIONIST CLASSIFICATION</Typography>
                                                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 1, borderRadius: 1, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: 'white' }}>
                                                         {JSON.stringify((({ amount, usage, ...rest }) => rest)(msg.mayaJson), null, 2)}
                                                     </Box>
@@ -1502,7 +1502,7 @@ const Chat = () => {
                                                 position: 'absolute',
                                                 bottom: 5,
                                                 right: 8,
-                                                color: 'rgba(255,255,255,0.9)',
+                                                color: '#000000',
                                                 fontWeight: 500,
                                                 pt: 1,
                                             }}

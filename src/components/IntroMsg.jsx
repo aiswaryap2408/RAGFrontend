@@ -33,10 +33,10 @@ const IntroMsg = ({
             <Box
                 sx={{
                     position: "relative",
-                    border: "2px solid #F36A2F",
+                    // border: "2px solid #F36A2F",
                     borderRadius: 2,
                     p: 2,
-                    bgcolor: "#fcebd3",
+                    bgcolor: "#fece8d",
                     ...cardSx,
                 }}
             >

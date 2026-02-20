@@ -58,7 +58,7 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
                 <Box
                     sx={{
                         flex: 1,
-                        bgcolor: "#fff4e5",
+                        bgcolor: "#ffffff",
                         borderRadius: 30,
                         px: 2,
                         display: "flex",
@@ -106,7 +106,7 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
                     sx={{
                         width: 48,
                         height: 48,
-                        bgcolor: "#fff4e5",
+                        bgcolor: "#ffffff",
                         borderRadius: "50%",
                         display: "flex",
                         alignItems: "center",
