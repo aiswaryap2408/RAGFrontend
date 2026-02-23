@@ -276,7 +276,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     const paras = [
         gurujiJson?.para1 || '',
         gurujiJson?.para2 || '',
-        (gurujiJson?.para3 || '') + "<br><br>" + (gurujiJson?.follow_up || gurujiJson?.followup || "🤔 What's Next?")
+        // (gurujiJson?.para3 || '') + "<br><br>" + (gurujiJson?.follow_up || gurujiJson?.followup || "🤔 What's Next?")
     ].filter(p => p.trim() !== '');
 
     const [visibleCount, setVisibleCount] = useState(animate ? 0 : paras.length);
@@ -1572,14 +1572,14 @@ const Chat = () => {
                                     )}
 
                                     {/* Translation Indicator for Guruji Response */}
-                                    {msg.mayaJson?.language_detected &&
-                                        msg.mayaJson.language_detected.toLowerCase() !== 'english' &&
+                                    {/* {msg.mayaJson?.msg_language &&
+                                        msg.mayaJson.msg_language.toLowerCase() !== 'english' &&
                                         msg.mayaJson.category === 'PROCEED' && (
                                             <TranslationIndicator
-                                                text={`Translated from English to ${msg.mayaJson.language_detected} for the user`}
+                                                text={`Translated ${msg.mayaJson.msg_language}`}
                                                 sx={{ mt: reportState === 'IDLE' ? '8px' : '3px' }}
                                             />
-                                        )}
+                                        )} */}
                                 </Box>
                             </Box>
                         );
@@ -1587,7 +1587,7 @@ const Chat = () => {
 
                     // Check for translation indicators
                     const nextMsg = messages[i + 1];
-                    const langDetected = msg.role === 'user' ? nextMsg?.mayaJson?.language_detected : msg.mayaJson?.language_detected;
+                    const langDetected = msg.role === 'user' ? nextMsg?.mayaJson?.msg_language : msg.mayaJson?.msg_language;
                     const category = msg.role === 'user' ? nextMsg?.mayaJson?.category : msg.mayaJson?.category;
                     const showTranslationIndicator = langDetected &&
                         langDetected.toLowerCase() !== 'english' &&
@@ -1769,8 +1769,8 @@ const Chat = () => {
                             {showTranslationIndicator && (
                                 <TranslationIndicator
                                     text={msg.role === 'user'
-                                        ? `${langDetected} detected, translated to English for astrologer.`
-                                        : `Translated from English to ${langDetected} for the user`
+                                        ? `${langDetected}`
+                                        : ``
                                     }
                                 />
                             )}
