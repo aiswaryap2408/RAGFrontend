@@ -30,6 +30,7 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
   const containerRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const isLoggedIn = !!localStorage.getItem("token");
 
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
   const toggleDrawer = (val) => {
@@ -54,7 +55,9 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
     toggleDrawer(false);
   };
 
+  const token = localStorage.getItem('token');
   const showTrigger = [
+    "/",
     "/chat",
     "/profile",
     "/history",
@@ -216,21 +219,20 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
                   </Box>
                 </Box>
               </Box>
-
               <List sx={{ pt: 2 }}>
-                <ListItem disablePadding onClick={() => handleNavigation("logout")}>
-                  <ListItemButton sx={{ pt: 1.3 }}>
-                    <ListItemIcon sx={{ minWidth: 40 }}>
-                      <LogoutIcon sx={{ minWidth: 40, color: "#fff" }} />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Logout"
-                      primaryTypographyProps={{ fontWeight: 400 }}
-                    />
-                  </ListItemButton>
-                </ListItem>
-
-
+                {isLoggedIn && location.pathname !== "/register" && (
+                  <ListItem disablePadding onClick={() => handleNavigation("logout")}>
+                    <ListItemButton sx={{ pt: 1.3 }}>
+                      <ListItemIcon sx={{ minWidth: 40 }}>
+                        <LogoutIcon sx={{ minWidth: 40, color: "#fff" }} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Logout"
+                        primaryTypographyProps={{ fontWeight: 400 }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                )}
 
                 <ListItem disablePadding onClick={() => handleNavigation("/dashboard")}>
                   <ListItemButton sx={{ pt: 1.3 }}>
