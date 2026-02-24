@@ -15,7 +15,8 @@ const Login = () => {
 
     useEffect(() => {
         const mobile = localStorage.getItem('mobile');
-        if (mobile) {
+        const token = localStorage.getItem('token');
+        if (mobile && token) {
             navigate('/chat');
         }
     }, [navigate]);

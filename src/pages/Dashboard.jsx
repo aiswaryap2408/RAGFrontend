@@ -128,7 +128,7 @@ const Dashboard = () => {
                     pb: 12,
                     px: 3
                 }}>
-                    {!isLoggedIn && (
+                    {/* {!isLoggedIn && (
                         <PrimaryButton
                             label="Login"
                             onClick={() => navigate("/")}
@@ -151,7 +151,7 @@ const Dashboard = () => {
                                 mb: 3,
                                 mt: 2
                             }} />
-                    )}
+                    )} */}
                     {isLoggedIn && (
                         <Box sx={{ mb: 3, display: "flex", justifyContent: "center" }}>
                             <Typography sx={{ fontWeight: 400, color: '#fff', fontSize: '1rem', bgcolor: '#dc5d35', borderRadius: 5, p: 1, px: 3, display: "flex", alignItems: "center" }}>
@@ -194,15 +194,20 @@ const Dashboard = () => {
                         <Box sx={{ bgcolor: '#fff', p: 3, borderRadius: 2, width: '100%', minHeight: 150, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                             {loadingPrediction ? (
                                 <Typography fontSize={14} color="text.secondary">Loading your daily prediction...</Typography>
-                            ) : (
+                            ) : isLoggedIn ? (
                                 <Typography
                                     fontSize={15}
                                     fontWeight={500}
                                     color={prediction && (prediction.includes("log") || prediction.includes("prepared")) ? "text.secondary" : "#444"}
                                     textAlign={prediction && (prediction.includes("log") || prediction.includes("prepared")) ? 'center' : 'justify'}
                                     lineHeight={1.6}
-                                    dangerouslySetInnerHTML={{ __html: prediction || (isLoggedIn ? "Fetching your prediction..." : "Login to view predictions") }}
+                                    dangerouslySetInnerHTML={{ __html: prediction || "Fetching your prediction..." }}
                                 />
+                            ) : (
+                                <Typography fontSize={15} color="text.secondary" textAlign="center">
+                                    You are logged out.<br />
+                                    Login to view the predictions.
+                                </Typography>
                             )}
                         </Box>
                         {!isLoggedIn && (

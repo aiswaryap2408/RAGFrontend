@@ -276,7 +276,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     const paras = [
         gurujiJson?.para1 || '',
         gurujiJson?.para2 || '',
-        (gurujiJson?.para3 || '') + "<br><br>" + (gurujiJson?.follow_up || gurujiJson?.followup || "🤔 What's Next?")
+        // (gurujiJson?.para3 || '') + "<br><br>" + (gurujiJson?.follow_up || gurujiJson?.followup || "🤔 What's Next?")
     ].filter(p => p.trim() !== '');
 
     const [visibleCount, setVisibleCount] = useState(animate ? 0 : paras.length);
@@ -293,9 +293,18 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     ];
 
     const scrollToBottom = () => {
-        textEndRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (!textEndRef.current) return;
+        // Only auto-scroll if user is near the end of the text block already
+        const container = textEndRef.current.closest('.MuiBox-root');
+        if (container) {
+            const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+            if (isNearBottom) {
+                textEndRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        } else {
+            textEndRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
     };
-
     const getDelayForText = (text) => {
         if (!text) return 2000;
         // Strip HTML tags to get pure text word count
@@ -434,7 +443,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                                 fontSize: '0.75rem',
                                 opacity: 0.8,
                                 position: 'absolute',
-                                bottom: (idx === paras.length - 1 && !hasReport && (!isThisActiveReport || reportState === 'IDLE')) ? 32 : 4,
+                                bottom: (idx === paras.length - 1 && !hasReport && (!isThisActiveReport || reportState === 'IDLE')) ? 4 : 4,
                                 right: 8,
                                 color: '#000000',
                                 fontWeight: 500
@@ -446,32 +455,6 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                 </Box>
             ))}
 
-            {isBuffering && (
-                <Box sx={{
-                    position: 'fixed',
-                    bottom: 80,
-                    left: 0,
-                    right: 0,
-                    mx: 'auto',
-                    width: { xs: '90%', sm: 400 },
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    zIndex: 10,
-                    pointerEvents: 'none'
-                }}>
-                    <Typography sx={{ fontSize: '0.8rem', color: '#a19b93', fontWeight: 'normal', textShadow: '0 1px 2px rgba(255,255,255,0.8)' }}>
-                        {waitMessage}
-                    </Typography>
-                    {/* <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite' }} />
-                        <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.2s' }} />
-                        <Box sx={{ width: 6, height: 6, bgcolor: '#ff8338', borderRadius: '50%', animation: 'bounce 1s infinite 0.4s' }} />
-                    </Box> */}
-                </Box>
-            )}
 
             {isThisActiveReport && (reportState === 'CONFIRMING' || reportState === 'PREPARING' || reportState === 'READY') && (
                 <MayaTemplateBox
@@ -1448,7 +1431,7 @@ const Chat = () => {
                     px: 3,
                     pb: 10,
 
-                    pt: showHeader ? 19 : 12,
+                    pt: 19,
                 }}
             >
                 {messages.map((msg, i) => {
@@ -1622,9 +1605,9 @@ const Chat = () => {
                                 </Box>
                                 <MayaTemplateBox
                                     name={userName.split(' ')[0]}
-                                    content={`personalized answer to your concern is chargeable ₹39.`}
-                                    buttonLabel={chatPaymentState === 'REQUIRED' || chatPaymentState === 'IDLE' ? "Pay ₹39 to get answer" : "Processing..."}
-                                    onButtonClick={() => handleChatPayment(39, localStorage.getItem('mobile'))}
+                                    content={`personalized answer to your concern is chargeable ₹${msg.chat_payment_amount || 39}.`}
+                                    buttonLabel={chatPaymentState === 'REQUIRED' || chatPaymentState === 'IDLE' ? `Pay ₹${msg.chat_payment_amount || 39} to get answer` : "Processing..."}
+                                    onButtonClick={() => handleChatPayment(msg.chat_payment_amount || 39, localStorage.getItem('mobile'))}
                                     loading={chatPaymentState === 'PAYING'}
                                     disabled={chatPaymentState === 'PAYING' || chatPaymentState === 'COMPLETE'}
                                 />

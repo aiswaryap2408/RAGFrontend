@@ -14,27 +14,38 @@ import {
     Button
 } from "@mui/material";
 import DownloadIcon from '@mui/icons-material/Download';
-import Header from "../components/header";
+import Subheader from '../components/subheader';
 import ConsultFooter from "../components/consultFooter";
-import HamburgerMenu from "../components/HamburgerMenu";
-import { getUserReports, downloadReportById } from "../api";
+import { useNavigate } from 'react-router-dom';
+import { getUserReports, downloadReportById, getBalance } from "../api";
 
 const DetailedReports = () => {
+    const navigate = useNavigate();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [downloadingId, setDownloadingId] = useState(null);
+    const [balance, setBalance] = useState(0);
     const mobile = localStorage.getItem("mobile");
 
     useEffect(() => {
-        fetchReports();
-    }, []);
+        if (mobile) {
+            fetchData();
+        } else {
+            navigate('/');
+        }
+    }, [mobile]);
 
-    const fetchReports = async () => {
+    const fetchData = async () => {
+        setLoading(true);
         try {
-            const res = await getUserReports(mobile);
-            setReports(res.data.reports || []);
+            const [reportsRes, balanceRes] = await Promise.all([
+                getUserReports(mobile),
+                getBalance(mobile)
+            ]);
+            setReports(reportsRes.data.reports || []);
+            setBalance(balanceRes.data.balance || 0);
         } catch (error) {
-            console.error("Failed to fetch reports:", error);
+            console.error("Failed to fetch data:", error);
         } finally {
             setLoading(false);
         }
@@ -64,12 +75,41 @@ const DetailedReports = () => {
     };
 
     return (
-        <Box sx={{ bgcolor: "#fff4e5", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-            <Header backgroundImage="/svg/top_curve_light.svg" />
-            <HamburgerMenu />
+        <Box sx={{
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            bgcolor: '#FFF6EB',
+            overflow: 'hidden',
+        }}>
+            <Box sx={{ position: 'relative', flexShrink: 0, zIndex: 100, bgcolor: '#FFF6EB' }}>
+                <Subheader title={'Detailed Reports'} showBack onBack={() => navigate('/chat')} />
+            </Box>
 
-            <Box sx={{ p: 3, flex: 1, maxWidth: 800, mx: "auto", width: "100%", mt: 20 }}>
-                <Typography variant="h5" sx={{ fontWeight: 600, color: "#dc5d35", mb: 3, textAlign: "center" }}>
+            <Box sx={{
+                flex: 1,
+                overflowY: 'auto',
+                position: 'relative',
+                zIndex: 10,
+                mt: 9,
+                pt: 2,
+                px: 2,
+                pb: 10,
+                maxWidth: 800,
+                mx: "auto",
+                width: "100%",
+                '&::-webkit-scrollbar': { display: 'none' },
+                msOverflowStyle: 'none',
+                scrollbarWidth: 'none'
+            }}>
+                {/* <Box sx={{ mb: 3 }}>
+                    <Typography sx={{ fontWeight: 700, color: '#eb3c34', fontSize: '1rem' }}>Current wallet balance:</Typography>
+                    <Typography sx={{ fontWeight: 500, color: '#53300e', fontSize: '2.5rem' }}>
+                        {balance.toLocaleString()}<span style={{ fontSize: '1.5rem', fontWeight: 400 }}> pts</span>
+                    </Typography>
+                </Box> */}
+
+                <Typography variant="h5" sx={{ fontWeight: 600, color: "#dc5d35", mb: 2 }}>
                     My Detailed Reports
                 </Typography>
 
@@ -85,7 +125,7 @@ const DetailedReports = () => {
                         <Button
                             variant="contained"
                             sx={{ mt: 2, bgcolor: "#54a170", "&:hover": { bgcolor: "#458a5c" }, borderRadius: 50 }}
-                            onClick={() => window.location.href = '/chat'}
+                            onClick={() => navigate('/chat')}
                         >
                             Get Your First Report
                         </Button>
