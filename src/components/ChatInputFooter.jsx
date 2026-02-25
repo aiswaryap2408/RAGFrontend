@@ -17,7 +17,7 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
 
 
     return (
-        <Box sx={{ position: "fixed", width: { xs: '100%', sm: 450 }, bottom: 0 }}>
+        <Box sx={{ position: "fixed", width: { xs: '100%', sm: 450 }, bottom: 0, zIndex: 1000 }}>
             {/* Bottom Curves */}
             <Box
                 sx={{
