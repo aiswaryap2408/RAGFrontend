@@ -66,6 +66,7 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
     "/wallet/recharge",
     "/dashboard",
     "/register",
+    "/onboarding",
     "/terms",
     "/privacy",
     "/cookie"

@@ -1351,7 +1351,7 @@ const Chat = () => {
                 }}
             />
 
-            {/* <HamburgerMenu
+            <HamburgerMenu
                 menubarsx={{
                     position: 'fixed',
                     // top: 25,
@@ -1360,7 +1360,7 @@ const Chat = () => {
                     zIndex: 1210,
                     pointerEvents: showHeader ? 'auto' : 'none',
                 }}
-            /> */}
+            />
 
 
             {messages.some(m => m.assistant === 'guruji') && (

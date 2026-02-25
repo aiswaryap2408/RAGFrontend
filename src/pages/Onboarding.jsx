@@ -5,16 +5,33 @@ import Header from '../components/header';
 import PrimaryButton from '../components/PrimaryButton';
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
 import { getUserStatus } from '../api';
+import HamburgerMenu from '../components/HamburgerMenu';
 
 const Onboarding = () => {
     const navigate = useNavigate();
     const [activeDot, setActiveDot] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState(null);
+    const [showHeader, setShowHeader] = useState(true);
+    const lastScrollTop = React.useRef(0);
+
+    const handleScroll = (e) => {
+        const scrollTop = e.target.scrollTop;
+        if (Math.abs(scrollTop - lastScrollTop.current) < 10) return;
+
+        if (scrollTop <= 10) {
+            setShowHeader(true);
+        } else if (scrollTop > lastScrollTop.current) {
+            setShowHeader(false);
+        } else {
+            setShowHeader(true);
+        }
+        lastScrollTop.current = scrollTop <= 0 ? 0 : scrollTop;
+    };
 
     // Retrieve user name from local storage or set default
     const name = localStorage.getItem('userName') || "User";
-    const mobile = localStorage.getItem('userMobile');
+    const mobile = localStorage.getItem('mobile');
 
     const handleBack = () => {
         setActiveDot((prev) => Math.max(prev - 1, 0));
@@ -26,7 +43,7 @@ const Onboarding = () => {
         } else {
             console.log("Onboarding completed, checking status...");
             if (!mobile) {
-                navigate('/chat');
+                navigate('/dashboard');
                 return;
             }
 
@@ -34,7 +51,7 @@ const Onboarding = () => {
             try {
                 const res = await getUserStatus(mobile);
                 if (res.data.status === 'ready') {
-                    navigate('/chat');
+                    navigate('/dashboard');
                 } else if (res.data.status === 'failed') {
                     console.error("Processing failed, redirecting to register...");
                     navigate('/register');
@@ -45,7 +62,7 @@ const Onboarding = () => {
                             const pollRes = await getUserStatus(mobile);
                             if (pollRes.data.status === 'ready') {
                                 clearInterval(pollInterval);
-                                navigate('/chat');
+                                navigate('/dashboard');
                             } else if (pollRes.data.status === 'failed') {
                                 clearInterval(pollInterval);
                                 console.error("Polling: Processing failed, redirecting to register...");
@@ -59,7 +76,7 @@ const Onboarding = () => {
             } catch (err) {
                 console.error("Status check failed", err);
                 // Fallback to chat, it has its own polling
-                navigate('/chat');
+                navigate('/dashboard');
             }
         }
     };
@@ -215,8 +232,27 @@ const Onboarding = () => {
     const data = getCardContent(name)[activeDot];
 
     return (
-        <Box>
+        <Box
+            onScroll={handleScroll}
+            sx={{
+                height: "100vh",
+                overflowY: "auto",
+                position: "relative",
+                "&::-webkit-scrollbar": { display: "none" },
+                scrollbarWidth: "none",
+            }}
+        >
             <Header />
+            <HamburgerMenu
+                menubarsx={{
+                    position: 'fixed',
+                    // top: 25,
+                    // transition: 'transform 0.3s ease-in-out',
+                    // transform: showHeader ? 'translateY(0)' : 'translateY(-100px)',
+                    zIndex: 1210,
+                    pointerEvents: showHeader ? 'auto' : 'none',
+                }}
+            />
 
             <Box sx={{ width: "100%", px: 3, py: 4, mt: 18 }}>
                 {/* Avatar */}
