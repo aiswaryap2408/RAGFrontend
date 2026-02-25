@@ -82,7 +82,7 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
           onClick={() => toggleDrawer(true)}
           sx={{
             position: "fixed",
-            top: 50,
+            top: 60,
             left: "max(20px, calc(50% - 205px))",
             display: "flex",
             flexDirection: "column",
@@ -97,9 +97,9 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
             <Box
               key={i}
               sx={{
-                width: 30,
+                width: 25,
                 height: "0.2rem",
-                bgcolor: "#333",
+                bgcolor: "#fff",
               }}
             />
           ))}

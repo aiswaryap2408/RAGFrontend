@@ -555,6 +555,8 @@ const Chat = () => {
     const [feedback, setFeedback] = useState({ rating: 0, comment: '' });
     const [submittingFeedback, setSubmittingFeedback] = useState(false);
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+    const [profileDob, setProfileDob] = useState('');
+    const [profileStar, setProfileStar] = useState('');
 
     // Multi-step report flow state
     const [reportState, setReportState] = useState('IDLE'); // IDLE, CONFIRMING, PAYING, PREPARING, READY
@@ -716,6 +718,25 @@ const Chat = () => {
                 if (res.data.user_profile?.name) {
                     setUserName(res.data.user_profile.name);
                     localStorage.setItem('userName', res.data.user_profile.name);
+                }
+                if (res.data.user_profile?.dob) {
+                    const dob = res.data.user_profile.dob;
+                    try {
+                        const date = new Date(dob);
+                        if (!isNaN(date.getTime())) {
+                            const formatted = date.toLocaleDateString('en-GB', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric'
+                            }).replace(/ /g, ' '); // Ensure single spaces
+                            setProfileDob(formatted);
+                        }
+                    } catch (e) {
+                        console.error("Error formatting DOB:", e);
+                    }
+                }
+                if (res.data.user_profile?.star || res.data.user_profile?.nakshatra) {
+                    setProfileStar(res.data.user_profile.star || res.data.user_profile.nakshatra);
                 }
                 if (res.data.wallet_balance !== undefined) {
                     setWalletBalance(res.data.wallet_balance);
@@ -1316,7 +1337,10 @@ const Chat = () => {
             }}
         >
             <Header
-                backgroundImage="/svg/top_curve_dark.svg"
+                showProfile={true}
+                name={userName.split(' ')[0]}
+                profiledob={profileDob}
+                profilestar={profileStar}
                 hscrollsx={{
                     position: 'fixed',
                     transition: 'transform 0.3s ease-in-out',
@@ -1327,28 +1351,28 @@ const Chat = () => {
                 }}
             />
 
-            <HamburgerMenu
+            {/* <HamburgerMenu
                 menubarsx={{
                     position: 'fixed',
-                    top: 25,
+                    // top: 25,
                     transition: 'transform 0.3s ease-in-out',
                     transform: showHeader ? 'translateY(0)' : 'translateY(-100px)',
                     zIndex: 1210,
                     pointerEvents: showHeader ? 'auto' : 'none',
                 }}
-            />
+            /> */}
 
 
             {messages.some(m => m.assistant === 'guruji') && (
                 <Box sx={{
                     position: 'sticky',
-                    top: showHeader ? 140 : 20,
+                    top: showHeader ? 110 : 20,
                     zIndex: 1200,
                     height: 0,
                     overflow: 'visible',
                     display: 'flex',
                     justifyContent: 'center',
-                    mt: -5,
+                    mt: -8,
                     mb: 10,
                     pointerEvents: 'none',
                     transition: 'top 0.3s ease-in-out'
@@ -1363,6 +1387,8 @@ const Chat = () => {
                                 width: 200,
                                 height: 40,
                                 borderRadius: 10,
+                                bgcolor: '#ff0000',
+                                fontWeight: 'normal',
                             }}
                         />
                     </Box>
