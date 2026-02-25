@@ -355,7 +355,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
             const timer = setTimeout(() => {
                 setIsBuffering(true);
                 scrollToBottom();
-            }, 1200); // Pause between bubbles
+            }, 1200000000000000000000000000000); // Pause between bubbles
             return () => clearTimeout(timer);
         }
     }, [visibleCount, isBuffering, animate, paras.length, onComplete]);
@@ -1367,7 +1367,7 @@ const Chat = () => {
                 }}
             />
 
-            <HamburgerMenu
+            {/* <HamburgerMenu
                 menubarsx={{
                     position: 'fixed',
                     // top: 25,
@@ -1376,7 +1376,7 @@ const Chat = () => {
                     zIndex: 1210,
                     pointerEvents: showHeader ? 'auto' : 'none',
                 }}
-            />
+            /> */}
 
 
             {messages.some(m => m.assistant === 'guruji') && (
@@ -1807,9 +1807,10 @@ const Chat = () => {
                 {isBuffering && waitMessage && (
                     <Box sx={{
                         position: 'fixed',
-                        bottom: 80,
+                        bottom: 60,
                         left: 0,
                         right: 0,
+                        height: 40,
                         mx: 'auto',
                         width: { xs: '90%', sm: 400 },
                         display: 'flex',
@@ -1818,9 +1819,10 @@ const Chat = () => {
                         alignItems: 'center',
                         gap: 0.5,
                         zIndex: 10,
-                        pointerEvents: 'none'
+                        pointerEvents: 'none',
+                        bgcolor: '#fece8d',
                     }}>
-                        <Typography sx={{ fontSize: '0.8rem', color: '#a19b93', fontWeight: 'normal', textShadow: '0 1px 2px rgba(255,255,255,0.8)' }}>
+                        <Typography sx={{ fontSize: '0.8rem', color: '#000', fontWeight: 'normal', textShadow: '0 1px 2px rgba(255,255,255,0.8)', pb: 1 }}>
                             {waitMessage}
                         </Typography>
                     </Box>

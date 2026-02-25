@@ -247,7 +247,7 @@ const Onboarding = () => {
                 menubarsx={{
                     position: 'fixed',
                     // top: 25,
-                    // transition: 'transform 0.3s ease-in-out',
+                    transition: 'transform 0.3s ease-in-out',
                     // transform: showHeader ? 'translateY(0)' : 'translateY(-100px)',
                     zIndex: 1210,
                     pointerEvents: showHeader ? 'auto' : 'none',
