@@ -1,9 +1,11 @@
 import React from "react";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
+import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
+import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 
 
-const Header = ({ backgroundImage = "/svg/top_curve_light.svg", hscrollsx = {} }) => {
+const Header = ({ showProfile = false, name = "", profiledob = "", profilestar = "", hscrollsx = {} }) => {
     return (
         // <Box sx={{ minHeight: '182px' }}>
         <Box >
@@ -12,39 +14,79 @@ const Header = ({ backgroundImage = "/svg/top_curve_light.svg", hscrollsx = {} }
                 sx={{
                     position: "fixed",
                     top: 0,
-                    width: { xs: '100%', sm: 450 },
+                    width: { xs: '100%', sm: 452 },
                     left: '50%',
                     transform: 'translateX(-50%)',
                     zIndex: 1100,
-                    minHeight: '182px',
-                    overflow: "hidden",
+                    height: '152px',
+                    overflow: "visible",
                     bgcolor: 'transparent',
                     ...hscrollsx
                 }}
             >
-                {/* Top Curve */}
+                <Box sx={{
+                    bgcolor: "#2f3148",
+                    height: '100px',
+                    px: 3,
+                    pt: 1.5,
+                    pb: .5,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                }}>
+                    {!showProfile ? (
+                        <Typography sx={{ fontSize: 28, fontWeight: 100, color: "#fff", fontFamily: "'Century Gothic', sans-serif", mb: 1 }}>
+                            Findastro
+                        </Typography>
+                    ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 0.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <PersonRoundedIcon sx={{ color: '#fff', fontSize: 24 }} />
+                                <Typography sx={{ fontSize: 24, fontWeight: 600, color: "#fff", fontFamily: "'Century Gothic', sans-serif", textTransform: 'capitalize' }}>
+                                    {name}
+                                </Typography>
+                                {/* <KeyboardArrowDownRoundedIcon sx={{ color: '#fff', fontSize: 24 }} /> */}
+                            </Box>
+                            {profiledob && (
+                                <Typography sx={{ fontSize: 14, mt: -.5, fontWeight: 100, color: "rgba(255,255,255,0.7)", fontFamily: "'Century Gothic', sans-serif" }}>
+                                    {profiledob}, {profilestar ? profilestar : 'Avittom'}
+                                </Typography>
+                            )}
+                        </Box>
+                    )}
+                </Box>
                 <Box
                     sx={{
                         position: "absolute",
-                        inset: 0,
-                        backgroundImage: `url(${backgroundImage})`,
-                        backgroundRepeat: "no-repeat",
-                        backgroundSize: "contain",
-                        zIndex: 1,
+                        bottom: 7,
+                        left: 0,
+                        width: 100,
+                        transform: 'rotate(180deg)',
                     }}
                 >
-                    {/* Stars */}
                     <Box
-                        sx={{
-                            position: "absolute",
-                            inset: 0,
-                            backgroundImage: `url(/svg/header_stars.svg)`,
-                            backgroundRepeat: "no-repeat",
-                            backgroundPosition: "center",
-                            backgroundSize: "contain",
-                            zIndex: 2,
-                            mt: { xs: -4, sm: 0 },
-                        }}
+                        component="img"
+                        src="/svg/bottom_right_open_curve.svg"
+                        alt="Right curve"
+                        sx={{ width: "100px" }}
+                    />
+                </Box>
+
+                <Box
+                    sx={{
+                        position: "absolute",
+                        bottom: 7,
+                        right: 0,
+                        width: 100,
+                        transform: 'rotate(180deg)',
+                    }}
+                >
+                    <Box
+                        component="img"
+                        src="/svg/bottom_left_open_curve.svg"
+                        alt="Left curve"
+                        sx={{ width: "100px" }}
                     />
                 </Box>
             </Box>
