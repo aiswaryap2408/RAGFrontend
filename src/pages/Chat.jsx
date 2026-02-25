@@ -53,6 +53,10 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility,
         return rest;
     };
 
+    const isSafetyWarning = mayaJson?.is_safety_warning;
+    const safetyTitle = mayaJson?.safety_title;
+    const safetyMessage = mayaJson?.safety_message;
+
     return (
         <Box sx={{ pt: 4, pb: 3, width: "100%" }}>
             <Box sx={{
@@ -61,6 +65,7 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility,
                 borderRadius: 2,
                 p: 2,
                 bgcolor: "#fece8d",
+                border: "none",
                 boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
             }}>
                 {/* Avatar */}
@@ -81,9 +86,20 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility,
                     <img src="/svg/maya.png" style={{ width: 50 }} alt="Maya" />
                 </Box>
 
-                <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500 }}>
-                    {name && <strong>Namaste {name}, </strong>}{content}
-                </Typography>
+                {isSafetyWarning ? (
+                    <Box sx={{ mt: 2, mb: 1.5 }}>
+                        <Typography sx={{ fontSize: '1.05rem', lineHeight: 1.4, color: '#333', mb: 1, textAlign: 'center', fontWeight: 700 }}>
+                            {safetyTitle}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.92rem', lineHeight: 1.5, color: '#333', textAlign: 'center', fontWeight: 500 }}>
+                            {safetyMessage}
+                        </Typography>
+                    </Box>
+                ) : (
+                    <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500 }}>
+                        {name && <strong>Namaste {name}, </strong>}{content}
+                    </Typography>
+                )}
 
                 {/* JSON Output View for Maya Intro */}
                 {jsonVisibility?.maya && mayaJson && (
