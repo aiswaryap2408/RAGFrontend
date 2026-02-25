@@ -289,31 +289,71 @@ const AdminDashboard = () => {
         let mimeType = '';
 
         if (format === 'json') {
+            const userId = userDetails.user?.mobile || 'user';
             const data = session.chats.map(chat => {
                 const usage = chat.usage || chat.maya_usage || {};
+
+                let label = chat.role || 'bot';
+                if (label === 'user') label = `user-${userId}`;
+                else if (label === 'guruji') label = 'astrologer';
+                else if (label === 'maya') label = 'maya';
+
+                let mayaRaw = null;
+                if (chat.maya_json) {
+                    mayaRaw = chat.maya_json;
+                } else if (chat.role === 'maya') {
+                    const raw = (chat.message || chat.user_message || chat.bot_response || '').toString();
+                    if (raw.startsWith('```')) {
+                        const match = raw.match(/```(?:json)?\s*(\{.*?\})\s*```/s);
+                        if (match) {
+                            try { mayaRaw = JSON.parse(match[1]); } catch (e) { mayaRaw = match[1]; }
+                        } else {
+                            const cleaned = raw.replace(/^```(json)?\s*|\s*```$/g, '');
+                            try { mayaRaw = JSON.parse(cleaned); } catch (e) { mayaRaw = cleaned; }
+                        }
+                    } else if (raw.includes('{')) {
+                        try { mayaRaw = JSON.parse(raw); } catch (e) { mayaRaw = raw; }
+                    }
+                }
+
                 return {
-                    role: chat.role || 'bot',
+                    role: label,
                     timestamp: chat.timestamp,
                     message: cleanMessage(chat.message || chat.user_message || chat.bot_response, chat.role),
-                    input_tokens: usage.prompt_tokens || 0,
-                    output_tokens: usage.completion_tokens || 0,
-                    total_tokens: usage.total_tokens || 0
+                    maya_json: mayaRaw
                 };
             }).filter(m => m.message);
             content = JSON.stringify(data, null, 2);
             mimeType = 'application/json';
         } else if (format === 'csv') {
-            const headers = ['Timestamp', 'Role', 'Message', 'Input Tokens', 'Output Tokens'];
+            const userId = userDetails.user?.mobile || 'user';
+            const headers = ['Timestamp', 'Role', 'Message', 'Maya JSON'];
             const rows = session.chats.map(chat => {
                 const msg = cleanMessage(chat.message || chat.user_message || chat.bot_response, chat.role);
                 if (!msg) return null;
-                const usage = chat.usage || chat.maya_usage || {};
+
+                let label = chat.role || 'bot';
+                if (label === 'user') label = `user-${userId}`;
+                else if (label === 'guruji') label = 'astrologer';
+                else if (label === 'maya') label = 'maya';
+
+                let mayaRaw = '';
+                if (chat.maya_json) {
+                    mayaRaw = typeof chat.maya_json === 'object' ? JSON.stringify(chat.maya_json) : chat.maya_json.toString();
+                } else if (chat.role === 'maya') {
+                    mayaRaw = (chat.message || chat.user_message || chat.bot_response || '').toString();
+                    if (mayaRaw.startsWith('```')) {
+                        const match = mayaRaw.match(/```(?:json)?\s*(\{.*?\})\s*```/s);
+                        if (match) mayaRaw = match[1];
+                        else mayaRaw = mayaRaw.replace(/^```(json)?\s*|\s*```$/g, '');
+                    }
+                }
+
                 return [
-                    new Date(chat.timestamp * (chat.timestamp > 10000000000 ? 1 : 1000)).toLocaleString(),
-                    chat.role || 'bot',
+                    `"${new Date(chat.timestamp * (chat.timestamp > 10000000000 ? 1 : 1000)).toLocaleString()}"`,
+                    `"${label}"`,
                     `"${msg.replace(/"/g, '""')}"`,
-                    usage.prompt_tokens || 0,
-                    usage.completion_tokens || 0
+                    `"${mayaRaw.replace(/"/g, '""')}"`
                 ];
             }).filter(Boolean);
             content = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -329,10 +369,12 @@ const AdminDashboard = () => {
                 else if (label === 'guruji') label = 'astrologer';
                 else if (label === 'maya') label = 'maya';
 
-                const usage = chat.usage || chat.maya_usage || {};
-                const tokenStr = usage.total_tokens ? ` [Tokens: In=${usage.prompt_tokens || 0}, Out=${usage.completion_tokens || 0}, Total=${usage.total_tokens || 0}]` : '';
+                let mayaStr = '';
+                if (chat.maya_json) {
+                    mayaStr = `\n[Maya JSON: ${typeof chat.maya_json === 'object' ? JSON.stringify(chat.maya_json) : chat.maya_json}]`;
+                }
 
-                return `${label}: ${msg}${tokenStr}`;
+                return `${label}: ${msg}${mayaStr}`;
             }).filter(Boolean);
             content = lines.join('\n\n');
             mimeType = 'text/plain';
