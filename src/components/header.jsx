@@ -50,7 +50,7 @@ const Header = ({ showProfile = false, name = "", profiledob = "", profilebirths
                             </Box>
                             {(profiledob || profilebirthstar) && (
                                 <Typography sx={{ fontSize: 14, mt: -.5, fontWeight: 100, color: "rgba(255,255,255,0.7)", fontFamily: "'Century Gothic', sans-serif" }}>
-                                    {profiledob}{profiledob && profilebirthstar ? ', ' : ''}{profilebirthstar}
+                                    {profiledob} {profilebirthstar ? `(${profilebirthstar})` : ""}
                                 </Typography>
                             )}
                         </Box>

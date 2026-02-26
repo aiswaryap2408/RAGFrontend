@@ -28,6 +28,7 @@ import FeedbackDrawer from '../components/FeedbackDrawer';
 import HamburgerMenu from '../components/HamburgerMenu';
 import Dakshina from '../pages/Dakshina';
 import DoneAllOutlinedIcon from '@mui/icons-material/DoneAllOutlined';
+import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import ThankYou from '../components/Thankyou';
 
 const tryParseJson = (data) => {
@@ -590,9 +591,32 @@ const Chat = () => {
     const processedNewSession = useRef(false);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
 
+    const renderStatusTicks = (idx) => {
+        const msg = messages[idx];
+        if (msg.role !== 'user') return null;
+
+        const nextMsg = messages[idx + 1];
+        if (!nextMsg || nextMsg.role !== 'assistant') {
+            return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', opacity: 0.6 }} />;
+        }
+
+        // Check if Maya or Guruji responded
+        const isGuruji = nextMsg.assistant === 'guruji' || !!nextMsg.gurujiJson;
+        const isMaya = nextMsg.assistant === 'maya';
+
+        if (isGuruji) {
+            return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: '#2b79c2' }} />;
+        } else if (isMaya) {
+            return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'rgba(0,0,0,0.4)' }} />;
+        }
+
+        return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', opacity: 0.6 }} />;
+    };
     const handleScroll = (e) => {
         const scrollTop = e.target.scrollTop;
         // Don't trigger for small scrolls
@@ -756,14 +780,19 @@ const Chat = () => {
                 const chartData = Array.isArray(userChart) ? userChart[0] : userChart;
 
                 if (chartData) {
-                    if (chartData.data?.birth_star) {
-                        extractedStar = chartData.data.birth_star;
-                    } else if (typeof chartData.birth_star === 'string') {
-                        extractedStar = chartData.birth_star;
-                    } else if (chartData.birth_star?.mainHTML?.content?.[2]) {
+                    // Image-based structure: birth_star.mainHTML.content[2]
+                    if (chartData.birth_star?.mainHTML?.content?.[2]) {
                         const starStr = chartData.birth_star.mainHTML.content[2];
                         if (starStr.toLowerCase().includes('birth star')) {
                             extractedStar = starStr.split(':')[1]?.trim() || "";
+                        }
+                    }
+                    // Fallbacks
+                    if (!extractedStar) {
+                        if (chartData.data?.birth_star) {
+                            extractedStar = chartData.data.birth_star;
+                        } else if (typeof chartData.birth_star === 'string') {
+                            extractedStar = chartData.birth_star;
                         }
                     }
                 }
@@ -1656,8 +1685,9 @@ const Chat = () => {
                                             <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}>
                                                 {msg.content}
                                             </Typography>
-                                            <Typography sx={{ fontSize: '0.75rem', opacity: 0.8, position: 'absolute', bottom: 5, right: 8, color: 'rgba(255,255,255,0.9)', fontWeight: 500, pt: 1 }}>
+                                            <Typography sx={{ fontSize: '0.75rem', opacity: 0.8, position: 'absolute', bottom: 5, right: 8, color: 'rgba(255,255,255,0.9)', fontWeight: 500, pt: 1, display: 'flex', alignItems: 'center' }}>
                                                 {msg.time}
+                                                {renderStatusTicks(i)}
                                             </Typography>
                                         </Box>
                                     </Box>
@@ -1788,21 +1818,23 @@ const Chat = () => {
                                         )}
 
                                         {/* Timestamp moved inside the bubble */}
-                                        <Typography
+                                        <Box
                                             sx={{
                                                 fontSize: '0.75rem',
                                                 opacity: 0.8,
                                                 position: 'absolute',
                                                 bottom: 5,
                                                 right: 8,
-                                                color: '#000000',
-
+                                                color: msg.role === 'user' ? '#000000' : '#000000',
                                                 fontWeight: 500,
                                                 pt: 1,
+                                                display: 'flex',
+                                                alignItems: 'center'
                                             }}
                                         >
                                             {msg.time}
-                                        </Typography>
+                                            {renderStatusTicks(i)}
+                                        </Box>
                                     </Box>
                                 )}
                             </Box>
