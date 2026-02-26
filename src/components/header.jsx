@@ -5,7 +5,7 @@ import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 
 
-const Header = ({ showProfile = false, name = "", profiledob = "", profilestar = "", hscrollsx = {} }) => {
+const Header = ({ showProfile = false, name = "", profiledob = "", profilebirthstar = "", hscrollsx = {} }) => {
     return (
         // <Box sx={{ minHeight: '182px' }}>
         <Box >
@@ -48,9 +48,9 @@ const Header = ({ showProfile = false, name = "", profiledob = "", profilestar =
                                 </Typography>
                                 {/* <KeyboardArrowDownRoundedIcon sx={{ color: '#fff', fontSize: 24 }} /> */}
                             </Box>
-                            {profiledob && (
+                            {(profiledob || profilebirthstar) && (
                                 <Typography sx={{ fontSize: 14, mt: -.5, fontWeight: 100, color: "rgba(255,255,255,0.7)", fontFamily: "'Century Gothic', sans-serif" }}>
-                                    {profiledob}, {profilestar ? profilestar : 'Avittom'}
+                                    {profiledob}{profiledob && profilebirthstar ? ', ' : ''}{profilebirthstar}
                                 </Typography>
                             )}
                         </Box>

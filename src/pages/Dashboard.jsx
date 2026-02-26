@@ -18,6 +18,9 @@ const Dashboard = () => {
     const [signName, setSignName] = useState("");
     const [balance, setBalance] = useState(0);
     const [loadingPrediction, setLoadingPrediction] = useState(false);
+    const [profileDob, setProfileDob] = useState("");
+    const [profilebirthstar, setProfileBirthStar] = useState("");
+    const [userName, setUserName] = useState(localStorage.getItem('userName') || "");
     const navigate = useNavigate();
 
     const isLoggedIn = !!localStorage.getItem("token");
@@ -43,6 +46,7 @@ const Dashboard = () => {
             const mobile = localStorage.getItem("mobile");
             if (mobile) {
                 fetchPrediction(mobile);
+                fetchUserStatus(mobile);
             } else {
                 setPrediction("Please log in to view your daily prediction.");
             }
@@ -50,6 +54,53 @@ const Dashboard = () => {
             setPrediction("You are currently logged out. Login to view your daily horoscope.");
         }
     }, [isLoggedIn]);
+
+    const fetchUserStatus = async (mobile) => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/user-status/${mobile}`);
+            const data = await response.json();
+
+            if (data.user_profile?.name) {
+                setUserName(data.user_profile.name);
+            }
+            if (data.user_profile?.dob) {
+                try {
+                    const date = new Date(data.user_profile.dob);
+                    if (!isNaN(date.getTime())) {
+                        const formatted = date.toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                        });
+                        setProfileDob(formatted);
+                    }
+                } catch (e) { console.error(e); }
+            }
+
+            const userChart = data.user_chart || data.user_charts;
+            let extractedStar = "";
+            const chartData = Array.isArray(userChart) ? userChart[0] : userChart;
+
+            if (chartData) {
+                if (chartData.data?.birth_star) {
+                    extractedStar = chartData.data.birth_star;
+                } else if (typeof chartData.birth_star === 'string') {
+                    extractedStar = chartData.birth_star;
+                } else if (chartData.birth_star?.mainHTML?.content?.[2]) {
+                    const starStr = chartData.birth_star.mainHTML.content[2];
+                    if (starStr.toLowerCase().includes('birth star')) {
+                        extractedStar = starStr.split(':')[1]?.trim() || "";
+                    }
+                }
+            }
+
+            if (extractedStar || data.user_profile?.birthstar || data.user_profile?.profilestar || data.user_profile?.star || data.user_profile?.nakshatra) {
+                setProfileBirthStar(extractedStar || data.user_profile.birthstar || data.user_profile.profilestar || data.user_profile.star || data.user_profile.nakshatra);
+            }
+        } catch (error) {
+            console.error("Error fetching user status:", error);
+        }
+    };
 
     const fetchPrediction = async (mobile) => {
         try {
@@ -114,7 +165,13 @@ const Dashboard = () => {
                     overflow: "hidden"
                 }}
             >
-                <Header backgroundImage="/svg/top_curve_light.svg" />
+                <Header
+                    backgroundImage="/svg/top_curve_light.svg"
+                    showProfile={isLoggedIn}
+                    name={userName?.split(' ')[0] || ""}
+                    profiledob={profileDob}
+                    profilebirthstar={profilebirthstar}
+                />
                 <HamburgerMenu />
 
 

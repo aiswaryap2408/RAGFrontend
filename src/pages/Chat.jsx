@@ -572,7 +572,7 @@ const Chat = () => {
     const [submittingFeedback, setSubmittingFeedback] = useState(false);
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
     const [profileDob, setProfileDob] = useState('');
-    const [profileStar, setProfileStar] = useState('');
+    const [profilebirthstar, setProfileBirthStar] = useState('');
 
     // Multi-step report flow state
     const [reportState, setReportState] = useState('IDLE'); // IDLE, CONFIRMING, PAYING, PREPARING, READY
@@ -751,8 +751,25 @@ const Chat = () => {
                         console.error("Error formatting DOB:", e);
                     }
                 }
-                if (res.data.user_profile?.star || res.data.user_profile?.nakshatra) {
-                    setProfileStar(res.data.user_profile.star || res.data.user_profile.nakshatra);
+                const userChart = res.data.user_chart || res.data.user_charts;
+                let extractedStar = "";
+                const chartData = Array.isArray(userChart) ? userChart[0] : userChart;
+
+                if (chartData) {
+                    if (chartData.data?.birth_star) {
+                        extractedStar = chartData.data.birth_star;
+                    } else if (typeof chartData.birth_star === 'string') {
+                        extractedStar = chartData.birth_star;
+                    } else if (chartData.birth_star?.mainHTML?.content?.[2]) {
+                        const starStr = chartData.birth_star.mainHTML.content[2];
+                        if (starStr.toLowerCase().includes('birth star')) {
+                            extractedStar = starStr.split(':')[1]?.trim() || "";
+                        }
+                    }
+                }
+
+                if (extractedStar || res.data.user_profile?.birthstar || res.data.user_profile?.profilestar || res.data.user_profile?.star || res.data.user_profile?.nakshatra) {
+                    setProfileBirthStar(extractedStar || res.data.user_profile.birthstar || res.data.user_profile.profilestar || res.data.user_profile.star || res.data.user_profile.nakshatra);
                 }
                 if (res.data.wallet_balance !== undefined) {
                     setWalletBalance(res.data.wallet_balance);
@@ -1356,7 +1373,7 @@ const Chat = () => {
                 showProfile={true}
                 name={userName.split(' ')[0]}
                 profiledob={profileDob}
-                profilestar={profileStar}
+                profilebirthstar={profilebirthstar}
                 hscrollsx={{
                     position: 'fixed',
                     transition: 'transform 0.3s ease-in-out',
