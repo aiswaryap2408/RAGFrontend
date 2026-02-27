@@ -1865,7 +1865,6 @@ const Chat = () => {
                                                 fontWeight: 900,
                                                 textTransform: 'uppercase',
                                                 mb: 0.5,
-                                                color: '#000000',
                                                 letterSpacing: 1,
                                                 color: 'green'
                                             }}>

@@ -13,8 +13,10 @@ const InputField = ({
     inputProps,
     className,
     name,
+    ...props
 }) => (
     <TextField
+        {...props}
         fullWidth
         id={id}
         name={name}
