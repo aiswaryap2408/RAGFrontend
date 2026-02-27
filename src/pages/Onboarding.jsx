@@ -86,42 +86,53 @@ const Onboarding = () => {
             title: (
                 <>
                     Hello {name}, <br />
-                    I’m <span style={{ color: "#F36A2F", fontWeight: 600 }}>MAYA</span>.
+                    I’m <span style={{ color: "#F36A2F", fontWeight: 600 }}>MAYA</span>. Before consulting our astrologer, please note the following.
                 </>
             ),
             paragraphs: [
-                <>
-                    I’m your{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        AI assistant to help you with consulting our astrologers
-                    </span>{" "}
-                    via this Findastro.
-                </>,
-                <>
-                    As an AI I have certain capabilities, but before that allow me to
-                    explain what to expect from this Findastro platform.
-                </>,
+                // <>
+                //     I’m your{" "}
+                //     <span style={{ color: "#F36A2F", fontWeight: 600 }}>
+                //         AI assistant to help you with consulting our astrologers
+                //     </span>{" "}
+                //     via this Findastro.
+                // </>,
+                // <>
+                //     As an AI I have certain capabilities, but before that allow me to
+                //     explain what to expect from this Findastro platform.
+                // </>,
             ],
             points: [
                 <span>
+                    Our astrologers are available{" "}
                     <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        All conversations
+                        24x7.
                     </span>{" "}
-                    between you and your astrologer{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>stays private</span>
-                    . I assure you, no other humans read your conversations.
+
+                </span>,
+                <span>
+                    I’m your{" "}
+                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
+
+                        AI assistant to help you with consulting our astrologers{" "}
+                    </span>{" "}
+                    via this Findastro.{" "}
                 </span>,
                 <span>
                     <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        {" "}
-                        Our astrologers take help of Softwares and/or AI{" "}
-                    </span>{" "}
-                    for giving you the right predictions with the right calculations as fast
-                    as possible,{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        because accuracy and time is valuable for both of us.
+                        All conversations{" "}
                     </span>
-                    .
+                    between you and your astrologer{" "}
+                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>stays private.{" "}</span>
+                    I assure you, no other humans read your conversations.{" "}
+                </span>,
+                <span>
+                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
+                        Our astrologers take help of Softwares and/or AI {" "}
+                    </span>
+                    for giving you the right predictions with the right calculations as fast as possible,{" "}
+                    <span style={{ color: "#F36A2F", fontWeight: 600 }}> because accuracy and time is valuable for both of us.</span>
+
                 </span>,
             ],
         },
@@ -129,41 +140,47 @@ const Onboarding = () => {
             title: (
                 <>
                     I have certain{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>capabilities</span>.
+                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>responsibilities</span>.
                 </>
             ),
             paragraphs: [<></>],
             points: [
                 <>
-                    Understand your question(s) and{" "}
+
                     <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        help you to ask the right questions
-                    </span>
-                    , ask better follow up questions, etc. Your astrologer will not know
-                    this.
-                </>,
-                <>
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        Help you understand the astrologer’s prediction
+                        Prevent the misuse
                     </span>{" "}
-                    it a better way, if applicable and{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        summarize the predictions
-                    </span>
-                    , remedies, etc if applicable.{" "}
-                </>,
-                <>
-                    Help you{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        visualize certain predictions
-                    </span>
-                    . For example a timeline.
+                    of the platform, pass only astrologically relevant questions to the astrologer.{" "}
                 </>,
                 <>
                     <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        Give you reminders
+                        Prevent
                     </span>{" "}
-                    to take on remedies, rituals, dasa changes, etc.
+                    astrologers from answering questions on{" "}
+                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
+                        restricted topics.
+                    </span>
+
+                </>,
+                <>
+                    Identify if a question (or answer) is beyond our{" "}
+                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
+                        free-to-use policy
+                    </span>{" "}
+                    and notify you regarding the{" "}
+                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
+                        astrologer fees.
+                    </span>
+                </>,
+                <>
+                    I’ll always be your{" "}
+                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
+                        friendly AI assistant
+                    </span>{" "}
+                    working for{" "}
+                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
+                        your better experience.
+                    </span>{" "}
                 </>,
             ],
         },
