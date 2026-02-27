@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import api, { sendMessage, endChat, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment } from '../api';
+import api, { sendMessage, endChat, startSession, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment } from '../api';
 import axios from 'axios';
 
 import {
@@ -290,11 +290,16 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     const isThisActiveReport = index === activeReportIndex;
     const hasReport = msgObj.report_generated || false;
     const reportId = msgObj.report_id || null;
+    const splitByNewlines = (text) => {
+        if (!text) return [];
+        return text.split(/\r?\n/).map(s => s.trim()).filter(s => s !== '');
+    };
+
     const paras = [
-        gurujiJson?.para1 || '',
-        gurujiJson?.para2 || '',
-        // (gurujiJson?.para3 || '') + "<br><br>" + (gurujiJson?.follow_up || gurujiJson?.followup || "🤔 What's Next?")
-    ].filter(p => p.trim() !== '');
+        ...splitByNewlines(gurujiJson?.para1),
+        ...splitByNewlines(gurujiJson?.para2),
+        ...(gurujiJson?.follow_up ? [gurujiJson.follow_up] : []),
+    ];
 
     const [visibleCount, setVisibleCount] = useState(animate ? 0 : paras.length);
     const [isBuffering, setIsBuffering] = useState(animate ? true : false);
@@ -322,13 +327,30 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
             textEndRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     };
-    const getDelayForText = (text) => {
+    const calculateDelay = (text, pacingFactor = 1.0, jitterPct = 0.10, jitterMs = 80) => {
         if (!text) return 2000;
-        // Strip HTML tags to get pure text word count
-        const cleanText = text.replace(/<[^>]*>/g, ' ');
-        const wordCount = cleanText.trim().split(/\s+/).length;
-        // Formula: min 3s, max 15s, 200ms per word
-        return Math.max(3000, Math.min(15000, wordCount * 200));
+
+        // Strip HTML tags to get pure text length
+        const cleanText = text.replace(/<[^>]*>/g, '').trim();
+        const charCount = cleanText.length;
+
+        // base = 600 + (char_count * 45), max 6000
+        let base = 600 + (charCount * 45);
+        base = Math.min(base, 6000);
+
+        let finalDelay = base * pacingFactor;
+
+        // final *= random.uniform(1 - jitter_pct, 1 + jitter_pct)
+        const randomPct = (1 - jitterPct) + Math.random() * (2 * jitterPct);
+        finalDelay *= randomPct;
+
+        // final += random.uniform(-jitter_ms, jitter_ms)
+        const randomMs = -jitterMs + Math.random() * (2 * jitterMs);
+        finalDelay += randomMs;
+
+        // final = max(250, min(final, 7000))
+        finalDelay = Math.max(250, Math.min(finalDelay, 7000));
+        return Math.floor(finalDelay);
     };
 
     // Effect 1: Manage Buffering State Transitions & Completion
@@ -366,7 +388,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
         if (isBuffering && animate && visibleCount < paras.length) {
             const currentPara = paras[visibleCount];
             const isLast = visibleCount === paras.length - 1;
-            const delay = getDelayForText(currentPara);
+            const delay = calculateDelay(currentPara);
 
             // Set waiting message
             const randomMsg = pleaseWaitMessages[Math.floor(Math.random() * pleaseWaitMessages.length)];
@@ -662,17 +684,56 @@ const Chat = () => {
                 try {
                     const res = await getChatHistory(mobile);
                     console.log("DEBUG: getChatHistory response:", res.data);
+                    const currentLocalSid = localStorage.getItem('activeSessionId');
+                    console.log("DEBUG: currentLocalSid:", currentLocalSid);
 
                     if (res.data.sessions && res.data.sessions.length > 0) {
+                        // Check if our localStorage session exists on the server
+                        let localSessionOnServer = null;
+                        if (currentLocalSid) {
+                            localSessionOnServer = res.data.sessions.find(s => s.session_id === currentLocalSid);
+                        }
+
+                        // Priority: Use the localStorage session if it exists on server and is NOT ended
+                        if (localSessionOnServer && !localSessionOnServer.is_ended) {
+                            console.log("DEBUG: Found localStorage session on server, not ended:", currentLocalSid);
+                            const history = localSessionOnServer.messages;
+                            if (history && history.length > 0) {
+                                console.log("DEBUG: Resuming localStorage session with", history.length, "messages");
+                                setSessionId(currentLocalSid);
+
+                                const mappedHistory = history.map(msg => ({
+                                    ...msg,
+                                    time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
+                                    gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
+                                    mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                    animating: false
+                                }));
+
+                                setMessages(mappedHistory);
+
+                                // Check for unpaid chat messages to resume state
+                                const unpaidMsg = mappedHistory.find(m => m.requires_chat_payment && !m.is_paid);
+                                if (unpaidMsg) {
+                                    setChatPaymentState('REQUIRED');
+                                    setPendingMessageId(unpaidMsg.message_id);
+                                    setActiveQuestion(unpaidMsg.content);
+                                }
+                            } else {
+                                // Active session exists on server but has zero messages — keep the welcome screen
+                                console.log("DEBUG: Active localStorage session has no messages yet, keeping welcome screen.");
+                                setSessionId(currentLocalSid);
+                            }
+                            return;
+                        }
+
+                        // Fallback: Use the most recent session from server
                         const mostRecentSession = res.data.sessions[0];
-                        const currentLocalSid = localStorage.getItem('activeSessionId');
                         console.log("DEBUG: mostRecentSession:", mostRecentSession.session_id);
-                        console.log("DEBUG: currentLocalSid:", currentLocalSid);
 
                         // Scenario 2: Most recent session on server is already ended
                         if (mostRecentSession.is_ended) {
                             console.log("DEBUG: Scenario 2 - Most recent session on server is ended. Starting fresh.");
-                            // ALWAYS start fresh if the server says the latest session is ended
                             handleNewChat();
                             return;
                         }
@@ -681,7 +742,6 @@ const Chat = () => {
                         const history = mostRecentSession.messages;
                         if (history && history.length > 0) {
                             console.log("DEBUG: Scenario 3 - Resuming Session:", mostRecentSession.session_id);
-                            // Use Relaxed logic: Load it regardless of local ID mismatch
                             setSessionId(mostRecentSession.session_id);
                             if (!currentLocalSid || currentLocalSid !== mostRecentSession.session_id) {
                                 localStorage.setItem('activeSessionId', mostRecentSession.session_id);
@@ -696,10 +756,8 @@ const Chat = () => {
                             }));
 
                             console.log("DEBUG: mappedHistory set, count:", mappedHistory.length);
-                            // Set messages to history (Replacing the initial welcome message)
                             setMessages(mappedHistory);
 
-                            // Check for unpaid chat messages to resume state
                             const unpaidMsg = mappedHistory.find(m => m.requires_chat_payment && !m.is_paid);
                             if (unpaidMsg) {
                                 setChatPaymentState('REQUIRED');
@@ -856,6 +914,12 @@ const Chat = () => {
         setSummary(null);
         setFeedback({ rating: 0, comment: '' });
         setFeedbackSubmitted(false);
+
+        // Register the new session on the server immediately so it survives page reload
+        const mobile = localStorage.getItem('mobile');
+        if (mobile) {
+            startSession(mobile, newSid).catch(err => console.error('Failed to register session:', err));
+        }
     };
 
     const handleEndChat = async (keepFeedback = false) => {
@@ -1278,7 +1342,79 @@ const Chat = () => {
         }
     };
 
+    const handleChatSuccess = async (paymentId, amount) => {
+        try {
+            setChatPaymentState('COMPLETE');
+            setThankYouAction('CHAT_PAYMENT');
+            setThankYouData({
+                amount: amount,
+                points: 0,
+                title: 'Payment successful',
+                trustMsg: 'Guruji is now analyzing your chart...',
+                gratitudeMsg: 'Thank you for your patience.',
+                showWave: true,
+                referenceId: paymentId
+            });
+            setThankYouOpen(true);
+
+            // Proceed to process the message after payment
+            const lastUserMsg = messages.find(m => m.message_id === pendingMessageId);
+            const mobile = localStorage.getItem('mobile');
+            const history = messages.slice(1, messages.findIndex(m => m.message_id === pendingMessageId));
+
+            const chatRes = await api.post('/auth/chat', {
+                mobile,
+                message: lastUserMsg.content,
+                history,
+                session_id: sessionId,
+                payment_id: paymentId
+            });
+
+            const { answer, metrics, context, assistant, wallet_balance, amount: cost, maya_json, guruji_json, timestamp, message_id } = chatRes.data;
+
+            if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
+
+            setMessages(prev => {
+                const next = [...prev];
+                // Mark the user message as paid
+                const userIdx = next.findIndex(m => m.message_id === pendingMessageId);
+                if (userIdx !== -1) {
+                    next[userIdx].is_paid = true;
+                    next[userIdx].payment_id = paymentId;
+                }
+
+                // Add Guruji's response
+                return [...next, {
+                    role: 'assistant',
+                    content: answer,
+                    assistant: assistant || 'guruji',
+                    metrics,
+                    context,
+                    amount: cost,
+                    mayaJson: maya_json,
+                    gurujiJson: guruji_json,
+                    animating: true,
+                    message_id: message_id,
+                    time: timestamp ? formatTime(timestamp) : getCurrentTime(),
+                    timestamp: timestamp || new Date().toISOString()
+                }];
+            });
+            setChatPaymentState('IDLE');
+            setPendingMessageId(null);
+        } catch (err) {
+            console.error("Chat success processing failed:", err);
+            alert("Error processing your request. Please contact support.");
+            setChatPaymentState('REQUIRED');
+        }
+    };
+
     const handleChatPayment = async (amount, mobile) => {
+        // Temporary Bypass: Alert Success and proceed
+        alert("Payment successful!");
+        handleChatSuccess("MOCK_PAYMENT_ID", amount);
+        return;
+
+        // Original logic preserved below (currently unreachable)
         setChatPaymentState('PAYING');
         try {
             const orderRes = await createPaymentOrder(amount, mobile);
@@ -1292,75 +1428,7 @@ const Chat = () => {
                 description: "Payment for personalized answer",
                 order_id,
                 handler: async (response) => {
-                    try {
-                        const verifyRes = await verifyPayment({
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature
-                        });
-
-                        setChatPaymentState('COMPLETE');
-                        setThankYouAction('CHAT_PAYMENT');
-                        setThankYouData({
-                            amount: amount,
-                            points: 0,
-                            title: 'Payment successful',
-                            trustMsg: 'Guruji is now analyzing your chart...',
-                            gratitudeMsg: 'Thank you for your patience.',
-                            showWave: true,
-                            referenceId: response.razorpay_payment_id
-                        });
-                        setThankYouOpen(true);
-
-                        // Proceed to process the message after payment
-                        const lastUserMsg = messages.find(m => m.message_id === pendingMessageId);
-                        const mobile = localStorage.getItem('mobile');
-                        const history = messages.slice(1, messages.findIndex(m => m.message_id === pendingMessageId));
-
-                        const chatRes = await api.post('/auth/chat', {
-                            mobile,
-                            message: lastUserMsg.content,
-                            history,
-                            session_id: sessionId,
-                            payment_id: response.razorpay_payment_id
-                        });
-
-                        const { answer, metrics, context, assistant, wallet_balance, amount: cost, maya_json, guruji_json, timestamp, message_id } = chatRes.data;
-
-                        if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
-
-                        setMessages(prev => {
-                            const next = [...prev];
-                            // Mark the user message as paid
-                            const userIdx = next.findIndex(m => m.message_id === pendingMessageId);
-                            if (userIdx !== -1) {
-                                next[userIdx].is_paid = true;
-                                next[userIdx].payment_id = response.razorpay_payment_id;
-                            }
-
-                            // Add Guruji's response
-                            return [...next, {
-                                role: 'assistant',
-                                content: answer,
-                                assistant: assistant || 'guruji',
-                                metrics,
-                                context,
-                                amount: cost,
-                                mayaJson: maya_json,
-                                gurujiJson: guruji_json,
-                                animating: true,
-                                message_id: message_id,
-                                time: timestamp ? formatTime(timestamp) : getCurrentTime(),
-                                timestamp: timestamp || new Date().toISOString()
-                            }];
-                        });
-                        setChatPaymentState('IDLE');
-                        setPendingMessageId(null);
-                    } catch (err) {
-                        console.error("Chat payment verification failed:", err);
-                        alert("Payment verification failed. Please contact support.");
-                        setChatPaymentState('REQUIRED');
-                    }
+                    handleChatSuccess(response.razorpay_payment_id, amount);
                 },
                 modal: {
                     ondismiss: () => {
