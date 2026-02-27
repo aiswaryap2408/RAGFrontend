@@ -337,7 +337,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
             textEndRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     };
-    const calculateDelay = (text, pacingFactor = 1.0, jitterPct = 0.10, jitterMs = 80) => {
+    const calculateDelay = (text, pacingFactor = 3.0, jitterPct = 0.10, jitterMs = 80) => {
         if (!text) return 2000;
 
         // Strip HTML tags to get pure text length
@@ -489,12 +489,12 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                     {time && (
                         <Typography
                             sx={{
-                                fontSize: '0.75rem',
+                                fontSize: '10px',
                                 opacity: 0.8,
                                 position: 'absolute',
                                 bottom: (idx === paras.length - 1 && !hasReport && (!isThisActiveReport || reportState === 'IDLE')) ? 4 : 4,
                                 right: 8,
-                                color: '#000000',
+                                color: '#494848',
                                 fontWeight: 500
                             }}
                         >
@@ -642,6 +642,7 @@ const Chat = () => {
     const [chatPaymentState, setChatPaymentState] = useState('IDLE'); // IDLE, REQUIRED, PAYING, COMPLETE
     const [pendingMessageId, setPendingMessageId] = useState(null);
     const [isBuffering, setIsBuffering] = useState(false);
+    const [isAnimating, setIsAnimating] = useState(false);
     const [waitMessage, setWaitMessage] = useState("");
     const messagesEndRef = useRef(null);
     const processedNewSession = useRef(false);
@@ -1157,6 +1158,7 @@ const Chat = () => {
                 time: timestamp ? formatTime(timestamp) : getCurrentTime(),
                 timestamp: timestamp || new Date().toISOString()
             }]);
+            if (guruji_json) setIsAnimating(true);
         } catch (err) {
             console.error("Chat Error:", err);
             // If it's a 404/401/403, the interceptor will handle redirect to login
@@ -1442,6 +1444,7 @@ const Chat = () => {
                     timestamp: timestamp || new Date().toISOString()
                 }];
             });
+            if (guruji_json) setIsAnimating(true);
             setChatPaymentState('IDLE');
             setPendingMessageId(null);
         } catch (err) {
@@ -1674,6 +1677,12 @@ const Chat = () => {
                                     <SequentialResponse
                                         gurujiJson={gurujiData}
                                         animate={msg.animating}
+                                        onComplete={() => {
+                                            setIsAnimating(false);
+                                            setMessages(prev => prev.map((m, idx) =>
+                                                idx === i ? { ...m, animating: false } : m
+                                            ));
+                                        }}
                                         messages={messages}
                                         handleReportGeneration={handleReportGeneration}
                                         reportState={reportState}
@@ -1931,12 +1940,12 @@ const Chat = () => {
                                         {/* Timestamp moved inside the bubble */}
                                         <Box
                                             sx={{
-                                                fontSize: '0.75rem',
+                                                fontSize: '10px',
                                                 opacity: 0.8,
                                                 position: 'absolute',
                                                 bottom: 5,
                                                 right: 8,
-                                                color: msg.role === 'user' ? '#000000' : '#000000',
+                                                color: msg.role === 'user' ? '#494848' : '#494848',
                                                 fontWeight: 500,
                                                 pt: 1,
                                                 display: 'flex',
@@ -1996,6 +2005,7 @@ const Chat = () => {
                 userStatus={userStatus}
                 loading={loading}
                 summary={summary}
+                isAnimating={isAnimating}
             />
             {/* Same overlays as before (Inactivity, Summary, Drawer) */}
             {/* ... preserved ... */}

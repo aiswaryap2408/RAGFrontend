@@ -6,11 +6,11 @@ import {
 import SendIcon from "@mui/icons-material/Send";
 import { useState } from "react";
 
-const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
+const ChatInputFooter = ({ onSend, userStatus, loading, summary, isAnimating }) => {
     const [message, setMessage] = useState("");
 
     const handleSend = () => {
-        if (!message.trim() || loading || summary || userStatus !== 'ready') return;
+        if (!message.trim() || loading || summary || isAnimating || userStatus !== 'ready') return;
         onSend(message);
         setMessage("");
     };
@@ -58,14 +58,13 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
                 <Box
                     sx={{
                         flex: 1,
-                        bgcolor: "#ffffff",
+                        bgcolor: (loading || isAnimating) ? "#e0e0e0" : "#ffffff",
                         borderRadius: 30,
                         px: 2,
                         display: "flex",
                         alignItems: "center",
                         minHeight: 48,
-                        // py: 0.5,
-
+                        transition: 'background-color 0.3s ease',
                     }}
                 >
                     <InputBase
@@ -85,7 +84,7 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
                                 handleSend();
                             }
                         }}
-                        disabled={loading || summary || userStatus !== 'ready'}
+                        disabled={loading || summary || isAnimating || userStatus !== 'ready'}
                         sx={{
                             fontSize: 14,
                             lineHeight: 1.5,
@@ -106,16 +105,17 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary }) => {
                     sx={{
                         width: 48,
                         height: 48,
-                        bgcolor: "#ffffff",
+                        bgcolor: (loading || isAnimating) ? "#e0e0e0" : "#ffffff",
                         borderRadius: "50%",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        cursor: message.trim() && !loading && !summary && userStatus === 'ready' ? "pointer" : "default",
+                        cursor: message.trim() && !loading && !summary && !isAnimating && userStatus === 'ready' ? "pointer" : "default",
+                        transition: 'background-color 0.3s ease',
                     }}
                     onClick={handleSend}
                 >
-                    <SendIcon sx={{ color: "#2f3148" }} />
+                    <SendIcon sx={{ color: (loading || isAnimating) ? "#999" : "#2f3148", transition: 'color 0.3s ease' }} />
                 </Box>
             </Box>
         </Box>
