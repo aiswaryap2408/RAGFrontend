@@ -657,17 +657,26 @@ const Chat = () => {
         if (msg.role !== 'user') return null;
 
         const nextMsg = messages[idx + 1];
+
+        // Time fallback: show double grey tick after 300 seconds (5 mins)
+        const msgTime = msg.timestamp ? new Date(msg.timestamp).getTime() : Date.now();
+        const now = Date.now();
+        const isExpired = (now - msgTime) > (300 * 1000);
+
         if (!nextMsg || nextMsg.role !== 'assistant') {
+            if (isExpired) {
+                return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'rgba(0,0,0,0.4)' }} />;
+            }
             return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', opacity: 0.6 }} />;
         }
 
         // Check if Maya or Guruji responded
         const isGuruji = nextMsg.assistant === 'guruji' || !!nextMsg.gurujiJson;
-        const isMaya = nextMsg.assistant === 'maya';
+        const isMaya = nextMsg.assistant === 'maya' || !!nextMsg.mayaJson;
 
         if (isGuruji) {
             return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: '#2b79c2' }} />;
-        } else if (isMaya) {
+        } else if (isMaya || isExpired) {
             return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'rgba(0,0,0,0.4)' }} />;
         }
 
@@ -1849,7 +1858,7 @@ const Chat = () => {
                                                 mb: 0.5,
                                                 color: '#000000',
                                                 letterSpacing: 1,
-
+                                                color: 'green'
                                             }}>
                                                 Astrology Guruji
                                             </Typography>
