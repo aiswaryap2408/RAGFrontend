@@ -642,6 +642,7 @@ const Chat = () => {
     const [chatPaymentState, setChatPaymentState] = useState('IDLE'); // IDLE, REQUIRED, PAYING, COMPLETE
     const [pendingMessageId, setPendingMessageId] = useState(null);
     const [isBuffering, setIsBuffering] = useState(false);
+    const [isAnimating, setIsAnimating] = useState(false);
     const [waitMessage, setWaitMessage] = useState("");
     const messagesEndRef = useRef(null);
     const processedNewSession = useRef(false);
@@ -1157,6 +1158,7 @@ const Chat = () => {
                 time: timestamp ? formatTime(timestamp) : getCurrentTime(),
                 timestamp: timestamp || new Date().toISOString()
             }]);
+            if (guruji_json) setIsAnimating(true);
         } catch (err) {
             console.error("Chat Error:", err);
             // If it's a 404/401/403, the interceptor will handle redirect to login
@@ -1442,6 +1444,7 @@ const Chat = () => {
                     timestamp: timestamp || new Date().toISOString()
                 }];
             });
+            if (guruji_json) setIsAnimating(true);
             setChatPaymentState('IDLE');
             setPendingMessageId(null);
         } catch (err) {
@@ -1674,6 +1677,12 @@ const Chat = () => {
                                     <SequentialResponse
                                         gurujiJson={gurujiData}
                                         animate={msg.animating}
+                                        onComplete={() => {
+                                            setIsAnimating(false);
+                                            setMessages(prev => prev.map((m, idx) =>
+                                                idx === i ? { ...m, animating: false } : m
+                                            ));
+                                        }}
                                         messages={messages}
                                         handleReportGeneration={handleReportGeneration}
                                         reportState={reportState}
@@ -1996,6 +2005,7 @@ const Chat = () => {
                 userStatus={userStatus}
                 loading={loading}
                 summary={summary}
+                isAnimating={isAnimating}
             />
             {/* Same overlays as before (Inactivity, Summary, Drawer) */}
             {/* ... preserved ... */}
