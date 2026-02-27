@@ -18,6 +18,9 @@ const Dashboard = () => {
     const [signName, setSignName] = useState("");
     const [balance, setBalance] = useState(0);
     const [loadingPrediction, setLoadingPrediction] = useState(false);
+    const [profileDob, setProfileDob] = useState("");
+    const [profilebirthstar, setProfileBirthStar] = useState("");
+    const [userName, setUserName] = useState(localStorage.getItem('userName') || "");
     const navigate = useNavigate();
 
     const isLoggedIn = !!localStorage.getItem("token");
@@ -43,6 +46,7 @@ const Dashboard = () => {
             const mobile = localStorage.getItem("mobile");
             if (mobile) {
                 fetchPrediction(mobile);
+                fetchUserStatus(mobile);
             } else {
                 setPrediction("Please log in to view your daily prediction.");
             }
@@ -50,6 +54,58 @@ const Dashboard = () => {
             setPrediction("You are currently logged out. Login to view your daily horoscope.");
         }
     }, [isLoggedIn]);
+
+    const fetchUserStatus = async (mobile) => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/user-status/${mobile}`);
+            const data = await response.json();
+
+            if (data.user_profile?.name) {
+                setUserName(data.user_profile.name);
+            }
+            if (data.user_profile?.dob) {
+                try {
+                    const date = new Date(data.user_profile.dob);
+                    if (!isNaN(date.getTime())) {
+                        const formatted = date.toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                        });
+                        setProfileDob(formatted);
+                    }
+                } catch (e) { console.error(e); }
+            }
+
+            const userChart = data.user_chart || data.user_charts;
+            let extractedStar = "";
+            const chartData = Array.isArray(userChart) ? userChart[0] : userChart;
+
+            if (chartData) {
+                // Image-based structure: birth_star.mainHTML.content[2]
+                if (chartData.birth_star?.mainHTML?.content?.[2]) {
+                    const starStr = chartData.birth_star.mainHTML.content[2];
+                    if (starStr.toLowerCase().includes('birth star')) {
+                        extractedStar = starStr.split(':')[1]?.trim() || "";
+                    }
+                }
+                // Fallbacks
+                if (!extractedStar) {
+                    if (chartData.data?.birth_star) {
+                        extractedStar = chartData.data.birth_star;
+                    } else if (typeof chartData.birth_star === 'string') {
+                        extractedStar = chartData.birth_star;
+                    }
+                }
+            }
+
+            if (extractedStar || data.user_profile?.birthstar || data.user_profile?.profilestar || data.user_profile?.star || data.user_profile?.nakshatra) {
+                setProfileBirthStar(extractedStar || data.user_profile.birthstar || data.user_profile.profilestar || data.user_profile.star || data.user_profile.nakshatra);
+            }
+        } catch (error) {
+            console.error("Error fetching user status:", error);
+        }
+    };
 
     const fetchPrediction = async (mobile) => {
         try {
@@ -63,6 +119,10 @@ const Dashboard = () => {
 
             if (predData.sign_name) {
                 setSignName(predData.sign_name);
+            }
+
+            if (predData.birth_star || predData.star_name) {
+                setProfileBirthStar(predData.birth_star || predData.star_name);
             }
 
             const clickAstro = predData.prediction;
@@ -114,7 +174,13 @@ const Dashboard = () => {
                     overflow: "hidden"
                 }}
             >
-                <Header backgroundImage="/svg/top_curve_light.svg" />
+                <Header
+                    backgroundImage="/svg/top_curve_light.svg"
+                    showProfile={isLoggedIn}
+                    name={userName?.split(' ')[0] || ""}
+                    profiledob={profileDob}
+                    profilebirthstar={profilebirthstar}
+                />
                 <HamburgerMenu />
 
 
@@ -124,7 +190,7 @@ const Dashboard = () => {
                     overflowY: 'auto',
                     "&::-webkit-scrollbar": { display: "none" },
                     scrollbarWidth: "none",
-                    mt: 16,
+                    mt: 12,
                     pb: 12,
                     px: 3
                 }}>
@@ -153,8 +219,8 @@ const Dashboard = () => {
                             }} />
                     )} */}
                     {isLoggedIn && (
-                        <Box sx={{ mb: 3, display: "flex", justifyContent: "center" }}>
-                            <Typography sx={{ fontWeight: 400, color: '#fff', fontSize: '1rem', bgcolor: '#dc5d35', borderRadius: 5, p: 1, px: 3, display: "flex", alignItems: "center" }}>
+                        <Box sx={{ mb: 3, display: "flex", justifyContent: "center", mt: 1.5 }}>
+                            <Typography sx={{ fontWeight: 400, color: '#fff', fontSize: '1rem', bgcolor: '#54a170', borderRadius: 5, p: 1, px: 3, display: "flex", alignItems: "center" }}>
                                 <img src="/svg/wallet-white.svg" alt="" style={{ width: '20px', height: '20px', marginRight: '5px', }} />
                                 You have {balance.toLocaleString()} pts
                             </Typography>
@@ -162,25 +228,25 @@ const Dashboard = () => {
                     )}
                     <Box sx={{ textAlign: "center", display: "flex", justifyContent: "space-around", flexWrap: 'wrap', gap: 2, mb: 2.5 }}>
                         <Box onClick={() => handleAction('/profile')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Box sx={{ bgcolor: "#ffdaa7", borderRadius: 1, p: 1, width: '65px', height: '65px', display: "flex", justifyContent: "center", alignItems: "center" }}>
+                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '65px', height: '65px', display: "flex", justifyContent: "center", alignItems: "center" }}>
                                 <img src="/svg/user.svg" alt="" style={{ width: '35px', height: '35px' }} />
                             </Box>
                             <Typography fontSize={16} mt={.3} width={90} >Edit profiles</Typography>
                         </Box>
                         <Box onClick={() => handleAction('/wallet')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Box sx={{ bgcolor: "#ffdaa7", borderRadius: 1, p: 1, width: '65px', height: '65px', display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                <img src="/svg/wallet.svg" alt="" style={{ width: '35px', height: '35px' }} />
+                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '65px', height: '65px', display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                <img src="/svg/wallet-white.svg" alt="" style={{ width: '35px', height: '35px' }} />
                             </Box>
                             <Typography fontSize={16} mt={.3} width={75} >Recharge</Typography>
                         </Box>
                         <Box onClick={() => handleAction('/wallet/recharge-history')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Box sx={{ bgcolor: "#ffdaa7", borderRadius: 1, p: 1, width: '65px', height: '65px', display: "flex", justifyContent: "center", alignItems: "center" }}>
+                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '65px', height: '65px', display: "flex", justifyContent: "center", alignItems: "center" }}>
                                 <img src="/svg/payments.svg" alt="" style={{ width: '35px', height: '35px' }} />
                             </Box>
                             <Typography fontSize={16} mt={.3} width={75} >Recharge</Typography>
                         </Box>
                         <Box onClick={() => handleAction('/detailed-reports')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Box sx={{ bgcolor: "#ffdaa7", borderRadius: 1, p: 1, width: '65px', height: '65px', display: "flex", justifyContent: "center", alignItems: "center" }}>
+                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '65px', height: '65px', display: "flex", justifyContent: "center", alignItems: "center" }}>
                                 <img src="/svg/detailed_report.svg" alt="" style={{ width: '35px', height: '35px' }} />
                             </Box>
                             <Typography fontSize={16} mt={.3} width={75} margin={'auto'}>Detailed Reports</Typography>
