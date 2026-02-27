@@ -272,7 +272,11 @@ const AdminDashboard = () => {
                     }
                     const parsed = JSON.parse(cleanJson);
                     if (role === 'guruji') {
-                        text = [parsed.para1, parsed.para2, parsed.para3].filter(Boolean).join('\n\n');
+                        const paras = [];
+                        Object.keys(parsed).filter(k => k.startsWith('para')).sort().forEach(k => {
+                            paras.push(...parsed[k].split('#').map(s => s.trim()).filter(s => s !== ''));
+                        });
+                        text = paras.join('\n\n');
                         if (parsed.follow_up || parsed.followup) {
                             text += `\n\n${parsed.follow_up || parsed.followup}`;
                         }
@@ -706,8 +710,11 @@ const AdminDashboard = () => {
                                                                                 if (match) cleanJson = match[1];
                                                                                 else cleanJson = cleanJson.replace(/^```(json)?\s*|\s*```$/g, '');
                                                                             }
-                                                                            const parsed = JSON.parse(cleanJson);
-                                                                            content = [parsed.para1, parsed.para2, parsed.para3].filter(Boolean).join('<br><br>');
+                                                                            const paras = [];
+                                                                            Object.keys(parsed).filter(k => k.startsWith('para')).sort().forEach(k => {
+                                                                                paras.push(...parsed[k].split('#').map(s => s.trim()).filter(s => s !== ''));
+                                                                            });
+                                                                            content = paras.join('<br><br>');
                                                                             if (parsed.follow_up || parsed.followup) {
                                                                                 content += `<br><br><span class="opacity-50 italic">${parsed.follow_up || parsed.followup}</span>`;
                                                                             }

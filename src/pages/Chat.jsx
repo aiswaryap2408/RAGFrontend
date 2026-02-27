@@ -292,14 +292,27 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     const reportId = msgObj.report_id || null;
     const splitByNewlines = (text) => {
         if (!text) return [];
-        return text.split(/\r?\n/).map(s => s.trim()).filter(s => s !== '');
+        return text.split('#').map(s => s.trim()).filter(s => s !== '');
     };
 
-    const paras = [
-        ...splitByNewlines(gurujiJson?.para1),
-        ...splitByNewlines(gurujiJson?.para2),
-        ...(gurujiJson?.follow_up ? [gurujiJson.follow_up] : []),
-    ];
+    // const paras = [
+    //     ...splitByNewlines(gurujiJson?.para1),
+    //     ...splitByNewlines(gurujiJson?.para2),
+    //     ...(gurujiJson?.follow_up ? [gurujiJson.follow_up] : []),
+    // ];
+
+    const paras = [];
+
+    Object.keys(gurujiJson || {})
+        .filter(key => key.startsWith('para'))
+        .sort() // ensures para1, para2, para3 order
+        .forEach(key => {
+            paras.push(...splitByNewlines(gurujiJson[key]));
+        });
+
+    if (gurujiJson?.follow_up) {
+        paras.push(gurujiJson.follow_up);
+    }
 
     const [visibleCount, setVisibleCount] = useState(animate ? 0 : paras.length);
     const [isBuffering, setIsBuffering] = useState(animate ? true : false);
@@ -308,10 +321,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     const hasCalledComplete = useRef(false);
 
     const pleaseWaitMessages = [
-        // "Please wait… checking your chart carefully.",
-        // "One moment... ",
-        "Astrologer is typing...",
-        "Please give me a moment.",
+        "Astrologer is typing..."
     ];
 
     const scrollToBottom = () => {
@@ -378,7 +388,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
             const timer = setTimeout(() => {
                 setIsBuffering(true);
                 scrollToBottom();
-            }, 1200000000000000000000000000000); // Pause between bubbles
+            }, 120); // Pause between bubbles
             return () => clearTimeout(timer);
         }
     }, [visibleCount, isBuffering, animate, paras.length, onComplete]);
@@ -493,6 +503,30 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
                     )}
                 </Box>
             ))}
+
+            {isBuffering && waitMessage && (
+                <Box sx={{
+                    position: 'fixed',
+                    bottom: 60,
+                    left: 0,
+                    right: 0,
+                    height: 40,
+                    mx: 'auto',
+                    width: { xs: '90%', sm: 400 },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    zIndex: 10,
+                    pointerEvents: 'none',
+                    bgcolor: '#fece8d',
+                }}>
+                    <Typography sx={{ fontSize: '0.8rem', color: '#000', fontWeight: 'normal', textShadow: '0 1px 2px rgba(255,255,255,0.8)', pb: 1 }}>
+                        {waitMessage}
+                    </Typography>
+                </Box>
+            )}
 
 
             {isThisActiveReport && (reportState === 'CONFIRMING' || reportState === 'PREPARING' || reportState === 'READY') && (
