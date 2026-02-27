@@ -1111,6 +1111,22 @@ const Chat = () => {
             }
             const history = messages.slice(1);
             const res = await sendMessage(mobile, text, history, sessionId);
+
+            // Handle rate limit / offline
+            if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
+                setWaitMessage("Astrologer is offline");
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: res.data.answer || 'Guruji is currently unavailable. Please try again shortly.',
+                    assistant: 'maya',
+                    time: res.data.timestamp ? formatTime(res.data.timestamp) : getCurrentTime(),
+                    timestamp: res.data.timestamp || new Date().toISOString()
+                }]);
+                setLoading(false);
+                setIsBuffering(false);
+                return;
+            }
+
             if (res.data.requires_payment) {
                 setLoading(false);
                 setIsBuffering(false);
