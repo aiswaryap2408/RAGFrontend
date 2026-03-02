@@ -156,21 +156,33 @@ const SpinnerDatePicker = ({ open, value, onCancel, onConfirm }) => {
     };
 
     return (
-        <Dialog open={open} onClose={onCancel} fullWidth maxWidth="xs">
-            <Box sx={{ p: 3, textAlign: "center" }}>
-                <Typography variant="h6" mb={2}>
+        <Dialog
+            open={open}
+            onClose={onCancel}
+            disableScrollLock={true}
+            PaperProps={{
+                sx: {
+                    width: '90%',
+                    maxWidth: '400px',
+                    borderRadius: 3,
+                    m: 2
+                }
+            }}
+        >
+            <Box sx={{ p: { xs: 2.5, sm: 3 }, textAlign: "center" }}>
+                <Typography variant="h6" mb={2} sx={{ fontWeight: 600, color: '#444' }}>
                     Select Birth Date
                 </Typography>
 
-                <Box sx={{ display: "flex" }}>
+                <Box sx={{ display: "flex", gap: 0.5, px: { xs: 0, sm: 1 } }}>
                     <SpinnerColumn items={days} value={day} onChange={setDay} />
                     <SpinnerColumn items={months} value={month} onChange={setMonth} />
                     <SpinnerColumn items={years} value={year} onChange={setYear} />
                 </Box>
 
-                <Box mt={3} display="flex" justifyContent="space-between">
-                    <Button onClick={onCancel}>Cancel</Button>
-                    <Button variant="contained" onClick={handleConfirm}>
+                <Box mt={3} display="flex" justifyContent="space-between" px={1}>
+                    <Button onClick={onCancel} sx={{ color: '#888', fontWeight: 600 }}>Cancel</Button>
+                    <Button variant="contained" onClick={handleConfirm} sx={{ bgcolor: '#FF8A3D', fontWeight: 600, borderRadius: 2, '&:hover': { bgcolor: '#e67324' } }}>
                         Confirm
                     </Button>
                 </Box>
