@@ -38,7 +38,7 @@ const Onboarding = () => {
     };
 
     const handleConfirm = async () => {
-        if (activeDot < 2) {
+        if (activeDot < 1) {
             setActiveDot((prev) => prev + 1);
         } else {
             console.log("Onboarding completed, checking status...");
@@ -183,56 +183,6 @@ const Onboarding = () => {
                     </span>{" "}
                 </>,
             ],
-        },
-
-        {
-            title: (
-                <>
-                    … and I have certain{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        responsibilities
-                    </span>
-                </>
-            ),
-            paragraphs: [<></>],
-            points: [
-                <>
-                    To{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        prevent the misuse
-                    </span>{" "}
-                    of the platform, pass only astrologically relevant questions to the
-                    astrologer.{" "}
-                </>,
-                <>
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>Prevent</span>{" "}
-                    astrologers from answering questions on{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        restricted topics
-                    </span>
-                    .
-                </>,
-                <>
-                    Identify if a question (or answer) is beyond our{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>free-to-use</span>{" "}
-                    policy and notify you regarding the{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        astrologer fees
-                    </span>
-                    .
-                </>,
-                <>
-                    I’ll always be your{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        friendly AI assistant
-                    </span>{" "}
-                    working for{" "}
-                    <span style={{ color: "#F36A2F", fontWeight: 600 }}>
-                        your better experience
-                    </span>
-                    .
-                </>,
-            ],
             highlights: [
                 <>
                     Always{" "}
@@ -244,6 +194,7 @@ const Onboarding = () => {
                 </>,
             ],
         },
+
     ];
 
     const data = getCardContent(name)[activeDot];
@@ -343,11 +294,11 @@ const Onboarding = () => {
                     {data.highlights && (
                         <Box
                             sx={{
-                                mt: "auto",
                                 backgroundColor: "#fff4e5",
                                 p: 2,
                                 borderRadius: 1,
                                 fontSize: '.9rem',
+                                mt: 5,
                             }}
                         >
                             {data.highlights}
@@ -372,27 +323,30 @@ const Onboarding = () => {
                         <Box /> // Empty placeholder to keep layout balanced
                     )}
 
-                    {/* Dots */}
-                    <Box sx={{ display: "flex", gap: { xs: .8, sm: 1.3 } }}>
-                        {[0, 1, 2].map((i) => (
-                            <Box
-                                key={i}
-                                sx={{
-                                    width: { xs: 15, sm: 20 },
-                                    height: { xs: 15, sm: 20 },
-                                    borderRadius: "50%",
-                                    bgcolor: activeDot === i ? "#F36A2F" : "rgba(243,106,47,0.3)",
-                                }}
-                            />
-                        ))}
-                    </Box>
+                    {/* Grouping Dots and Button together */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: '82%', justifyContent: 'flex-end' }}>
+                        {/* Dots */}
+                        <Box sx={{ display: "flex", gap: { xs: .8, sm: 1.3 } }}>
+                            {[0, 1].map((i) => (
+                                <Box
+                                    key={i}
+                                    sx={{
+                                        width: { xs: 15, sm: 20 },
+                                        height: { xs: 15, sm: 20 },
+                                        borderRadius: "50%",
+                                        bgcolor: activeDot === i ? "#F36A2F" : "rgba(243,106,47,0.3)",
+                                    }}
+                                />
+                            ))}
+                        </Box>
 
-                    <PrimaryButton
-                        label={activeDot < 2 ? "I understand" : "Consult now"}
-                        onClick={handleConfirm}
-                        endIcon={<KeyboardDoubleArrowRightIcon sx={{ fontSize: '40px' }} />}
-                        sx={{ borderRadius: 5, width: { xs: '55%', sm: '40%' } }}
-                    />
+                        <PrimaryButton
+                            label={activeDot < 1 ? "I understand" : "Consult now"}
+                            onClick={handleConfirm}
+                            endIcon={<KeyboardDoubleArrowRightIcon sx={{ fontSize: '40px !important' }} />}
+                            sx={{ borderRadius: 5, px: { xs: 1, sm: 3 }, width: '60%', py: .5, maxWidth: 200, minWidth: 150 }}
+                        />
+                    </Box>
                 </Box>
             </Box>
 
