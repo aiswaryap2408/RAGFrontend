@@ -439,7 +439,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     const bubbleSx = {
         p: '16px 12px 14px 16px',
         borderRadius: '10px',
-        bgcolor: '#f1f1f1',
+        bgcolor: '#fef6eb',
         color: '#000000',
         boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
         border: 'none',
@@ -507,23 +507,54 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
             {isBuffering && waitMessage && (
                 <Box sx={{
                     position: 'fixed',
-                    bottom: 60,
+                    bottom: 80,
                     left: 0,
                     right: 0,
-                    height: 40,
+                    minHeight: 25,
+                    height: 'auto',
                     mx: 'auto',
-                    width: { xs: '90%', sm: 400 },
+                    width: 'max-content',
+                    minWidth: '32%',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    gap: 0.5,
                     zIndex: 10,
                     pointerEvents: 'none',
                     bgcolor: '#fece8d',
+                    borderRadius: '50px',
+                    px: 3,
+                    py: 0.5
                 }}>
-                    <Typography sx={{ fontSize: '0.8rem', color: '#000', fontWeight: 'normal', textShadow: '0 1px 2px rgba(255,255,255,0.8)', pb: 1 }}>
-                        {waitMessage}
+                    <Typography
+                        sx={{
+                            fontSize: "0.9rem",
+                            fontWeight: 400,
+                            display: "inline-block",
+                            overflow: "hidden",
+                            "@keyframes letterBounceAppear": {
+                                "0%": { opacity: 0, transform: "translateY(10px)" },
+                                "10%": { opacity: 1, transform: "translateY(-4px)" },
+                                "15%, 85%": { opacity: 1, transform: "translateY(0)" },
+                                "100%": { opacity: 0, transform: "translateY(0)" }
+                            },
+                        }}
+                    >
+                        {waitMessage.split("").map((char, index) => (
+                            <Box
+                                component="span"
+                                key={index}
+                                sx={{
+                                    display: "inline-block",
+                                    whiteSpace: char === " " ? "pre" : "normal",
+                                    opacity: 0,
+                                    animation: "letterBounceAppear 3.5s infinite",
+                                    animationDelay: `${index * 0.1}s`,
+                                }}
+                            >
+                                {char}
+                            </Box>
+                        ))}
                     </Typography>
                 </Box>
             )}
@@ -647,6 +678,13 @@ const Chat = () => {
     const messagesEndRef = useRef(null);
     const processedNewSession = useRef(false);
 
+    // Dynamic timer to force re-renders for status ticks
+    const [currentTime, setCurrentTime] = useState(Date.now());
+    useEffect(() => {
+        const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
+        return () => clearInterval(interval);
+    }, []);
+
     const scrollToBottom = () => {
         if (messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -659,16 +697,17 @@ const Chat = () => {
 
         const nextMsg = messages[idx + 1];
 
-        // Time fallback: show double grey tick after 300 seconds (5 mins)
+        // Dynamic time updates matching user specifications
         const msgTime = msg.timestamp ? new Date(msg.timestamp).getTime() : Date.now();
-        const now = Date.now();
-        const isExpired = (now - msgTime) > (300 * 1000);
+        const now = currentTime;
+        const elapsedSecs = (now - msgTime) / 1000;
+        const isExpired = elapsedSecs > 300; // 5 mins fallback
 
         if (!nextMsg || nextMsg.role !== 'assistant') {
-            if (isExpired) {
-                return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'rgba(0,0,0,0.4)' }} />;
+            if (elapsedSecs < 5) {
+                return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', opacity: 0.6 }} />;
             }
-            return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', opacity: 0.6 }} />;
+            return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'rgba(0,0,0,0.4)' }} />;
         }
 
         // Check if Maya or Guruji responded
@@ -676,7 +715,11 @@ const Chat = () => {
         const isMaya = nextMsg.assistant === 'maya' || !!nextMsg.mayaJson;
 
         if (isGuruji) {
-            return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: '#2b79c2' }} />;
+            if (elapsedSecs < 5) {
+                return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'rgba(0,0,0,0.4)' }} />;
+            } else {
+                return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: '#2b79c2' }} />;
+            }
         } else if (isMaya || isExpired) {
             return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'rgba(0,0,0,0.4)' }} />;
         }
@@ -1273,7 +1316,7 @@ const Chat = () => {
                 key: order.key,
                 amount: order.amount,
                 currency: order.currency,
-                name: "Astrology Guruji",
+                name: "Guruji",
                 description: "Detailed Report Payment",
                 order_id: order.order_id,
                 handler: async function (response) {
@@ -1674,21 +1717,10 @@ const Chat = () => {
 
                     if (gurujiData && msg.assistant === 'guruji') {
                         return (
-                            <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 2, width: '100%' }}>
-                                {/* <Box sx={{
-                                    width: 40,
-                                    height: 40,
-                                    borderRadius: '50%',
-                                    bgcolor: 'white',
-                                    border: '3px solid #F36A2F',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                                }}>
-                                    <img src="/svg/guruji_illustrated.svg" style={{ width: 32 }} alt="G" />
-                                </Box> */}
+                            <Box key={i} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 2, width: '100%' }}>
+                                <Typography sx={{ fontSize: '0.75rem', color: '#acacac', ml: 1, fontWeight: 400 }}>
+                                    Guruji
+                                </Typography>
                                 <Box sx={{ flex: 1, maxWidth: '100%' }}>
                                     <SequentialResponse
                                         gurujiJson={gurujiData}
@@ -1804,12 +1836,15 @@ const Chat = () => {
                         return (
                             <Box key={i} sx={{ width: '100%', mb: 2 }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 2 }}>
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#666', mb: 0.5, mr: 1, fontWeight: 600 }}>
+                                        User
+                                    </Typography>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
                                             p: '12px 12px 24px 12px',
                                             borderRadius: '10px',
-                                            bgcolor: '#2f3148',
-                                            color: 'white',
+                                            bgcolor: '#f1f1f1',
+                                            color: '#000000',
                                             boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                             position: 'relative',
                                             maxWidth: '325px',
@@ -1821,7 +1856,7 @@ const Chat = () => {
                                             <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}>
                                                 {msg.content}
                                             </Typography>
-                                            <Typography sx={{ fontSize: '0.75rem', opacity: 0.8, position: 'absolute', bottom: 5, right: 8, color: 'rgba(255,255,255,0.9)', fontWeight: 500, pt: 1, display: 'flex', alignItems: 'center' }}>
+                                            <Typography sx={{ fontSize: '0.85rem', opacity: 0.8, position: 'absolute', bottom: 5, right: 8, color: '#6d6b69', fontWeight: 500, pt: 1, display: 'flex', alignItems: 'center' }}>
                                                 {msg.time}
                                                 {renderStatusTicks(i)}
                                             </Typography>
@@ -1851,6 +1886,16 @@ const Chat = () => {
                                 mb: 2
                             }}
                         >
+                            <Typography sx={{
+                                fontSize: '0.75rem',
+                                color: '#acacac',
+                                // mb: 0.5,
+                                ml: msg.role !== 'user' ? 1 : 0,
+                                mr: msg.role === 'user' ? 1 : 0,
+                                fontWeight: 400
+                            }}>
+                                {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'Maya' : 'Guruji')}
+                            </Typography>
                             <Box sx={{
                                 display: 'flex',
                                 alignItems: 'flex-start',
@@ -1864,7 +1909,7 @@ const Chat = () => {
                                     <Box sx={{
                                         p: '12px 12px 24px 12px',
                                         borderRadius: '10px',
-                                        bgcolor: msg.role === 'user' ? '#e2e2e2' : '#f1f1f1',
+                                        bgcolor: msg.role === 'user' ? '#f1f1f1' : '#fef6eb',
                                         color: '#000000',
                                         boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                         border: 'none',
@@ -1875,20 +1920,6 @@ const Chat = () => {
                                         wordBreak: "break-word",
                                         whiteSpace: "pre-line",
                                     }}>
-                                        {msg.role === 'assistant' && msg.assistant !== 'maya' && (
-                                            <Typography sx={{
-                                                fontSize: '0.65rem',
-                                                fontWeight: 900,
-                                                textTransform: 'uppercase',
-                                                mb: 0.5,
-                                                color: '#000000',
-                                                letterSpacing: 1,
-                                                color: 'green'
-                                            }}>
-                                                Astrology Guruji
-                                            </Typography>
-                                        )}
-
                                         <Typography
                                             variant="body2"
                                             sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}
@@ -1956,7 +1987,7 @@ const Chat = () => {
                                         {/* Timestamp moved inside the bubble */}
                                         <Box
                                             sx={{
-                                                fontSize: '10px',
+                                                fontSize: '11px',
                                                 opacity: 0.8,
                                                 position: 'absolute',
                                                 bottom: 5,
@@ -1992,23 +2023,54 @@ const Chat = () => {
                 {isBuffering && waitMessage && (
                     <Box sx={{
                         position: 'fixed',
-                        bottom: 60,
+                        bottom: 80,
                         left: 0,
                         right: 0,
-                        height: 40,
+                        minHeight: 25,
+                        height: 'auto',
                         mx: 'auto',
-                        width: { xs: '90%', sm: 400 },
+                        width: 'max-content',
+                        minWidth: '32%',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center',
                         alignItems: 'center',
-                        gap: 0.5,
                         zIndex: 10,
                         pointerEvents: 'none',
                         bgcolor: '#fece8d',
+                        borderRadius: '50px',
+                        px: 3,
+                        py: 0.5
                     }}>
-                        <Typography sx={{ fontSize: '0.8rem', color: '#000', fontWeight: 'normal', textShadow: '0 1px 2px rgba(255,255,255,0.8)', pb: 1 }}>
-                            {waitMessage}
+                        <Typography
+                            sx={{
+                                fontSize: "0.9rem",
+                                fontWeight: 400,
+                                display: "inline-block",
+                                overflow: "hidden",
+                                "@keyframes letterBounceAppear": {
+                                    "0%": { opacity: 0, transform: "translateY(10px)" },
+                                    "10%": { opacity: 1, transform: "translateY(-4px)" },
+                                    "15%, 85%": { opacity: 1, transform: "translateY(0)" },
+                                    "100%": { opacity: 0, transform: "translateY(0)" }
+                                },
+                            }}
+                        >
+                            {waitMessage.split("").map((char, index) => (
+                                <Box
+                                    component="span"
+                                    key={index}
+                                    sx={{
+                                        display: "inline-block",
+                                        whiteSpace: char === " " ? "pre" : "normal",
+                                        opacity: 0,
+                                        animation: "letterBounceAppear 3.5s infinite",
+                                        animationDelay: `${index * 0.1}s`,
+                                    }}
+                                >
+                                    {char}
+                                </Box>
+                            ))}
                         </Typography>
                     </Box>
                 )}
