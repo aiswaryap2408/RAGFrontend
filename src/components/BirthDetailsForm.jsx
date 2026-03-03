@@ -15,9 +15,76 @@ import { GenderButton } from "./inputwithIcon";
 import SpinnerDatePicker from './SpinnerDatePicker';
 import SpinnerTimePicker from './SpinnerTimePicker';
 
-const BirthDetailsForm = ({ details, setDetails, error }) => {
+const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, focusTrigger = 0 }) => {
     const [dobModalOpen, setDobModalOpen] = React.useState(false);
     const [tobModalOpen, setTobModalOpen] = React.useState(false);
+
+    const nameRef = React.useRef(null);
+    const emailRef = React.useRef(null);
+    const genderRef = React.useRef(null);
+    const dobRef = React.useRef(null);
+    const tobRef = React.useRef(null);
+    const pobRef = React.useRef(null);
+
+    React.useEffect(() => {
+        // Auto-clear errors when the user fills in the field
+        if (setErrors && Object.keys(errors).length > 0) {
+            const keysToClear = [];
+            Object.keys(errors).forEach(key => {
+                const val = details[key];
+                if (val && typeof val === 'string' && val.trim() !== '') {
+                    if (key === 'email') {
+                        // Only clear email error if it passes basic format check
+                        if (/\S+@\S+\.\S+/.test(val)) {
+                            keysToClear.push(key);
+                        }
+                    } else if (key === 'pob') {
+                        if (errors.pob === "Place of birth is required." && val.trim() !== '') {
+                            keysToClear.push(key);
+                        }
+                        // Note: If the error is 'Please select a valid birth place from the suggestions dropdown.',
+                        // we DO NOT auto-clear it here just because they typed a character. 
+                        // It will be cleared explicitly by the 'place_changed' listener in the Places API callback.
+                    } else {
+                        // For other fields, just being non-empty is enough to clear "is required"
+                        keysToClear.push(key);
+                    }
+                }
+            });
+
+            if (keysToClear.length > 0) {
+                setErrors(prev => {
+                    const next = { ...prev };
+                    keysToClear.forEach(k => delete next[k]);
+                    return next;
+                });
+            }
+        }
+    }, [details, errors, setErrors]);
+
+    React.useEffect(() => {
+        // Auto-focus on the first field with an error, BUT ONLY when triggered by a submit attempt.
+        if (focusTrigger > 0 && Object.keys(errors).length > 0) {
+            const firstErrorField = [
+                { key: 'name', ref: nameRef },
+                { key: 'email', ref: emailRef },
+                { key: 'gender', ref: genderRef },
+                { key: 'dob', ref: dobRef },
+                { key: 'tob', ref: tobRef },
+                { key: 'pob', ref: pobRef },
+            ].find(field => errors[field.key]);
+
+            if (firstErrorField && firstErrorField.ref.current) {
+                firstErrorField.ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Add a small delay for smooth scroll before focus
+                setTimeout(() => {
+                    if (firstErrorField.ref.current) {
+                        firstErrorField.ref.current.focus();
+                    }
+                }, 300);
+            }
+        }
+    }, [focusTrigger]);
 
     const handleConfirmDob = (newDob) => {
         setDetails({ ...details, dob: newDob });
@@ -42,6 +109,13 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                     const place = this.getPlace();
                     if (place && place.formatted_address) {
                         setDetails(prev => ({ ...prev, pob: place.formatted_address }));
+                        if (typeof setErrors === 'function') {
+                            setErrors(prev => {
+                                const next = { ...prev };
+                                delete next.pob;
+                                return next;
+                            });
+                        }
                     }
                 });
                 birthPlaceInput.setAttribute('data-capac-initialized', 'true');
@@ -132,6 +206,9 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                     placeholder="Name"
                     value={details.name}
                     onChange={e => setDetails({ ...details, name: e.target.value })}
+                    error={!!errors.name}
+                    helperText={errors.name}
+                    inputRef={nameRef}
                 />
 
                 {/* Email */}
@@ -142,23 +219,33 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                     type="email"
                     value={details.email}
                     onChange={e => setDetails({ ...details, email: e.target.value })}
+                    error={!!errors.email}
+                    helperText={errors.email}
+                    inputRef={emailRef}
                 />
 
                 {/* Gender */}
-                <ToggleButtonGroup
-                    exclusive
-                    value={details.gender.toLowerCase()}
-                    onChange={(_, v) => v && setDetails({ ...details, gender: v.charAt(0).toUpperCase() + v.slice(1) })}
-                    sx={{
-                        width: "90%",
-                        mb: 1.5,
-                        borderRadius: 1,
-                        overflow: "hidden",
-                    }}
-                >
-                    <GenderButton value="male">Male</GenderButton>
-                    <GenderButton value="female">Female</GenderButton>
-                </ToggleButtonGroup>
+                <Box ref={genderRef}>
+                    <ToggleButtonGroup
+                        exclusive
+                        value={details.gender.toLowerCase()}
+                        onChange={(_, v) => v && setDetails({ ...details, gender: v.charAt(0).toUpperCase() + v.slice(1) })}
+                        sx={{
+                            width: "90%",
+                            mb: 1.5,
+                            borderRadius: 1,
+                            overflow: "hidden",
+                        }}
+                    >
+                        <GenderButton value="male" error={!!errors.gender}>Male</GenderButton>
+                        <GenderButton value="female" error={!!errors.gender}>Female</GenderButton>
+                    </ToggleButtonGroup>
+                    {errors.gender && (
+                        <Typography color="error" variant="caption" sx={{ display: 'block', mb: 1, ml: 2, mt: -0.5 }}>
+                            {errors.gender}
+                        </Typography>
+                    )}
+                </Box>
 
                 {/* Date of birth */}
                 <InputField
@@ -168,6 +255,9 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                     inputProps={{ readOnly: true }}
                     onClick={() => setDobModalOpen(true)}
                     sx={{ cursor: 'pointer', "& .MuiInputBase-input": { cursor: 'pointer' } }}
+                    error={!!errors.dob}
+                    helperText={errors.dob}
+                    inputRef={dobRef}
                 />
 
                 <SpinnerDatePicker
@@ -186,6 +276,9 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                         inputProps={{ readOnly: true }}
                         onClick={() => setTobModalOpen(true)}
                         sx={{ cursor: 'pointer', "& .MuiInputBase-input": { cursor: 'pointer' } }}
+                        error={!!errors.tob}
+                        helperText={errors.tob}
+                        inputRef={tobRef}
                     />
 
                     <SpinnerTimePicker
@@ -203,6 +296,9 @@ const BirthDetailsForm = ({ details, setDetails, error }) => {
                     placeholder="Place of birth"
                     value={details.pob}
                     onChange={e => setDetails({ ...details, pob: e.target.value })}
+                    error={!!errors.pob}
+                    helperText={errors.pob}
+                    inputRef={pobRef}
                 />
             </Box>
             <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>

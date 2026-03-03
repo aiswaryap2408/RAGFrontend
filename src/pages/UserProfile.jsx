@@ -21,6 +21,8 @@ const UserProfile = () => {
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [errors, setErrors] = useState({});
+    const [focusTrigger, setFocusTrigger] = useState(0);
     const [saving, setSaving] = useState(false);
     const [successMsg, setSuccessMsg] = useState('');
 
@@ -157,25 +159,52 @@ const UserProfile = () => {
     const handleSave = async () => {
         setSaving(true);
         setError('');
+        setErrors({});
+
+        // Validation
+        const { name, email, dob, tob, pob, gender } = details;
+        const newErrors = {};
+
+        // Get location details from hidden inputs (populated by solar.js)
+        const locationFields = {
+            country: document.getElementById('country')?.value || '',
+            state: document.getElementById('state')?.value || '',
+            region_dist: document.getElementById('region_dist')?.value || '',
+            txt_place_search: document.getElementById('txt_place_search')?.value || '',
+            longdeg: document.getElementById('longdeg')?.value || '',
+            longmin: document.getElementById('longmin')?.value || '',
+            longdir: document.getElementById('longdir')?.value || '',
+            latdeg: document.getElementById('latdeg')?.value || '',
+            latmin: document.getElementById('latmin')?.value || '',
+            latdir: document.getElementById('latdir')?.value || '',
+            timezone: document.getElementById('timezone')?.value || '0',
+            timezone_name: document.getElementById('timezone_name')?.value || '',
+            latitude_google: document.getElementById('latitude_google')?.value || '',
+            longitude_google: document.getElementById('longitude_google')?.value || '',
+            correction: document.getElementById('correction')?.value || '0'
+        };
+
+        if (!name.trim()) newErrors.name = "Name is required.";
+        if (!email.trim()) newErrors.email = "Email is required.";
+        else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = "Email is invalid.";
+        if (!gender.trim()) newErrors.gender = "Gender is required.";
+        if (gender.trim() && !["Male", "Female"].includes(gender.trim())) newErrors.gender = "Gender must be Male or Female.";
+        if (!dob.trim()) newErrors.dob = "Date of birth is required.";
+        if (!tob.trim()) newErrors.tob = "Time of birth is required.";
+        if (!pob.trim()) {
+            newErrors.pob = "Place of birth is required.";
+        } else if (!locationFields.longdeg || !locationFields.latdeg || locationFields.longdeg === '0' || locationFields.latdeg === '0') {
+            newErrors.pob = "Please select a valid birth place from the suggestions dropdown.";
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            setFocusTrigger(prev => prev + 1);
+            setSaving(false);
+            return;
+        }
+
         try {
-            // Get location details from hidden inputs (populated by solar.js)
-            const locationFields = {
-                country: document.getElementById('country')?.value || '',
-                state: document.getElementById('state')?.value || '',
-                region_dist: document.getElementById('region_dist')?.value || '',
-                txt_place_search: document.getElementById('txt_place_search')?.value || '',
-                longdeg: document.getElementById('longdeg')?.value || '',
-                longmin: document.getElementById('longmin')?.value || '',
-                longdir: document.getElementById('longdir')?.value || '',
-                latdeg: document.getElementById('latdeg')?.value || '',
-                latmin: document.getElementById('latmin')?.value || '',
-                latdir: document.getElementById('latdir')?.value || '',
-                timezone: document.getElementById('timezone')?.value || '0',
-                timezone_name: document.getElementById('timezone_name')?.value || '',
-                latitude_google: document.getElementById('latitude_google')?.value || '',
-                longitude_google: document.getElementById('longitude_google')?.value || '',
-                correction: document.getElementById('correction')?.value || '0'
-            };
 
             const payload = { ...details, ...locationFields };
             await updateProfile(payload);
@@ -273,7 +302,7 @@ const UserProfile = () => {
                             </Box>
                         </Box> */}
                         <Box sx={{ width: '100%' }}>
-                            <BirthDetailsForm details={details} setDetails={setDetails} error={error} />
+                            <BirthDetailsForm details={details} setDetails={setDetails} error={error} errors={errors} setErrors={setErrors} focusTrigger={focusTrigger} />
                         </Box>
                         <Box sx={{ mt: 6, display: 'flex', justifyContent: 'right', width: '100%' }}>
                             <PrimaryButton

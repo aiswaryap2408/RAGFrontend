@@ -409,7 +409,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
         borderRadius: '10px',
         bgcolor: '#fef6eb',
         color: '#000000',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+        // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
         border: 'none',
         position: 'relative',
         mb: 1.5,
@@ -501,10 +501,10 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
                             display: "inline-block",
                             overflow: "hidden",
                             "@keyframes letterBounceAppear": {
-                                "0%": { opacity: 0, transform: "translateY(10px)" },
-                                "10%": { opacity: 1, transform: "translateY(-4px)" },
-                                "15%, 85%": { opacity: 1, transform: "translateY(0)" },
-                                "100%": { opacity: 0, transform: "translateY(0)" }
+                                "0%": { opacity: 0 },
+                                "10%": { opacity: 1 },
+                                "15%, 85%": { opacity: 1 },
+                                "100%": { opacity: 0 }
                             },
                         }}
                     >
@@ -1822,7 +1822,7 @@ const Chat = () => {
                                             borderRadius: '10px',
                                             bgcolor: '#f1f1f1',
                                             color: '#000000',
-                                            boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                                            // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                             position: 'relative',
                                             maxWidth: '325px',
                                             minWidth: '100px',
@@ -1888,7 +1888,7 @@ const Chat = () => {
                                         borderRadius: '10px',
                                         bgcolor: msg.role === 'user' ? '#f1f1f1' : '#fef6eb',
                                         color: '#000000',
-                                        boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                                        // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                         border: 'none',
                                         position: 'relative',
                                         maxWidth: '325px',
@@ -2007,7 +2007,7 @@ const Chat = () => {
                         height: 'auto',
                         mx: 'auto',
                         width: 'max-content',
-                        minWidth: '32%',
+                        minWidth: '65%',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center',
@@ -2026,10 +2026,10 @@ const Chat = () => {
                                 display: "inline-block",
                                 overflow: "hidden",
                                 "@keyframes letterBounceAppear": {
-                                    "0%": { opacity: 0, transform: "translateY(10px)" },
-                                    "10%": { opacity: 1, transform: "translateY(-4px)" },
-                                    "15%, 85%": { opacity: 1, transform: "translateY(0)" },
-                                    "100%": { opacity: 0, transform: "translateY(0)" }
+                                    "0%": { opacity: 0 },
+                                    "10%": { opacity: 1 },
+                                    "15%, 85%": { opacity: 1 },
+                                    "100%": { opacity: 0 }
                                 },
                             }}
                         >
