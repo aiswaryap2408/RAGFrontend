@@ -208,6 +208,47 @@ const ChatHistory = () => {
                                         {session.messages.map((msg, mIndex) => {
                                             const { label, color, icon } = getRoleLabel(msg);
                                             const isUser = msg.role === 'user';
+
+                                            if ((msg.assistant === 'maya' || msg.role === 'maya') && (!msg.content || msg.content.trim() === '')) {
+                                                return null;
+                                            }
+
+                                            if (msg.assistant === 'maya' || msg.role === 'maya') {
+                                                return (
+                                                    <Box key={mIndex} sx={{ pt: 4, pb: 3, width: "100%", display: 'flex', justifyContent: 'center' }}>
+                                                        <Box sx={{
+                                                            position: "relative",
+                                                            borderRadius: 2,
+                                                            p: 2,
+                                                            bgcolor: "#fece8d",
+                                                            border: "none",
+                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                                                            width: '100%',
+                                                        }}>
+                                                            <Box sx={{
+                                                                position: "absolute", top: -33, left: "50%", transform: "translateX(-50%)",
+                                                                width: 50, height: 50, borderRadius: "50%", border: "3px solid #F36A2F",
+                                                                bgcolor: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                                                            }}>
+                                                                <img src="/svg/maya.png" style={{ width: 50 }} alt="Maya" />
+                                                            </Box>
+                                                            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500, whiteSpace: 'pre-line' }}>
+                                                                {msg.content}
+                                                            </Typography>
+                                                            {msg.timestamp && (
+                                                                <Typography sx={{ fontSize: '0.75rem', opacity: 0.8, position: 'absolute', bottom: 6, right: 12, color: "#666", fontWeight: 500 }}>
+                                                                    {dayjs(msg.timestamp).isValid()
+                                                                        ? (msg.timestamp < 10000000000
+                                                                            ? dayjs.unix(msg.timestamp).format('hh:mm A')
+                                                                            : dayjs(msg.timestamp).format('hh:mm A'))
+                                                                        : ''}
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                    </Box>
+                                                );
+                                            }
+
                                             return (
                                                 <Box key={mIndex} sx={{ display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-end' : 'flex-start' }}>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -218,7 +259,7 @@ const ChatHistory = () => {
                                                         className="chat-bubble"
                                                         sx={{
                                                             maxWidth: '95%',
-                                                            bgcolor: isUser ? '#2f3148' : (msg.assistant === 'maya' ? '#FFF6EB' : '#ff8338'),
+                                                            bgcolor: isUser ? '#2f3148' : '#ff8338',
                                                             color: isUser || (msg.assistant === 'guruji' || msg.role === 'guruji') ? '#fff' : '#333',
                                                             p: 1.5,
                                                             borderRadius: isUser ? '16px 16px 0 16px' : '16px 16px 16px 0',
