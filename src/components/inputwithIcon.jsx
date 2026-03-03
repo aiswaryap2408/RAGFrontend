@@ -13,6 +13,8 @@ const InputField = ({
     inputProps,
     className,
     name,
+    error,
+    inputRef,
     ...props
 }) => (
     <TextField
@@ -25,6 +27,8 @@ const InputField = ({
         value={value}
         onChange={onChange}
         onBlur={onBlur}
+        error={error}
+        inputRef={inputRef}
         variant="outlined"
         InputProps={{
             startAdornment: (
@@ -37,16 +41,19 @@ const InputField = ({
         }}
         sx={{
             mb: 1.5,
-            bgcolor: "#fff",
-            borderRadius: 1,
             "& fieldset": {
                 border: "none",
             },
             "& .MuiInputBase-root": {
                 height: 52, // Standard height for all fields
+                bgcolor: "#fff",
+                borderRadius: 1,
             },
             "& .MuiInputBase-input": {
                 padding: "12px 14px",
+            },
+            "& .MuiFormHelperText-root": {
+                mx: 0,
             }
         }}
         helperText={helperText}
@@ -56,18 +63,19 @@ const InputField = ({
 const GenderButton = ({
     children,
     selected,
+    error,
     ...props
 }) => (
     <ToggleButton
         {...props}
         sx={{
             flex: 1,
-            border: "none",
+            border: error ? "1px solid #d32f2f" : "none",
             borderRadius: 1,
             py: 1.5,
             fontWeight: 500,
-            bgcolor: selected ? "#FF8A3D" : "#fff",
-            color: selected ? "#fff" : "#111",
+            bgcolor: selected ? "#FF8A3D" : (error ? "#ffebee" : "#fff"),
+            color: selected ? "#fff" : (error ? "#d32f2f" : "#111"),
             "&.Mui-selected": {
                 bgcolor: "#FF8A3D",
                 color: "#fff",
@@ -81,7 +89,7 @@ const GenderButton = ({
         }}
     >
         {children}
-    </ToggleButton>
+    </ToggleButton >
 );
 
 export { InputField, GenderButton };

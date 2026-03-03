@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Dialog, Box, Typography, Button } from "@mui/material";
 
-const ITEM_HEIGHT = 48;
-const VISIBLE_ITEMS = 5;
+const ITEM_HEIGHT = 38;
+const VISIBLE_ITEMS = 7;
 const CENTER_INDEX = Math.floor(VISIBLE_ITEMS / 2);
 
 const months = [
@@ -28,8 +28,11 @@ const SpinnerColumn = ({ items, value, onChange }) => {
         (item) => String(item) === String(value)
     );
 
+    const [localIndex, setLocalIndex] = useState(selectedIndex >= 0 ? selectedIndex : 0);
+
     // 🔥 CORRECT CENTER SCROLL LOGIC
     useEffect(() => {
+        setLocalIndex(selectedIndex >= 0 ? selectedIndex : 0);
         if (!ref.current || selectedIndex < 0) return;
 
         const scrollTo = selectedIndex * ITEM_HEIGHT;
@@ -45,6 +48,11 @@ const SpinnerColumn = ({ items, value, onChange }) => {
     const handleScroll = (e) => {
         const scrollTop = e.target.scrollTop;
         const index = Math.round(scrollTop / ITEM_HEIGHT);
+
+        // Instantly update the visual highlight
+        if (index !== localIndex && items[index] !== undefined) {
+            setLocalIndex(index);
+        }
 
         if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
 
@@ -77,7 +85,26 @@ const SpinnerColumn = ({ items, value, onChange }) => {
                 }}
             >
                 {items.map((item, index) => {
-                    const isSelected = index === selectedIndex;
+                    const isSelected = index === localIndex;
+                    const distance = Math.abs(index - localIndex);
+
+                    let opacity = 0.3;
+                    let fontSize = "1rem";
+
+                    if (distance === 0) {
+                        opacity = 1;
+                        fontSize = "1.2rem";
+                    } else if (distance === 1) {
+                        opacity = 0.5;
+                        fontSize = "1.1rem";
+                    } else if (distance === 2) {
+                        opacity = 0.4;
+                        fontSize = "1rem";
+                    }
+                    else if (distance === 3) {
+                        opacity = 0.6;
+                        fontSize = ".9rem";
+                    }
 
                     return (
                         <Box
@@ -89,11 +116,10 @@ const SpinnerColumn = ({ items, value, onChange }) => {
                                 justifyContent: "center",
                                 scrollSnapAlign: "center",
                                 transition: "all 0.15s ease-out",
-                                opacity: isSelected ? 1 : 0.25,
-                                fontWeight: isSelected ? 800 : 500,
-                                fontSize: isSelected ? "1.2rem" : "1rem",
-                                color: isSelected ? "#FF8A3D" : "#555",
-                                transform: isSelected ? "scale(1.15)" : "scale(0.95)"
+                                opacity: opacity,
+                                fontWeight: isSelected ? 500 : 400,
+                                fontSize: fontSize,
+                                color: isSelected ? "#222" : "#888888",
                             }}
                         >
                             {item}
@@ -101,20 +127,6 @@ const SpinnerColumn = ({ items, value, onChange }) => {
                     );
                 })}
             </Box>
-
-            {/* Center Highlight */}
-            <Box
-                sx={{
-                    position: "absolute",
-                    top: ITEM_HEIGHT * CENTER_INDEX,
-                    left: 0,
-                    right: 0,
-                    height: ITEM_HEIGHT,
-                    borderTop: "1px solid #ddd",
-                    borderBottom: "1px solid #ddd",
-                    pointerEvents: "none",
-                }}
-            />
         </Box>
     );
 };
@@ -162,8 +174,8 @@ const SpinnerDatePicker = ({ open, value, onCancel, onConfirm }) => {
             disableScrollLock={true}
             PaperProps={{
                 sx: {
-                    width: '90%',
-                    maxWidth: '400px',
+                    width: '70%',
+                    maxWidth: '320px',
                     borderRadius: 3,
                     m: 2
                 }
@@ -174,10 +186,32 @@ const SpinnerDatePicker = ({ open, value, onCancel, onConfirm }) => {
                     Select Birth Date
                 </Typography>
 
-                <Box sx={{ display: "flex", gap: 0.5, px: { xs: 0, sm: 1 } }}>
-                    <SpinnerColumn items={days} value={day} onChange={setDay} />
-                    <SpinnerColumn items={months} value={month} onChange={setMonth} />
-                    <SpinnerColumn items={years} value={year} onChange={setYear} />
+                <Box sx={{ position: "relative" }}>
+                    {/* Global Center Highlight */}
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            top: ITEM_HEIGHT * CENTER_INDEX,
+                            left: 0,
+                            right: 0,
+                            height: ITEM_HEIGHT,
+                            bgcolor: '#ffe8da',
+                            pointerEvents: "none",
+                            borderRadius: 1,
+                        }}
+                    />
+                    {/* Columns with Fade Effect */}
+                    <Box sx={{
+                        display: "flex",
+                        px: { xs: 0, sm: 1 },
+                        maskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)',
+                        position: 'relative' // Sit above the absolute highlight
+                    }}>
+                        <SpinnerColumn items={years} value={year} onChange={setYear} />
+                        <SpinnerColumn items={months} value={month} onChange={setMonth} />
+                        <SpinnerColumn items={days} value={day} onChange={setDay} />
+                    </Box>
                 </Box>
 
                 <Box mt={3} display="flex" justifyContent="space-between" px={1}>
