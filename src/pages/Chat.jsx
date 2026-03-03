@@ -97,7 +97,7 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility,
                         </Typography>
                     </Box>
                 ) : (
-                    <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500 }}>
+                    <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500, whiteSpace: 'pre-line' }}>
                         {name && <strong>Namaste {name}, </strong>}{content}
                     </Typography>
                 )}
@@ -285,34 +285,29 @@ const NotificationBox = ({ content, buttonLabel, onButtonClick }) => (
     </Box>
 );
 
-const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages, handleReportGeneration, reportState, activeCategory, userName, time, index, activeReportIndex }) => {
+const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = [], animate = false, onComplete, messages, handleReportGeneration, reportState, activeCategory, userName, time, index, activeReportIndex }) => {
     const msgObj = messages[index] || {};
     const isThisActiveReport = index === activeReportIndex;
     const hasReport = msgObj.report_generated || false;
     const reportId = msgObj.report_id || null;
-    const splitByNewlines = (text) => {
-        if (!text) return [];
-        return text.split('#').map(s => s.trim()).filter(s => s !== '');
-    };
 
-    // const paras = [
-    //     ...splitByNewlines(gurujiJson?.para1),
-    //     ...splitByNewlines(gurujiJson?.para2),
-    //     ...(gurujiJson?.follow_up ? [gurujiJson.follow_up] : []),
-    // ];
-
-    const paras = [];
-
-    Object.keys(gurujiJson || {})
-        .filter(key => key.startsWith('para'))
-        .sort() // ensures para1, para2, para3 order
-        .forEach(key => {
-            paras.push(...splitByNewlines(gurujiJson[key]));
-        });
-
-    if (gurujiJson?.follow_up) {
-        paras.push(gurujiJson.follow_up);
-    }
+    // Use pre-processed bubbles from backend if available;
+    // fallback to splitting by '#' for old history messages without bubbles
+    const paras = bubblesProp.length > 0 ? bubblesProp : (() => {
+        const fallback = [];
+        Object.keys(gurujiJson || {})
+            .filter(key => key.startsWith('para'))
+            .sort()
+            .forEach(key => {
+                if (gurujiJson[key]) {
+                    gurujiJson[key].split('#').map(s => s.trim()).filter(s => s !== '').forEach(s => fallback.push(s));
+                }
+            });
+        if (gurujiJson?.follow_up) {
+            fallback.push(gurujiJson.follow_up);
+        }
+        return fallback;
+    })();
 
     const [visibleCount, setVisibleCount] = useState(animate ? 0 : paras.length);
     const [isBuffering, setIsBuffering] = useState(animate ? true : false);
@@ -336,31 +331,6 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
         } else {
             textEndRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
         }
-    };
-    const calculateDelay = (text, pacingFactor = 3.0, jitterPct = 0.10, jitterMs = 80) => {
-        if (!text) return 2000;
-
-        // Strip HTML tags to get pure text length
-        const cleanText = text.replace(/<[^>]*>/g, '').trim();
-        const charCount = cleanText.length;
-
-        // base = 600 + (char_count * 45), max 6000
-        let base = 600 + (charCount * 45);
-        base = Math.min(base, 6000);
-
-        let finalDelay = base * pacingFactor;
-
-        // final *= random.uniform(1 - jitter_pct, 1 + jitter_pct)
-        const randomPct = (1 - jitterPct) + Math.random() * (2 * jitterPct);
-        finalDelay *= randomPct;
-
-        // final += random.uniform(-jitter_ms, jitter_ms)
-        const randomMs = -jitterMs + Math.random() * (2 * jitterMs);
-        finalDelay += randomMs;
-
-        // final = max(250, min(final, 7000))
-        finalDelay = Math.max(250, Math.min(finalDelay, 7000));
-        return Math.floor(finalDelay);
     };
 
     // Effect 1: Manage Buffering State Transitions & Completion
@@ -396,9 +366,7 @@ const SequentialResponse = ({ gurujiJson, animate = false, onComplete, messages,
     // Effect 2: Manage Typing Delay when Buffering
     useEffect(() => {
         if (isBuffering && animate && visibleCount < paras.length) {
-            const currentPara = paras[visibleCount];
-            const isLast = visibleCount === paras.length - 1;
-            const delay = calculateDelay(currentPara);
+            const delay = (delays && delays[visibleCount]) ? delays[visibleCount] : 2000;
 
             // Set waiting message
             const randomMsg = pleaseWaitMessages[Math.floor(Math.random() * pleaseWaitMessages.length)];
@@ -1154,6 +1122,22 @@ const Chat = () => {
             }
             const history = messages.slice(1);
             const res = await sendMessage(mobile, text, history, sessionId);
+
+            // Handle rate limit / offline
+            if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
+                setWaitMessage("Astrologer is offline");
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: res.data.answer || 'Guruji is currently unavailable. Please try again shortly.',
+                    assistant: 'maya',
+                    time: res.data.timestamp ? formatTime(res.data.timestamp) : getCurrentTime(),
+                    timestamp: res.data.timestamp || new Date().toISOString()
+                }]);
+                setLoading(false);
+                setIsBuffering(false);
+                return;
+            }
+
             if (res.data.requires_payment) {
                 setLoading(false);
                 setIsBuffering(false);
@@ -1182,7 +1166,7 @@ const Chat = () => {
                 return;
             }
 
-            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, timestamp, message_id } = res.data;
+            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, bubbles, delays, timestamp, message_id } = res.data;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
@@ -1196,6 +1180,8 @@ const Chat = () => {
                 rawResponse: res.data,
                 mayaJson: maya_json,
                 gurujiJson: guruji_json,
+                bubbles: bubbles || [],
+                delays: delays || [],
                 animating: true,
                 message_id: message_id,
                 time: timestamp ? formatTime(timestamp) : getCurrentTime(),
@@ -1481,6 +1467,8 @@ const Chat = () => {
                     amount: cost,
                     mayaJson: maya_json,
                     gurujiJson: guruji_json,
+                    bubbles: chatRes.data.bubbles || [],
+                    delays: chatRes.data.delays || [],
                     animating: true,
                     message_id: message_id,
                     time: timestamp ? formatTime(timestamp) : getCurrentTime(),
@@ -1682,7 +1670,10 @@ const Chat = () => {
                 {messages.map((msg, i) => {
                     const idx = i; // Use idx for the current message index
 
-                    if (msg.assistant === 'maya' && msg.content && msg.content.trim() !== '') {
+                    if (msg.assistant === 'maya') {
+                        if (!msg.content || msg.content.trim() === '') {
+                            return null;
+                        }
                         return (
                             <MayaIntro
                                 key={i}
@@ -1708,6 +1699,8 @@ const Chat = () => {
                                 <Box sx={{ flex: 1, maxWidth: '100%' }}>
                                     <SequentialResponse
                                         gurujiJson={gurujiData}
+                                        bubbles={msg.bubbles || []}
+                                        delays={msg.delays || []}
                                         animate={msg.animating}
                                         onComplete={() => {
                                             setIsAnimating(false);
