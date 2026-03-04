@@ -1827,8 +1827,8 @@ const Chat = () => {
                                         <Box sx={{
                                             p: '12px 12px 24px 12px',
                                             borderRadius: '10px',
-                                            bgcolor: '#f1f1f1',
-                                            color: '#000000',
+                                            bgcolor: '#2f3148',
+                                            color: '#fff',
                                             // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                             position: 'relative',
                                             maxWidth: '325px',
@@ -1840,7 +1840,7 @@ const Chat = () => {
                                             <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}>
                                                 {msg.content}
                                             </Typography>
-                                            <Typography sx={{ fontSize: '0.85rem', opacity: 0.8, position: 'absolute', bottom: 5, right: 8, color: '#6d6b69', fontWeight: 500, pt: 1, display: 'flex', alignItems: 'center' }}>
+                                            <Typography sx={{ fontSize: '0.7rem', opacity: 0.8, position: 'absolute', bottom: 5, right: 8, color: '#fff', fontWeight: 500, pt: 1, display: 'flex', alignItems: 'center' }}>
                                                 {msg.time}
                                                 {renderStatusTicks(i)}
                                             </Typography>
