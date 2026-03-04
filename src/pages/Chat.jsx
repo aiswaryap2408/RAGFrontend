@@ -97,7 +97,7 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility,
                         </Typography>
                     </Box>
                 ) : (
-                    <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1.5, textAlign: 'left', fontWeight: 500, whiteSpace: 'pre-line' }}>
+                    <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1, textAlign: 'left', fontWeight: 500, whiteSpace: 'pre-line' }}>
                         {name && <strong>Namaste {name}, </strong>}{content}
                     </Typography>
                 )}
@@ -405,21 +405,17 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
     };
 
     const bubbleSx = {
-        px: 2,                 // horizontal padding (16px)
-        py: 1.5,               // vertical padding (~12px)
-        borderRadius: '12px',
+        p: '16px 12px 14px 16px',
+        borderRadius: ' 2px 10px 10px 10px',
         bgcolor: isPaidResponse ? '#fef6eb' : '#f1f1f1',
         color: isPaidResponse ? '#3e2723' : '#000000',
+        // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+        // border: isPaidResponse ? '1px solid #ffd54f' : 'none',
         position: 'relative',
-        mb: 1.5,
-
-        display: 'inline-block',
+        mb: 1,
+        maxWidth: '85%',
         width: 'fit-content',
-        maxWidth: '85%',       // better than 85% (WhatsApp style)
-
-        wordBreak: 'break-word',
-        overflowWrap: 'break-word',
-        whiteSpace: 'pre-wrap',
+        minWidth: '100px',
         // display: 'inline-flex',
         // flex: '0 1 auto',
         // alignSelf: 'flex-start',
@@ -1132,7 +1128,7 @@ const Chat = () => {
         setLoading(true);
         setIsBuffering(true);
         scrollToBottom()
-        setWaitMessage("Please wait...");
+        setWaitMessage("Sending to your astrologer...");
 
         try {
             const mobile = localStorage.getItem('mobile');
@@ -1842,7 +1838,7 @@ const Chat = () => {
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
                                             p: '10px 12px 20px 12px',
-                                            borderRadius: '10px',
+                                            borderRadius: '10px 10px 0 10px',
                                             bgcolor: '#2f3148',
                                             color: '#fff',
                                             // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
@@ -1884,7 +1880,7 @@ const Chat = () => {
                                 flexDirection: 'column',
                                 alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
                                 maxWidth: '100%',
-                                mb: 1
+                                mb: .5
                             }}
                         >
                             <Typography sx={{
@@ -1909,7 +1905,7 @@ const Chat = () => {
                                 {msg.content && msg.content.trim() !== '' && (
                                     <Box sx={{
                                         p: '10px 12px 20px 12px',
-                                        borderRadius: '10px',
+                                        borderRadius: '10px 2px 10px 10px',
                                         bgcolor: msg.role === 'user' ? (msg.requires_chat_payment ? '#2f3148' : '#e2e2e2') : (messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '#fef6eb' : '#f1f1f1'),
                                         color: msg.role === 'user' ? (msg.requires_chat_payment ? '#ffffff' : '#000000') : (messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '#3e2723' : '#000000'),
                                         // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
