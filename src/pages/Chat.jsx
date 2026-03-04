@@ -285,7 +285,7 @@ const NotificationBox = ({ content, buttonLabel, onButtonClick }) => (
     </Box>
 );
 
-const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = [], animate = false, onComplete, messages, handleReportGeneration, reportState, activeCategory, userName, time, index, activeReportIndex }) => {
+const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = [], animate = false, onComplete, messages, handleReportGeneration, reportState, activeCategory, userName, time, index, activeReportIndex, isPaidResponse = false }) => {
     const msgObj = messages[index] || {};
     const isThisActiveReport = index === activeReportIndex;
     const hasReport = msgObj.report_generated || false;
@@ -405,23 +405,45 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
     };
 
     const bubbleSx = {
-        p: '16px 12px 14px 16px',
-        borderRadius: '10px',
-        bgcolor: '#fef6eb',
-        color: '#000000',
-        // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-        border: 'none',
+        px: 2,                 // horizontal padding (16px)
+        py: 1.5,               // vertical padding (~12px)
+        borderRadius: '12px',
+        bgcolor: isPaidResponse ? '#fef6eb' : '#f1f1f1',
+        color: isPaidResponse ? '#3e2723' : '#000000',
         position: 'relative',
         mb: 1.5,
-        maxWidth: '85%',
+
+        display: 'inline-block',
+        width: 'fit-content',
+        maxWidth: '85%',       // better than 85% (WhatsApp style)
+
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word',
+        whiteSpace: 'pre-wrap',
+        // display: 'inline-flex',
+        // flex: '0 1 auto',
+        // alignSelf: 'flex-start',
+        // width: 'max-content',
+        // maxWidth: '85%',
+        // whiteSpace: 'normal',
+        // overflowWrap: 'anywhere',
+        // minWidth: '100px'
     };
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             {paras.slice(0, visibleCount).map((para, idx) => (
                 <Box key={idx} sx={bubbleSx}>
                     {/* Label Removed to match Maya's bubble style */}
-                    <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para }} />
+                    <Box
+                        sx={{
+                            '& p': { margin: 0 },
+                            '& blockquote': { margin: 0, paddingLeft: 1, borderLeft: '4px solid rgba(0,0,0,0.1)' },
+                            '& ul, & ol': { margin: 0, paddingLeft: 2 }
+                        }}
+                    >
+                        <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para }} />
+                    </Box>
 
                     {/* {idx === paras.length - 1 && !hasReport && (!isThisActiveReport || reportState === 'IDLE') && (
                         <Box sx={{ mt: 2, mb: 2, display: 'flex', justifyContent: 'flex-start', position: 'relative' }}>
@@ -673,9 +695,9 @@ const Chat = () => {
 
         if (!nextMsg || nextMsg.role !== 'assistant') {
             if (elapsedSecs < 5) {
-                return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', opacity: 0.6 }} />;
+                return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
             }
-            return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'rgba(0,0,0,0.4)' }} />;
+            return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
         }
 
         // Check if Maya or Guruji responded
@@ -684,15 +706,15 @@ const Chat = () => {
 
         if (isGuruji) {
             if (elapsedSecs < 5) {
-                return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'rgba(0,0,0,0.4)' }} />;
+                return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
             } else {
-                return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: '#2b79c2' }} />;
+                return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: '#34B7F1' }} />;
             }
         } else if (isMaya || isExpired) {
-            return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'rgba(0,0,0,0.4)' }} />;
+            return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
         }
 
-        return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', opacity: 0.6 }} />;
+        return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
     };
     const handleScroll = (e) => {
         const scrollTop = e.target.scrollTop;
@@ -1420,16 +1442,16 @@ const Chat = () => {
         try {
             setChatPaymentState('COMPLETE');
             setThankYouAction('CHAT_PAYMENT');
-            setThankYouData({
-                amount: amount,
-                points: 0,
-                title: 'Payment successful',
-                trustMsg: 'Guruji is now analyzing your chart...',
-                gratitudeMsg: 'Thank you for your patience.',
-                showWave: true,
-                referenceId: paymentId
-            });
-            setThankYouOpen(true);
+            // setThankYouData({
+            //     amount: amount,
+            //     points: 0,
+            //     title: 'Payment successful',
+            //     trustMsg: 'Guruji is now analyzing your chart...',
+            //     gratitudeMsg: 'Thank you for your patience.',
+            //     showWave: true,
+            //     referenceId: paymentId
+            // });
+            setThankYouOpen(false);
 
             // Proceed to process the message after payment
             const lastUserMsg = messages.find(m => m.message_id === pendingMessageId);
@@ -1487,7 +1509,7 @@ const Chat = () => {
 
     const handleChatPayment = async (amount, mobile) => {
         // Temporary Bypass: Alert Success and proceed
-        alert("Payment successful!");
+        // alert("Payment successful!");
         handleChatSuccess("MOCK_PAYMENT_ID", amount);
         return;
 
@@ -1692,12 +1714,13 @@ const Chat = () => {
 
                     if (gurujiData && msg.assistant === 'guruji') {
                         return (
-                            <Box key={i} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 2, width: '100%' }}>
+                            <Box key={i} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 0, width: '100%' }}>
                                 <Typography sx={{ fontSize: '0.75rem', color: '#acacac', ml: 1, fontWeight: 400 }}>
                                     Guruji
                                 </Typography>
                                 <Box sx={{ flex: 1, maxWidth: '100%' }}>
                                     <SequentialResponse
+                                        isPaidResponse={messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment}
                                         gurujiJson={gurujiData}
                                         bubbles={msg.bubbles || []}
                                         delays={msg.delays || []}
@@ -1811,14 +1834,14 @@ const Chat = () => {
 
                     if (msg.role === 'user' && msg.requires_chat_payment && !msg.is_paid) {
                         return (
-                            <Box key={i} sx={{ width: '100%', mb: 2 }}>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 2 }}>
-                                    <Typography sx={{ fontSize: '0.75rem', color: '#666', mb: 0.5, mr: 1, fontWeight: 600 }}>
+                            <Box key={i} sx={{ width: '100%', mb: 0 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 0 }}>
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#666', mr: 1, fontWeight: 600 }}>
                                         User
                                     </Typography>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
-                                            p: '12px 12px 24px 12px',
+                                            p: '10px 12px 20px 12px',
                                             borderRadius: '10px',
                                             bgcolor: '#2f3148',
                                             color: '#fff',
@@ -1826,14 +1849,15 @@ const Chat = () => {
                                             position: 'relative',
                                             maxWidth: '325px',
                                             minWidth: '100px',
+                                            width: 'fit-content',
                                             overflowWrap: "break-word",
                                             wordBreak: "break-word",
                                             whiteSpace: "pre-line",
                                         }}>
-                                            <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}>
+                                            <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem', m: 0 }}>
                                                 {msg.content}
                                             </Typography>
-                                            <Typography sx={{ fontSize: '0.7rem', opacity: 0.8, position: 'absolute', bottom: 5, right: 8, color: '#fff', fontWeight: 500, pt: 1, display: 'flex', alignItems: 'center' }}>
+                                            <Typography sx={{ fontSize: '0.625rem', opacity: 0.8, position: 'absolute', bottom: 5, right: 8, color: '#fff', fontWeight: 500, pt: 1, display: 'flex', alignItems: 'center' }}>
                                                 {msg.time}
                                                 {renderStatusTicks(i)}
                                             </Typography>
@@ -1860,7 +1884,7 @@ const Chat = () => {
                                 flexDirection: 'column',
                                 alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
                                 maxWidth: '100%',
-                                mb: 2
+                                mb: 1
                             }}
                         >
                             <Typography sx={{
@@ -1884,15 +1908,16 @@ const Chat = () => {
                                 {/* ... message contents ... */}
                                 {msg.content && msg.content.trim() !== '' && (
                                     <Box sx={{
-                                        p: '12px 12px 24px 12px',
+                                        p: '10px 12px 20px 12px',
                                         borderRadius: '10px',
-                                        bgcolor: msg.role === 'user' ? '#f1f1f1' : '#fef6eb',
-                                        color: '#000000',
+                                        bgcolor: msg.role === 'user' ? (msg.requires_chat_payment ? '#2f3148' : '#e2e2e2') : (messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '#fef6eb' : '#f1f1f1'),
+                                        color: msg.role === 'user' ? (msg.requires_chat_payment ? '#ffffff' : '#000000') : (messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '#3e2723' : '#000000'),
                                         // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-                                        border: 'none',
+                                        // border: msg.role !== 'user' && messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '1px solid #ffd54f' : 'none',
                                         position: 'relative',
                                         maxWidth: '325px',
                                         minWidth: '100px',
+                                        width: 'fit-content',
                                         overflowWrap: "break-word",
                                         wordBreak: "break-word",
                                         whiteSpace: "pre-line",
@@ -1964,12 +1989,12 @@ const Chat = () => {
                                         {/* Timestamp moved inside the bubble */}
                                         <Box
                                             sx={{
-                                                fontSize: '11px',
+                                                fontSize: '10px',
                                                 opacity: 0.8,
                                                 position: 'absolute',
                                                 bottom: 5,
                                                 right: 8,
-                                                color: msg.role === 'user' ? '#494848' : '#494848',
+                                                color: msg.role === 'user' ? (msg.requires_chat_payment ? 'rgba(255,255,255,0.7)' : '#494848') : '#494848',
                                                 fontWeight: 500,
                                                 pt: 1,
                                                 display: 'flex',
@@ -2066,7 +2091,7 @@ const Chat = () => {
             {/* ... preserved ... */}
 
             {/* Inactivity Prompt Overlay */}
-            {showInactivityPrompt && !summary && (
+            {/* {showInactivityPrompt && !summary && (
                 <Box sx={{ position: 'fixed', inset: 0, bgcolor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
                     <Box sx={{ bgcolor: 'white', p: 4, borderRadius: 4, textAlign: 'center', maxWidth: 400, boxShadow: '0 20px 50px rgba(0,0,0,0.2)', border: '1px solid #F36A2F' }}>
                         <Box sx={{ width: 80, height: 80, bgcolor: '#FFF6EB', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3 }}>
@@ -2086,7 +2111,7 @@ const Chat = () => {
                         </Box>
                     </Box>
                 </Box>
-            )}
+            )} */}
 
             {/* Summary & Feedback Modal */}
             {summary && (
@@ -2209,7 +2234,7 @@ const Chat = () => {
             />
 
             {/* Initial Loading / Processing Overlay */}
-            {userStatus === 'processing' && (
+            {/* {userStatus === 'processing' && (
                 <Box sx={{
                     position: 'fixed',
                     inset: 0,
@@ -2232,7 +2257,7 @@ const Chat = () => {
                         Please wait a moment as we align your stars...
                     </Typography>
                 </Box>
-            )}
+            )} */}
             {/* Full JSON Modal */}
             <Dialog
                 open={jsonModal.open}
