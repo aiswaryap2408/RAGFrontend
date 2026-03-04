@@ -18,7 +18,7 @@ const Header = ({ showProfile = false, name = "", profiledob = "", profilebirths
                     left: '50%',
                     transform: 'translateX(-50%)',
                     zIndex: 1100,
-                    height: '152px',
+                    height: '125px',
                     overflow: "visible",
                     bgcolor: 'transparent',
                     ...hscrollsx
@@ -26,7 +26,7 @@ const Header = ({ showProfile = false, name = "", profiledob = "", profilebirths
             >
                 <Box sx={{
                     bgcolor: "#2f3148",
-                    height: '100px',
+                    height: '80px',
                     px: 3,
                     pt: 1.5,
                     pb: .5,
@@ -59,7 +59,7 @@ const Header = ({ showProfile = false, name = "", profiledob = "", profilebirths
                 <Box
                     sx={{
                         position: "absolute",
-                        bottom: 7,
+                        bottom: 0,
                         left: 0,
                         width: 100,
                         transform: 'rotate(180deg)',
@@ -76,7 +76,7 @@ const Header = ({ showProfile = false, name = "", profiledob = "", profilebirths
                 <Box
                     sx={{
                         position: "absolute",
-                        bottom: 7,
+                        bottom: 0,
                         right: 0,
                         width: 100,
                         transform: 'rotate(180deg)',
