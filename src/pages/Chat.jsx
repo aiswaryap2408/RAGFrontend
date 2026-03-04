@@ -416,14 +416,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
         maxWidth: '85%',
         width: 'fit-content',
         minWidth: '100px',
-        // display: 'inline-flex',
-        // flex: '0 1 auto',
-        // alignSelf: 'flex-start',
-        // width: 'max-content',
-        // maxWidth: '85%',
-        // whiteSpace: 'normal',
-        // overflowWrap: 'anywhere',
-        // minWidth: '100px'
+
     };
 
     return (
@@ -433,6 +426,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
                     {/* Label Removed to match Maya's bubble style */}
                     <Box
                         sx={{
+                            mb: .5,
                             '& p': { margin: 0 },
                             '& blockquote': { margin: 0, paddingLeft: 1, borderLeft: '4px solid rgba(0,0,0,0.1)' },
                             '& ul, & ol': { margin: 0, paddingLeft: 2 }
@@ -1211,7 +1205,12 @@ const Chat = () => {
             // If it's a 404/401/403, the interceptor will handle redirect to login
             // Only show error message for other types of errors
             if (err.response?.status !== 404 && err.response?.status !== 401 && err.response?.status !== 403) {
-                setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    assistant: 'maya',
+                    content: 'Sorry, I encountered an error. Please try again.',
+                    time: getCurrentTime()
+                }]);
             }
         } finally {
             setLoading(false);
@@ -1591,7 +1590,8 @@ const Chat = () => {
             {messages.some(m => m.assistant === 'guruji') && (
                 <Box sx={{
                     position: 'sticky',
-                    top: showHeader ? 110 : 20,
+                    top: 20,
+                    transform: showHeader ? 'translateY(70px)' : 'translateY(0)',
                     zIndex: 1200,
                     height: 0,
                     overflow: 'visible',
@@ -1600,7 +1600,7 @@ const Chat = () => {
                     mt: -8,
                     mb: 10,
                     pointerEvents: 'none',
-                    transition: 'top 0.3s ease-in-out'
+                    transition: 'transform 0.3s ease-in-out'
                 }}>
                     <Box sx={{ pointerEvents: 'auto' }}>
                         <PrimaryButton
@@ -1831,7 +1831,7 @@ const Chat = () => {
                     if (msg.role === 'user' && msg.requires_chat_payment && !msg.is_paid) {
                         return (
                             <Box key={i} sx={{ width: '100%', mb: 0 }}>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 0 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 1 }}>
                                     <Typography sx={{ fontSize: '0.75rem', color: '#666', mr: 1, fontWeight: 600 }}>
                                         User
                                     </Typography>
@@ -1880,7 +1880,7 @@ const Chat = () => {
                                 flexDirection: 'column',
                                 alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
                                 maxWidth: '100%',
-                                mb: .5
+                                mb: 1
                             }}
                         >
                             <Typography sx={{
@@ -1891,7 +1891,7 @@ const Chat = () => {
                                 mr: msg.role === 'user' ? 1 : 0,
                                 fontWeight: 400
                             }}>
-                                {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'Maya' : 'Guruji')}
+                                {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                             </Typography>
                             <Box sx={{
                                 display: 'flex',
