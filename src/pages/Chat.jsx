@@ -157,6 +157,51 @@ const TranslationIndicator = ({ text, sx }) => (
     </Box>
 );
 
+const FadeInRoleLabel = ({ isUser, name, ml, mr }) => {
+    const [isVisible, setIsVisible] = React.useState(false);
+    const labelRef = React.useRef(null);
+
+    React.useEffect(() => {
+        const rootElement = document.getElementById('chat-scroll-container');
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsVisible(entry.isIntersecting);
+            },
+            {
+                root: rootElement,
+                rootMargin: '0px 0px -150px 0px', // Hides the label 120px before the bottom to avoid the curved footer
+                threshold: 0
+            }
+        );
+
+        if (labelRef.current) {
+            observer.observe(labelRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <Typography
+            ref={labelRef}
+            sx={{
+                fontSize: '0.75rem',
+                color: isUser ? '#666' : '#acacac',
+                ml: ml !== undefined ? ml : (isUser ? 0 : 1),
+                mr: mr !== undefined ? mr : (isUser ? 1 : 0),
+                fontWeight: isUser ? 600 : 400,
+                opacity: isVisible ? 1 : 0,
+                transition: 'opacity 0.3s ease-in-out',
+                position: 'relative',
+                pointerEvents: 'none',
+                mb: 0.5
+            }}
+        >
+            {name}
+        </Typography>
+    );
+};
+
 
 const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, disabled }) => (
     <Box sx={{ px: 0, pt: 3, mb: 2.5, pb: 1, width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -1138,10 +1183,6 @@ const Chat = () => {
         scrollToBottom()
         setWaitMessage("Sending to your astrologer...");
 
-        // After a random 1.5–3s delay (natural feel, approx when Maya finishes), switch to "Astrologer is typing..."
-        const waitDelay = Math.floor(Math.random() * (4000 - 2000 + 1)) + 2000; // random between 2000ms and 4000ms
-        const waitMsgTimer = setTimeout(() => setWaitMessage("Astrologer is typing..."), waitDelay);
-
         try {
             const mobile = localStorage.getItem('mobile');
             if (!mobile) {
@@ -1231,7 +1272,6 @@ const Chat = () => {
                 }]);
             }
         } finally {
-            clearTimeout(waitMsgTimer);
             setLoading(false);
             setIsBuffering(false);
             setWaitMessage("");
@@ -1731,9 +1771,7 @@ const Chat = () => {
                     if (gurujiData && msg.assistant === 'guruji') {
                         return (
                             <Box key={i} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 0, width: '100%' }}>
-                                {/* <Typography sx={{ fontSize: '0.75rem', color: '#acacac', ml: 1, fontWeight: 400 }}>
-                                    Guruji
-                                </Typography> */}
+                                <FadeInRoleLabel isUser={false} name="Guruji" ml={1} />
                                 <Box sx={{ flex: 1, maxWidth: '85%' }}>
                                     <SequentialResponse
                                         isPaidResponse={messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment}
@@ -1852,9 +1890,7 @@ const Chat = () => {
                         return (
                             <Box key={i} sx={{ width: '100%', mb: 0 }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 1 }}>
-                                    <Typography sx={{ fontSize: '0.75rem', color: '#666', mr: 1, fontWeight: 600 }}>
-                                        User
-                                    </Typography>
+                                    <FadeInRoleLabel isUser={true} name="User" mr={1} />
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
                                             p: '10px 12px 20px 12px',
@@ -1903,16 +1939,12 @@ const Chat = () => {
                                 mb: 1
                             }}
                         >
-                            <Typography sx={{
-                                fontSize: '0.75rem',
-                                color: '#acacac',
-                                // mb: 0.5,
-                                ml: msg.role !== 'user' ? 1 : 0,
-                                mr: msg.role === 'user' ? 1 : 0,
-                                fontWeight: 400
-                            }}>
-                                {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
-                            </Typography>
+                            <FadeInRoleLabel
+                                isUser={msg.role === 'user'}
+                                name={msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
+                                ml={msg.role !== 'user' ? 1 : 0}
+                                mr={msg.role === 'user' ? 1 : 0}
+                            />
                             <Box sx={{
                                 display: 'flex',
                                 alignItems: 'flex-start',
