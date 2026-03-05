@@ -19,40 +19,41 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary, isAnimating }) 
     return (
         <Box sx={{ position: "fixed", width: { xs: '100%', sm: 450 }, bottom: 0, zIndex: 1000 }}>
             {/* Bottom Curves */}
-            <Box
-                sx={{
-                    position: "absolute",
-                    bottom: "100%",
-                    left: 0,
-                    width: 100,
-                    top: '-45px',
-                }}
-            >
+            <Box sx={{ display: "flex", justifyContent: "space-between", position: "relative", top: '8px' }}>
+                {/* <Box
+                    sx={{
+                        position: "absolute",
+                        bottom: "100%",
+                        left: 0,
+                        width: 100,
+                        top: '-45px',
+                    }}
+                > */}
                 <Box
                     component="img"
                     src="/svg/bottom_left_open_curve.svg"
                     alt="Left curve"
                     sx={{ width: "100px" }}
                 />
-            </Box>
+                {/* </Box> */}
 
-            <Box
-                sx={{
-                    position: "absolute",
-                    bottom: "100%",
-                    right: 0,
-                    width: 100,
-                    top: '-45px',
-                }}
-            >
+                {/* <Box
+                    sx={{
+                        position: "absolute",
+                        bottom: "100%",
+                        right: 0,
+                        width: 100,
+                        top: '-45px',
+                    }}
+                > */}
                 <Box
                     component="img"
                     src="/svg/bottom_right_open_curve.svg"
                     alt="Right curve"
                     sx={{ width: "100px" }}
                 />
+                {/* </Box> */}
             </Box>
-
             {/* Footer Input Area */}
             <Box sx={{ bgcolor: "#2f3148", px: 2, py: 1.5, display: "flex", gap: 2, alignItems: "center" }}>
                 <Box
