@@ -657,6 +657,8 @@ const Chat = () => {
     const [waitMessage, setWaitMessage] = useState("");
     const messagesEndRef = useRef(null);
     const processedNewSession = useRef(false);
+    const isAutoScrolling = useRef(false);
+    const scrollTimeout = useRef(null);
 
     // Dynamic timer to force re-renders for status ticks
     const [currentTime, setCurrentTime] = useState(Date.now());
@@ -667,7 +669,13 @@ const Chat = () => {
 
     const scrollToBottom = () => {
         if (messagesEndRef.current) {
+            isAutoScrolling.current = true;
             messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+
+            if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+            scrollTimeout.current = setTimeout(() => {
+                isAutoScrolling.current = false;
+            }, 800); // Wait for smooth scroll to finish
         }
     };
 
@@ -708,16 +716,21 @@ const Chat = () => {
     };
     const handleScroll = (e) => {
         const scrollTop = e.target.scrollTop;
+        if (isAutoScrolling.current) {
+            lastScrollTop.current = scrollTop <= 0 ? 0 : scrollTop;
+            return;
+        }
+
         // Don't trigger for small scrolls
         if (Math.abs(scrollTop - lastScrollTop.current) < 10) return;
 
         if (scrollTop <= 10) {
             setShowHeader(true);
         } else if (scrollTop > lastScrollTop.current) {
-            // Scrolling down (towards bottom/newer) -> SHOW header
+            // Scrolling down (towards bottom/newer) -> HIDE header
             setShowHeader(false);
         } else {
-            // Scrolling up (towards top/older) -> HIDE header
+            // Scrolling up (towards top/older) -> SHOW header
             setShowHeader(true);
         }
         lastScrollTop.current = scrollTop <= 0 ? 0 : scrollTop;
