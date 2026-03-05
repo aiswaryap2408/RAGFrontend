@@ -186,15 +186,15 @@ const FadeInRoleLabel = ({ isUser, name, ml, mr }) => {
             ref={labelRef}
             sx={{
                 fontSize: '0.75rem',
-                color: isUser ? '#666' : '#acacac',
-                ml: ml !== undefined ? ml : (isUser ? 0 : 1),
-                mr: mr !== undefined ? mr : (isUser ? 1 : 0),
-                fontWeight: isUser ? 600 : 400,
+                color: isUser ? '#acacac' : '#acacac',
+                // ml: ml !== undefined ? ml : (isUser ? 0 : 1),
+                // mr: mr !== undefined ? mr : (isUser ? 1 : 0),
+                fontWeight: isUser ? 400 : 400,
                 opacity: isVisible ? 1 : 0,
                 transition: 'opacity 0.3s ease-in-out',
                 position: 'relative',
                 pointerEvents: 'none',
-                mb: 0.5
+                mb: 0
             }}
         >
             {name}
@@ -202,6 +202,28 @@ const FadeInRoleLabel = ({ isUser, name, ml, mr }) => {
     );
 };
 
+// Helper to safely render text with bold (**text**) and newlines (\n)
+const FormattedText = ({ text, sx }) => {
+    if (!text) return null;
+
+    // Split by newlines first
+    return (
+        <Typography sx={sx} variant="body2">
+            {text.split('\n').map((line, i) => (
+                <React.Fragment key={i}>
+                    {/* Split each line by **bold** markers */}
+                    {line.split(/(\*\*.*?\*\*)/g).map((part, j) => {
+                        if (part.startsWith('**') && part.endsWith('**')) {
+                            return <strong key={j}>{part.slice(2, -2)}</strong>;
+                        }
+                        return <span key={j}>{part}</span>;
+                    })}
+                    {i < text.split('\n').length - 1 && <br />}
+                </React.Fragment>
+            ))}
+        </Typography>
+    );
+};
 
 const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, disabled }) => (
     <Box sx={{ px: 0, pt: 3, mb: 2.5, pb: 1, width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -450,7 +472,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
     };
 
     const bubbleSx = {
-        p: '16px 12px 14px 16px',
+        p: '12px 16px 14px 12px',
         borderRadius: ' 2px 10px 10px 10px',
         bgcolor: isPaidResponse ? '#fef6eb' : '#f1f1f1',
         color: isPaidResponse ? '#3e2723' : '#000000',
@@ -477,7 +499,11 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
                             '& ul, & ol': { margin: 0, paddingLeft: 2 }
                         }}
                     >
-                        <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para }} />
+                        {/* <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para }} /> */}
+                        <FormattedText
+                            text={para}
+                            sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}
+                        />
                         {/* <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para.replace(/,/g, '') }} /> */}
                     </Box>
 
@@ -1893,7 +1919,7 @@ const Chat = () => {
                                     <FadeInRoleLabel isUser={true} name="User" mr={1} />
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
-                                            p: '10px 12px 20px 12px',
+                                            p: '12px 16px 14px 12px',
                                             borderRadius: '10px 10px 0 10px',
                                             bgcolor: '#2f3148',
                                             color: '#fff',
@@ -1956,7 +1982,7 @@ const Chat = () => {
                                 {/* ... message contents ... */}
                                 {msg.content && msg.content.trim() !== '' && (
                                     <Box sx={{
-                                        p: '10px 12px 20px 12px',
+                                        p: '12px 16px 18px 12px',
                                         borderRadius: '10px 2px 10px 10px',
                                         bgcolor: msg.role === 'user' ? (msg.requires_chat_payment ? '#2f3148' : '#e2e2e2') : (messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '#fef6eb' : '#f1f1f1'),
                                         color: msg.role === 'user' ? (msg.requires_chat_payment ? '#ffffff' : '#000000') : (messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '#3e2723' : '#000000'),
@@ -1970,10 +1996,9 @@ const Chat = () => {
                                         wordBreak: "break-word",
                                         whiteSpace: "pre-line",
                                     }}>
-                                        <Typography
-                                            variant="body2"
+                                        <FormattedText
+                                            text={msg.content}
                                             sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}
-                                            dangerouslySetInnerHTML={{ __html: msg.content }}
                                         />
 
                                         {/* JSON Output View (for regular messages) */}
@@ -2040,7 +2065,7 @@ const Chat = () => {
                                                 fontSize: '10px',
                                                 opacity: 0.8,
                                                 position: 'absolute',
-                                                bottom: 5,
+                                                bottom: 2,
                                                 right: 8,
                                                 color: msg.role === 'user' ? (msg.requires_chat_payment ? 'rgba(255,255,255,0.7)' : '#494848') : '#494848',
                                                 fontWeight: 500,
