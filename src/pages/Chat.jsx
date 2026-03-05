@@ -1138,6 +1138,10 @@ const Chat = () => {
         scrollToBottom()
         setWaitMessage("Sending to your astrologer...");
 
+        // After a random 1.5–3s delay (natural feel, approx when Maya finishes), switch to "Astrologer is typing..."
+        const waitDelay = Math.floor(Math.random() * (4000 - 2000 + 1)) + 2000; // random between 2000ms and 4000ms
+        const waitMsgTimer = setTimeout(() => setWaitMessage("Astrologer is typing..."), waitDelay);
+
         try {
             const mobile = localStorage.getItem('mobile');
             if (!mobile) {
@@ -1227,6 +1231,7 @@ const Chat = () => {
                 }]);
             }
         } finally {
+            clearTimeout(waitMsgTimer);
             setLoading(false);
             setIsBuffering(false);
             setWaitMessage("");
