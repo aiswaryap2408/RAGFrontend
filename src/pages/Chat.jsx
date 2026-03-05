@@ -413,7 +413,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
         // border: isPaidResponse ? '1px solid #ffd54f' : 'none',
         position: 'relative',
         mb: 1,
-        maxWidth: '85%',
+        // maxWidth: '85%',
         width: 'fit-content',
         minWidth: '100px',
 
@@ -433,6 +433,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
                         }}
                     >
                         <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para }} />
+                        {/* <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: para.replace(/,/g, '') }} /> */}
                     </Box>
 
                     {/* {idx === paras.length - 1 && !hasReport && (!isThisActiveReport || reportState === 'IDLE') && (
@@ -1691,7 +1692,7 @@ const Chat = () => {
                     flex: 1,
                     // overflowY: "auto",
                     px: 3,
-                    pb: 10,
+                    pb: 14,
 
                     pt: 19,
                     overflowY: "auto",
@@ -1725,10 +1726,10 @@ const Chat = () => {
                     if (gurujiData && msg.assistant === 'guruji') {
                         return (
                             <Box key={i} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 0, width: '100%' }}>
-                                <Typography sx={{ fontSize: '0.75rem', color: '#acacac', ml: 1, fontWeight: 400 }}>
+                                {/* <Typography sx={{ fontSize: '0.75rem', color: '#acacac', ml: 1, fontWeight: 400 }}>
                                     Guruji
-                                </Typography>
-                                <Box sx={{ flex: 1, maxWidth: '100%' }}>
+                                </Typography> */}
+                                <Box sx={{ flex: 1, maxWidth: '85%' }}>
                                     <SequentialResponse
                                         isPaidResponse={messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment}
                                         gurujiJson={gurujiData}
