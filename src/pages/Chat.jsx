@@ -1559,7 +1559,6 @@ const Chat = () => {
 
     return (
         <Box
-            onScroll={handleScroll}
             sx={{
                 // minHeight: '100vh',
                 display: 'flex',
@@ -1568,9 +1567,9 @@ const Chat = () => {
                 height: "100vh",
                 position: 'relative',
                 // width: '100%'
-                overflowY: "auto",
-                "&::-webkit-scrollbar": { display: "block" },
-                scrollbarWidth: "none",
+                // overflowY: "auto",
+                // "&::-webkit-scrollbar": { display: "block" },
+                // scrollbarWidth: "none",
             }}
         >
             <Header
@@ -1602,16 +1601,14 @@ const Chat = () => {
 
             {messages.some(m => m.assistant === 'guruji') && (
                 <Box sx={{
-                    position: 'sticky',
+                    position: 'fixed',
                     top: 20,
+                    left: 0,
+                    right: 0,
                     transform: showHeader ? 'translateY(70px)' : 'translateY(0)',
                     zIndex: 1200,
-                    height: 0,
-                    overflow: 'visible',
                     display: 'flex',
                     justifyContent: 'center',
-                    mt: -8,
-                    mb: 10,
                     pointerEvents: 'none',
                     transition: 'transform 0.3s ease-in-out'
                 }}>
@@ -1689,6 +1686,7 @@ const Chat = () => {
 
             {/* Chat Messages Area - Scrollable segment with visible scrollbar */}
             <Box
+                onScroll={handleScroll}
                 sx={{
                     flex: 1,
                     // overflowY: "auto",
@@ -1696,6 +1694,9 @@ const Chat = () => {
                     pb: 10,
 
                     pt: 19,
+                    overflowY: "auto",
+                    "&::-webkit-scrollbar": { display: "block" },
+                    scrollbarWidth: "none",
                 }}
             >
                 {messages.map((msg, i) => {
