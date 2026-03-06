@@ -46,7 +46,7 @@ const tryParseJson = (data) => {
     return null;
 };
 
-const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility, onLabelClick }) => {
+const MayaIntro = ({ title, name, content, mayaJson, rawResponse, time, jsonVisibility, onLabelClick }) => {
     // Filter out fields we don't want to show in the UI debug block
     const getFilteredJson = (json) => {
         if (!json) return null;
@@ -60,6 +60,20 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility,
 
     return (
         <Box sx={{ pt: 4, pb: 3, width: "100%" }}>
+            <Typography sx={{
+                fontSize: '0.75rem',
+                color: '#acacac',
+                fontWeight: 400,
+                opacity: 1,
+                transition: 'opacity 0.3s ease-in-out',
+                position: 'relative',
+                pointerEvents: 'none',
+                mb: 0,
+                mr: 1,
+                textAlign: 'right',
+            }}>
+                MAYA
+            </Typography>
             <Box sx={{
                 position: "relative",
                 // border: "2px solid #F36A2F",
@@ -67,9 +81,9 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility,
                 p: 2,
                 bgcolor: "#fece8d",
                 border: "none",
-                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                // boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
             }}>
-                {/* Avatar */}
+
                 <Box sx={{
                     position: "absolute",
                     top: -33,
@@ -87,6 +101,19 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility,
                     <img src="/svg/maya.png" style={{ width: 50 }} alt="Maya" />
                 </Box>
 
+                {name && (
+                    <Typography sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 12,
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        color: 'rgba(0,0,0,0.5)'
+                    }}>
+                        {name}
+                    </Typography>
+                )}
+
                 {isSafetyWarning ? (
                     <Box sx={{ mt: 2, mb: 1.5 }}>
                         <Typography sx={{ fontSize: '1.05rem', lineHeight: 1.4, color: '#333', mb: 1, textAlign: 'center', fontWeight: 700 }}>
@@ -97,9 +124,16 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility,
                         </Typography>
                     </Box>
                 ) : (
-                    <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1, textAlign: 'left', fontWeight: 500, whiteSpace: 'pre-line' }}>
-                        {name && <strong>Namaste {name}, </strong>}{content}
-                    </Typography>
+                    <Box sx={{ mt: 1, mb: 1 }}> {/* Increased mt to avoid overlap with name */}
+                        {title && (
+                            <Typography sx={{ fontSize: '1.05rem', lineHeight: 1.4, color: '#333', mb: 1, fontWeight: 700, textAlign: 'center' }}>
+                                {title}
+                            </Typography>
+                        )}
+                        <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', textAlign: 'left', fontWeight: 500, whiteSpace: 'pre-line' }}>
+                            {content}
+                        </Typography>
+                    </Box>
                 )}
 
                 {/* JSON Output View for Maya Intro */}
@@ -124,7 +158,7 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility,
 
                 {time && (
                     <Typography sx={{
-                        fontSize: '0.75rem',
+                        fontSize: '0.7rem',
                         opacity: 0.8,
                         position: 'absolute',
                         bottom: 6,
@@ -157,50 +191,20 @@ const TranslationIndicator = ({ text, sx }) => (
     </Box>
 );
 
-const FadeInRoleLabel = ({ isUser, name, ml, mr }) => {
-    const [isVisible, setIsVisible] = React.useState(false);
-    const labelRef = React.useRef(null);
+const FadeInRoleLabel = ({ isUser, name, ml, mr }) => (
+    <Typography
+        sx={{
+            fontSize: '0.75rem',
+            color: '#acacac',
+            fontWeight: 400,
+            pointerEvents: 'none',
+            mb: 0,
+        }}
+    >
+        {name}
+    </Typography>
+);
 
-    React.useEffect(() => {
-        const rootElement = document.getElementById('chat-scroll-container');
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                setIsVisible(entry.isIntersecting);
-            },
-            {
-                root: rootElement,
-                rootMargin: '0px 0px -150px 0px', // Hides the label 120px before the bottom to avoid the curved footer
-                threshold: 0
-            }
-        );
-
-        if (labelRef.current) {
-            observer.observe(labelRef.current);
-        }
-
-        return () => observer.disconnect();
-    }, []);
-
-    return (
-        <Typography
-            ref={labelRef}
-            sx={{
-                fontSize: '0.75rem',
-                color: isUser ? '#acacac' : '#acacac',
-                // ml: ml !== undefined ? ml : (isUser ? 0 : 1),
-                // mr: mr !== undefined ? mr : (isUser ? 1 : 0),
-                fontWeight: isUser ? 400 : 400,
-                opacity: isVisible ? 1 : 0,
-                transition: 'opacity 0.3s ease-in-out',
-                position: 'relative',
-                pointerEvents: 'none',
-                mb: 0
-            }}
-        >
-            {name}
-        </Typography>
-    );
-};
 
 // Helper to safely render text with bold (**text**) and newlines (\n)
 const FormattedText = ({ text, sx }) => {
@@ -736,6 +740,7 @@ const Chat = () => {
     const processedNewSession = useRef(false);
     const isAutoScrolling = useRef(false);
     const scrollTimeout = useRef(null);
+    const latestGurujiRef = useRef(null); // ref to the top of the latest guruji response
 
     // Dynamic timer to force re-renders for status ticks
     const [currentTime, setCurrentTime] = useState(Date.now());
@@ -953,7 +958,13 @@ const Chat = () => {
     }, []);
 
     useEffect(() => {
-        scrollToBottom();
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg?.role === 'assistant' && latestGurujiRef.current) {
+            // Scroll to the top of the new assistant message so it's readable from the start
+            latestGurujiRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            scrollToBottom();
+        }
     }, [messages]);
 
     useEffect(() => {
@@ -1791,6 +1802,7 @@ const Chat = () => {
                         return (
                             <MayaIntro
                                 key={i}
+                                title={msg.title || msg.mayaJson?.title || "Title"}
                                 name={i === 0 ? userName : null}
                                 content={msg.content}
                                 mayaJson={msg.mayaJson}
@@ -1807,7 +1819,7 @@ const Chat = () => {
                     if (gurujiData && msg.assistant === 'guruji') {
                         const startedCond = !msg.animating || gurujiStarted.has(i);
                         return (
-                            <Box key={i} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 0, width: '100%' }}>
+                            <Box key={i} ref={i === messages.length - 1 ? latestGurujiRef : null} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 0, width: '100%' }}>
                                 {startedCond && <FadeInRoleLabel isUser={false} name="Guruji" ml={1} />}
                                 <Box sx={{ flex: 1, maxWidth: '85%' }}>
                                     <SequentialResponse
