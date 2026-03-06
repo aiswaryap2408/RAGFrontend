@@ -46,7 +46,7 @@ const tryParseJson = (data) => {
     return null;
 };
 
-const MayaIntro = ({ title, name, content, mayaJson, rawResponse, time, jsonVisibility, onLabelClick }) => {
+const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse, time, jsonVisibility, onLabelClick }) => {
     // Filter out fields we don't want to show in the UI debug block
     const getFilteredJson = (json) => {
         if (!json) return null;
@@ -137,22 +137,40 @@ const MayaIntro = ({ title, name, content, mayaJson, rawResponse, time, jsonVisi
                 )}
 
                 {/* JSON Output View for Maya Intro */}
-                {jsonVisibility?.maya && mayaJson && (
-                    <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(243,106,47,0.3)', textAlign: 'center' }}>
-                        <Typography
-                            onClick={() => onLabelClick?.(mayaJson, 'RECEPTIONIST CLASSIFICATION')}
-                            sx={{
-                                fontSize: '0.65rem',
-                                color: '#F36A2F',
-                                fontWeight: 800,
-                                cursor: 'pointer',
-                                textTransform: 'uppercase',
-                                textDecoration: 'underline',
-                                '&:hover': { opacity: 0.8 }
-                            }}
-                        >
-                            View Maya JSON
-                        </Typography>
+                {(jsonVisibility?.maya || jsonVisibility?.psycology) && (
+                    <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(243,106,47,0.3)', textAlign: 'center', display: 'flex', gap: 2, justifyContent: 'center' }}>
+                        {(mayaJson && jsonVisibility?.maya) && (
+                            <Typography
+                                onClick={() => onLabelClick?.(mayaJson, 'RECEPTIONIST CLASSIFICATION')}
+                                sx={{
+                                    fontSize: '0.65rem',
+                                    color: '#F36A2F',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    textTransform: 'uppercase',
+                                    textDecoration: 'underline',
+                                    '&:hover': { opacity: 0.8 }
+                                }}
+                            >
+                                View Maya JSON
+                            </Typography>
+                        )}
+                        {(psycologyJson && jsonVisibility?.psycology) && (
+                            <Typography
+                                onClick={() => onLabelClick?.(psycologyJson, 'USER PSYCHOLOGY')}
+                                sx={{
+                                    fontSize: '0.65rem',
+                                    color: '#F36A2F',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    textTransform: 'uppercase',
+                                    textDecoration: 'underline',
+                                    '&:hover': { opacity: 0.8 }
+                                }}
+                            >
+                                View Psychology
+                            </Typography>
+                        )}
                     </Box>
                 )}
 
@@ -728,7 +746,7 @@ const Chat = () => {
     const [readyReportData, setReadyReportData] = useState(null);
     const [activeQuestion, setActiveQuestion] = useState(null);
     const [activeReportIndex, setActiveReportIndex] = useState(null);
-    const [jsonVisibility, setJsonVisibility] = useState({ maya: false, guruji: false });
+    const [jsonVisibility, setJsonVisibility] = useState({ maya: false, guruji: false, psycology: false });
     const [jsonModal, setJsonModal] = useState({ open: false, data: null, title: '' });
     const [chatPaymentState, setChatPaymentState] = useState('IDLE'); // IDLE, REQUIRED, PAYING, COMPLETE
     const [pendingMessageId, setPendingMessageId] = useState(null);
@@ -869,6 +887,7 @@ const Chat = () => {
                                     time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
                                     gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
                                     mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                    psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
                                     animating: false
                                 }));
 
@@ -914,6 +933,7 @@ const Chat = () => {
                                 time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
                                 gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
                                 mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
                                 animating: false
                             }));
 
@@ -948,7 +968,8 @@ const Chat = () => {
                 console.log("DEBUG: JSON settings fetched:", res.data);
                 setJsonVisibility({
                     maya: res.data.maya_json_enabled,
-                    guruji: res.data.guruji_json_enabled
+                    guruji: res.data.guruji_json_enabled,
+                    psycology: res.data.psycology_json_enabled || false
                 });
             } catch (err) {
                 console.error("Failed to fetch JSON settings:", err);
@@ -1272,7 +1293,8 @@ const Chat = () => {
                             chat_payment_amount: res.data.amount,
                             is_paid: false,
                             message_id: res.data.message_id,
-                            mayaJson: tryParseJson(res.data.maya_json)
+                            mayaJson: tryParseJson(res.data.maya_json),
+                            psycologyJson: tryParseJson(res.data.psycology_json)
                         };
                     }
                     return next;
@@ -1284,7 +1306,7 @@ const Chat = () => {
                 return;
             }
 
-            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, bubbles, delays, timestamp, message_id } = res.data;
+            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id } = res.data;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
@@ -1298,6 +1320,7 @@ const Chat = () => {
                 rawResponse: res.data,
                 mayaJson: tryParseJson(maya_json),
                 gurujiJson: tryParseJson(guruji_json),
+                psycologyJson: tryParseJson(psycology_json),
                 bubbles: bubbles || [],
                 delays: delays || [],
                 animating: true,
@@ -1589,6 +1612,7 @@ const Chat = () => {
                     context,
                     amount: cost,
                     mayaJson: maya_json,
+                    psycologyJson: chatRes.data.psycology_json,
                     gurujiJson: guruji_json,
                     bubbles: chatRes.data.bubbles || [],
                     delays: chatRes.data.delays || [],
@@ -1806,6 +1830,7 @@ const Chat = () => {
                                 name={i === 0 ? userName : null}
                                 content={msg.content}
                                 mayaJson={msg.mayaJson}
+                                psycologyJson={msg.psycologyJson}
                                 rawResponse={msg.rawResponse}
                                 time={msg.time}
                                 jsonVisibility={jsonVisibility}
@@ -1847,7 +1872,7 @@ const Chat = () => {
                                         activeReportIndex={activeReportIndex}
                                     />
                                     {/* JSON Output View for Guruji Multi-bubble */}
-                                    {(jsonVisibility.maya || jsonVisibility.guruji) && (msg.mayaJson || gurujiData) && (
+                                    {(jsonVisibility.maya || jsonVisibility.guruji || jsonVisibility.psycology) && (msg.mayaJson || gurujiData || msg.psycologyJson) && (
                                         <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)', display: 'flex', gap: 2, justifyContent: 'center' }}>
                                             {(msg.mayaJson && jsonVisibility.maya) && (
                                                 <Typography
@@ -1879,6 +1904,22 @@ const Chat = () => {
                                                     }}
                                                 >
                                                     Guruji JSON
+                                                </Typography>
+                                            )}
+                                            {(msg.psycologyJson && jsonVisibility.psycology) && (
+                                                <Typography
+                                                    onClick={() => handleLabelClick(msg.psycologyJson, 'USER PSYCHOLOGY')}
+                                                    sx={{
+                                                        fontSize: '0.65rem',
+                                                        color: '#F36A2F',
+                                                        fontWeight: 800,
+                                                        cursor: 'pointer',
+                                                        textTransform: 'uppercase',
+                                                        textDecoration: 'underline',
+                                                        '&:hover': { opacity: 0.8 }
+                                                    }}
+                                                >
+                                                    Psychology
                                                 </Typography>
                                             )}
                                             {(msg.context && jsonVisibility.guruji) && (
@@ -2042,22 +2083,40 @@ const Chat = () => {
                                         />
 
                                         {/* JSON Output View (for regular messages) */}
-                                        {(msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) && (
-                                            <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)', textAlign: 'right' }}>
-                                                <Typography
-                                                    onClick={() => handleLabelClick(msg.mayaJson, 'RECEPTIONIST CLASSIFICATION')}
-                                                    sx={{
-                                                        fontSize: '0.65rem',
-                                                        color: '#F36A2F',
-                                                        fontWeight: 800,
-                                                        cursor: 'pointer',
-                                                        textTransform: 'uppercase',
-                                                        textDecoration: 'underline',
-                                                        '&:hover': { opacity: 0.8 }
-                                                    }}
-                                                >
-                                                    Maya JSON
-                                                </Typography>
+                                        {((msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) || (msg.psycologyJson && jsonVisibility.psycology)) && (
+                                            <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)', textAlign: 'right', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                                                {(msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) && (
+                                                    <Typography
+                                                        onClick={() => handleLabelClick(msg.mayaJson, 'RECEPTIONIST CLASSIFICATION')}
+                                                        sx={{
+                                                            fontSize: '0.65rem',
+                                                            color: '#F36A2F',
+                                                            fontWeight: 800,
+                                                            cursor: 'pointer',
+                                                            textTransform: 'uppercase',
+                                                            textDecoration: 'underline',
+                                                            '&:hover': { opacity: 0.8 }
+                                                        }}
+                                                    >
+                                                        Maya JSON
+                                                    </Typography>
+                                                )}
+                                                {(msg.psycologyJson && jsonVisibility.psycology) && (
+                                                    <Typography
+                                                        onClick={() => handleLabelClick(msg.psycologyJson, 'USER PSYCHOLOGY')}
+                                                        sx={{
+                                                            fontSize: '0.65rem',
+                                                            color: '#F36A2F',
+                                                            fontWeight: 800,
+                                                            cursor: 'pointer',
+                                                            textTransform: 'uppercase',
+                                                            textDecoration: 'underline',
+                                                            '&:hover': { opacity: 0.8 }
+                                                        }}
+                                                    >
+                                                        Psychology
+                                                    </Typography>
+                                                )}
                                             </Box>
                                         )}
 

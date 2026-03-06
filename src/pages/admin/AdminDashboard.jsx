@@ -3,6 +3,7 @@ import DashboardOverview from './DashboardOverview';
 import SystemPromptEditor from './SystemPromptEditor';
 import EditMayaPrompt from './EditMayaPrompt';
 import ReportPromptEditor from './ReportPromptEditor';
+import PsycologyPromptEditor from './PsycologyPromptEditor';
 import LoginLogs from './LoginLogs';
 import {
     getAllUsers as getUsers,
@@ -58,6 +59,7 @@ const AdminDashboard = () => {
     const [paymentEnabled, setPaymentEnabled] = useState(true);
     const [mayaJsonEnabled, setMayaJsonEnabled] = useState(false);
     const [gurujiJsonEnabled, setGurujiJsonEnabled] = useState(false);
+    const [psycologyJsonEnabled, setPsycologyJsonEnabled] = useState(false);
 
     // RAG Tester State
     const [testFile, setTestFile] = useState(null);
@@ -187,6 +189,19 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleTogglePsycologyJson = async () => {
+        try {
+            const newState = !psycologyJsonEnabled;
+            setPsycologyJsonEnabled(newState);
+            import('../../api').then(async (api) => {
+                await api.updateSystemSettings('psycology_json_enabled', newState);
+            });
+        } catch (err) {
+            console.error("Failed to update Psycology JSON settings", err);
+            setPsycologyJsonEnabled(!psycologyJsonEnabled);
+        }
+    };
+
     const handleToggleWallet = async () => {
         try {
             const newState = !walletEnabled;
@@ -208,6 +223,7 @@ const AdminDashboard = () => {
                     if (typeof data.payment_enabled !== 'undefined') setPaymentEnabled(data.payment_enabled);
                     if (typeof data.maya_json_enabled !== 'undefined') setMayaJsonEnabled(data.maya_json_enabled);
                     if (typeof data.guruji_json_enabled !== 'undefined') setGurujiJsonEnabled(data.guruji_json_enabled);
+                    if (typeof data.psycology_json_enabled !== 'undefined') setPsycologyJsonEnabled(data.psycology_json_enabled);
                 }
             } catch (e) {
                 console.error("Failed to fetch settings", e);
@@ -499,6 +515,13 @@ const AdminDashboard = () => {
                         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
                         label="Guruji Detailed Prompt"
                         themeColor="emerald"
+                    />
+                    <NavButton
+                        active={activeTab === 'psychology'}
+                        onClick={() => setActiveTab('psychology')}
+                        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
+                        label="Psychology Prompt"
+                        themeColor="rose"
                     />
                     <NavButton
                         active={activeTab === 'system'}
@@ -880,6 +903,20 @@ const AdminDashboard = () => {
                                         <span className={`inline-block h-4 w-4 bg-white rounded-full transition-transform ${gurujiJsonEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
                                 </div>
+
+                                {/* Psychology JSON Toggle */}
+                                <div className="flex items-center justify-between pt-6 border-t border-slate-800/60">
+                                    <div>
+                                        <h3 className="font-black text-slate-200">Psychology JSON Output</h3>
+                                        <p className="text-xs text-slate-500">Show raw psychology analysis in chat bubbles</p>
+                                    </div>
+                                    <button
+                                        onClick={handleTogglePsycologyJson}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all ${psycologyJsonEnabled ? 'bg-indigo-600' : 'bg-slate-700'}`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 bg-white rounded-full transition-transform ${psycologyJsonEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -890,6 +927,10 @@ const AdminDashboard = () => {
                 ) : activeTab === 'report-prompt' ? (
                     <div className="flex-1 overflow-y-auto p-12 bg-black">
                         <ReportPromptEditor />
+                    </div>
+                ) : activeTab === 'psychology' ? (
+                    <div className="flex-1 overflow-y-auto p-12 bg-black">
+                        <PsycologyPromptEditor />
                     </div>
                 ) : activeTab === 'logs' ? (
                     <div className="flex-1 overflow-y-auto bg-black custom-scrollbar">

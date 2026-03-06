@@ -64,6 +64,10 @@ export const updateMayaPrompt = (prompt) => api.post('/admin/maya-prompt', { pro
 export const getReportPrompt = () => api.get('/admin/report-prompt');
 export const updateReportPrompt = (prompt) => api.post('/admin/report-prompt', { prompt });
 
+export const getPsycologyPrompt = () => api.get('/admin/psycology-prompt');
+export const updatePsycologyPrompt = (prompt) => api.post('/admin/psycology-prompt', { prompt });
+export const getPsycologyPromptHistory = () => api.get('/admin/psycology-prompt/history');
+
 // Chat Tester Endpoints
 export const testUpload = (formData) => api.post('/admin/test-upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
