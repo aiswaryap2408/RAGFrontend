@@ -163,12 +163,12 @@ const TranslationIndicator = ({ text, sx }) => (
         display: 'inline-block',
         // backgroundColor: '#b0f88d',
         color: '#acacac',
-        padding: '4px 12px',
+        // padding: '0px 12px',
         // borderRadius: '8px',
-        fontSize: '0.75rem',
+        fontSize: '0.7rem',
         fontWeight: 400,
-        marginTop: '3px',
-        marginBottom: '8px',
+        marginTop: '2px',
+        // marginBottom: '8px',
         ...sx
     }}>
         {text}
@@ -370,7 +370,7 @@ const NotificationBox = ({ content, buttonLabel, onButtonClick }) => (
     </Box>
 );
 
-const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = [], animate = false, onComplete, messages, handleReportGeneration, reportState, activeCategory, userName, time, index, activeReportIndex, isPaidResponse = false }) => {
+const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = [], animate = false, onComplete, onFirstBubble, messages, handleReportGeneration, reportState, activeCategory, userName, time, index, activeReportIndex, isPaidResponse = false }) => {
     const msgObj = messages[index] || {};
     const isThisActiveReport = index === activeReportIndex;
     const hasReport = msgObj.report_generated || false;
@@ -461,7 +461,11 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
 
             const timer = setTimeout(() => {
                 setIsBuffering(false);
-                setVisibleCount(prev => prev + 1);
+                setVisibleCount(prev => {
+                    const next = prev + 1;
+                    if (prev === 0 && onFirstBubble) onFirstBubble();
+                    return next;
+                });
                 scrollToBottom();
             }, delay);
 
@@ -744,6 +748,7 @@ const Chat = () => {
     const [pendingMessageId, setPendingMessageId] = useState(null);
     const [isBuffering, setIsBuffering] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
+    const [gurujiStarted, setGurujiStarted] = useState(new Set()); // tracks which guruji msgs have shown at least 1 bubble
     const [waitMessage, setWaitMessage] = useState("");
     const messagesEndRef = useRef(null);
     const processedNewSession = useRef(false);
@@ -1277,7 +1282,7 @@ const Chat = () => {
                             chat_payment_amount: res.data.amount,
                             is_paid: false,
                             message_id: res.data.message_id,
-                            mayaJson: res.data.maya_json
+                            mayaJson: tryParseJson(res.data.maya_json)
                         };
                     }
                     return next;
@@ -1301,8 +1306,8 @@ const Chat = () => {
                 context,
                 amount,
                 rawResponse: res.data,
-                mayaJson: maya_json,
-                gurujiJson: guruji_json,
+                mayaJson: tryParseJson(maya_json),
+                gurujiJson: tryParseJson(guruji_json),
                 bubbles: bubbles || [],
                 delays: delays || [],
                 animating: true,
@@ -1823,9 +1828,10 @@ const Chat = () => {
                     const gurujiData = msg.gurujiJson || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null);
 
                     if (gurujiData && msg.assistant === 'guruji') {
+                        const startedCond = !msg.animating || gurujiStarted.has(i);
                         return (
                             <Box key={i} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 0, width: '100%' }}>
-                                <FadeInRoleLabel isUser={false} name="Guruji" ml={1} />
+                                {startedCond && <FadeInRoleLabel isUser={false} name="Guruji" ml={1} />}
                                 <Box sx={{ flex: 1, maxWidth: '85%' }}>
                                     <SequentialResponse
                                         isPaidResponse={messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment}
@@ -1838,6 +1844,9 @@ const Chat = () => {
                                             setMessages(prev => prev.map((m, idx) =>
                                                 idx === i ? { ...m, animating: false } : m
                                             ));
+                                        }}
+                                        onFirstBubble={() => {
+                                            setGurujiStarted(prev => new Set([...prev, i]));
                                         }}
                                         messages={messages}
                                         handleReportGeneration={handleReportGeneration}
@@ -1935,13 +1944,13 @@ const Chat = () => {
                                     )}
 
                                     {/* Translation Indicator for Guruji Response */}
-                                    {msg.mayaJson?.language_detected &&
-                                        msg.mayaJson.language_detected.toLowerCase() !== 'english' &&
-                                        msg.mayaJson.category === 'PROCEED' && (
+                                    {startedCond &&
+                                        msg.mayaJson?.MSG_LANGUAGE &&
+                                        msg.mayaJson.MSG_LANGUAGE.toLowerCase() !== 'en' &&
+                                        msg.mayaJson.MSG_LANGUAGE.toLowerCase() !== 'english' && (
                                             <TranslationIndicator
-                                                // text={`Translated from English to ${msg.mayaJson.language_detected} for the user`}
                                                 text={`Translated to your language / language style by MAYA`}
-                                                sx={{ mt: reportState === 'IDLE' ? '8px' : '3px' }}
+                                                sx={{ mt: reportState === 'IDLE' ? '3px' : '3px', position: 'relative', top: -12 }}
                                             />
                                         )}
                                 </Box>
@@ -1949,13 +1958,19 @@ const Chat = () => {
                         );
                     }
 
-                    // Check for translation indicators
                     const nextMsg = messages[i + 1];
-                    const langDetected = msg.role === 'user' ? nextMsg?.mayaJson?.language_detected : msg.mayaJson?.language_detected;
-                    const category = msg.role === 'user' ? nextMsg?.mayaJson?.category : msg.mayaJson?.category;
-                    const showTranslationIndicator = langDetected &&
-                        langDetected.toLowerCase() !== 'english' &&
-                        category === 'PROCEED';
+
+                    let langDetected = msg?.mayaJson?.MSG_LANGUAGE;
+
+                    if (!langDetected && msg.role === "user") {
+                        langDetected = nextMsg?.mayaJson?.MSG_LANGUAGE;
+                    }
+
+                    const normalizedLang = langDetected?.toLowerCase();
+
+                    const showTranslationIndicator =
+                        normalizedLang &&
+                        !["en", "english"].includes(normalizedLang);
 
                     if (msg.role === 'user' && msg.requires_chat_payment && !msg.is_paid) {
                         return (
@@ -1965,7 +1980,7 @@ const Chat = () => {
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
                                             p: '12px 16px 14px 12px',
-                                            borderRadius: '10px 10px 0 10px',
+                                            borderRadius: '10px 0 10px 10px',
                                             bgcolor: '#2f3148',
                                             color: '#fff',
                                             // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
@@ -1977,20 +1992,22 @@ const Chat = () => {
                                             wordBreak: "break-word",
                                             whiteSpace: "pre-line",
                                         }}>
-                                            <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem', m: 0 }}>
+                                            <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem', m: 0, mb: .5 }}>
                                                 {msg.content}
                                             </Typography>
-                                            <Typography sx={{ fontSize: '0.625rem', opacity: 0.8, position: 'absolute', bottom: 5, right: 8, color: '#fff', fontWeight: 500, pt: 1, display: 'flex', alignItems: 'center' }}>
+                                            <Typography sx={{ fontSize: '0.625rem', opacity: 0.8, position: 'absolute', bottom: 2, right: 8, color: '#fff', fontWeight: 500, pt: 1, display: 'flex', alignItems: 'center' }}>
                                                 {msg.time}
                                                 {renderStatusTicks(i)}
                                             </Typography>
                                         </Box>
                                     </Box>
-                                    <TranslationIndicator
-                                        // text={`Translated from English to ${msg.mayaJson.language_detected} for the user`}
-                                        text={`Translated to astrologer's language by MAYA`}
-                                        sx={{ mt: reportState === 'IDLE' ? '8px' : '3px' }}
-                                    />
+                                    {showTranslationIndicator && (
+                                        <TranslationIndicator
+                                            // text={`Translated from English to ${msg.mayaJson.language_detected} for the user`}
+                                            text={`Translated to astrologer's language by MAYA`}
+                                            sx={{ mt: reportState === 'IDLE' ? '3px' : '3px', position: 'relative', top: 0 }}
+                                        />
+                                    )}
                                 </Box>
                                 <MayaTemplateBox
                                     name={userName.split(' ')[0]}
@@ -2125,6 +2142,7 @@ const Chat = () => {
                                             </Box>
                                         )}
 
+
                                         {/* Timestamp moved inside the bubble */}
                                         <Box
                                             sx={{
@@ -2143,17 +2161,16 @@ const Chat = () => {
                                             {msg.time}
                                             {renderStatusTicks(i)}
                                         </Box>
+
                                     </Box>
+
                                 )}
+
                             </Box>
 
                             {/* Translation Indicator */}
                             {showTranslationIndicator && (
                                 <TranslationIndicator
-                                    // text={msg.role === 'user'
-                                    //     ? `${langDetected} detected, translated to English for astrologer.`
-                                    //     : `Translated from English to ${langDetected} for the user`
-                                    // }
                                     text={msg.role === 'user'
                                         ? `Translated to astrologer's language by MAYA`
                                         : `Translated to your language / language style by MAYA`
