@@ -28,12 +28,12 @@ const Header = ({ showProfile = false, name = "", profiledob = "", profilebirths
                     bgcolor: "#2f3148",
                     height: '80px',
                     px: 3,
-                    pt: 1.5,
-                    pb: .5,
+                    // pt: 1.5,
+                    // pb: .5,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    justifyContent: "flex-end",
+                    justifyContent: "center",
                 }}>
                     {!showProfile ? (
                         <Typography sx={{ fontSize: 28, fontWeight: 100, color: "#fff", fontFamily: "'Century Gothic', sans-serif", mb: 1 }}>
@@ -43,7 +43,7 @@ const Header = ({ showProfile = false, name = "", profiledob = "", profilebirths
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 0.5 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <PersonRoundedIcon sx={{ color: '#fff', fontSize: 24 }} />
-                                <Typography sx={{ fontSize: 24, fontWeight: 600, color: "#fff", fontFamily: "'Century Gothic', sans-serif", textTransform: 'capitalize' }}>
+                                <Typography sx={{ fontSize: 24, fontWeight: 500, color: "#fff", fontFamily: "'Roboto', sans-serif", textTransform: 'capitalize' }}>
                                     {name}
                                 </Typography>
                                 {/* <KeyboardArrowDownRoundedIcon sx={{ color: '#fff', fontSize: 24 }} /> */}

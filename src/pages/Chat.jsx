@@ -143,12 +143,12 @@ const MayaIntro = ({ name, content, mayaJson, rawResponse, time, jsonVisibility,
 const TranslationIndicator = ({ text, sx }) => (
     <Box sx={{
         display: 'inline-block',
-        backgroundColor: '#b0f88d',
-        color: '#76c15b',
+        // backgroundColor: '#b0f88d',
+        color: '#acacac',
         padding: '4px 12px',
         // borderRadius: '8px',
         fontSize: '0.75rem',
-        fontWeight: 500,
+        fontWeight: 400,
         marginTop: '3px',
         marginBottom: '8px',
         ...sx
@@ -1900,7 +1900,8 @@ const Chat = () => {
                                         msg.mayaJson.language_detected.toLowerCase() !== 'english' &&
                                         msg.mayaJson.category === 'PROCEED' && (
                                             <TranslationIndicator
-                                                text={`Translated from English to ${msg.mayaJson.language_detected} for the user`}
+                                                // text={`Translated from English to ${msg.mayaJson.language_detected} for the user`}
+                                                text={`Translated to your language / language style by MAYA`}
                                                 sx={{ mt: reportState === 'IDLE' ? '8px' : '3px' }}
                                             />
                                         )}
@@ -1946,6 +1947,11 @@ const Chat = () => {
                                             </Typography>
                                         </Box>
                                     </Box>
+                                    <TranslationIndicator
+                                        // text={`Translated from English to ${msg.mayaJson.language_detected} for the user`}
+                                        text={`Translated to astrologer's language by MAYA`}
+                                        sx={{ mt: reportState === 'IDLE' ? '8px' : '3px' }}
+                                    />
                                 </Box>
                                 <MayaTemplateBox
                                     name={userName.split(' ')[0]}
@@ -2089,9 +2095,13 @@ const Chat = () => {
                             {/* Translation Indicator */}
                             {showTranslationIndicator && (
                                 <TranslationIndicator
+                                    // text={msg.role === 'user'
+                                    //     ? `${langDetected} detected, translated to English for astrologer.`
+                                    //     : `Translated from English to ${langDetected} for the user`
+                                    // }
                                     text={msg.role === 'user'
-                                        ? `${langDetected} detected, translated to English for astrologer.`
-                                        : `Translated from English to ${langDetected} for the user`
+                                        ? `Translated to astrologer's language by MAYA`
+                                        : `Translated to your language / language style by MAYA`
                                     }
                                 />
                             )}

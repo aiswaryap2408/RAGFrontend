@@ -83,7 +83,7 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
           onClick={() => toggleDrawer(true)}
           sx={{
             position: "fixed",
-            top: 60,
+            top: 30,
             left: "max(20px, calc(50% - 205px))",
             display: "flex",
             flexDirection: "column",
