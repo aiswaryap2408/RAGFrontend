@@ -41,9 +41,7 @@ const ReportPromptEditor = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-bottom border-gray-100">
                 <h3 className="text-xl font-bold text-gray-900">Detailed Report Prompt Configuration</h3>
-                <p className="text-sm text-gray-500 mt-1">
-                    This prompt defines how the AI generates personalized PDF reports for users.
-                </p>
+
             </div>
 
             <div className="p-6 space-y-4">
