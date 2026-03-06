@@ -46,7 +46,7 @@ const tryParseJson = (data) => {
     return null;
 };
 
-const MayaIntro = ({ name, content, mayaJson, psycologyJson, rawResponse, time, jsonVisibility, onLabelClick }) => {
+const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse, time, jsonVisibility, onLabelClick }) => {
     // Filter out fields we don't want to show in the UI debug block
     const getFilteredJson = (json) => {
         if (!json) return null;
@@ -60,6 +60,20 @@ const MayaIntro = ({ name, content, mayaJson, psycologyJson, rawResponse, time, 
 
     return (
         <Box sx={{ pt: 4, pb: 3, width: "100%" }}>
+            <Typography sx={{
+                fontSize: '0.75rem',
+                color: '#acacac',
+                fontWeight: 400,
+                opacity: 1,
+                transition: 'opacity 0.3s ease-in-out',
+                position: 'relative',
+                pointerEvents: 'none',
+                mb: 0,
+                mr: 1,
+                textAlign: 'right',
+            }}>
+                MAYA
+            </Typography>
             <Box sx={{
                 position: "relative",
                 // border: "2px solid #F36A2F",
@@ -67,9 +81,9 @@ const MayaIntro = ({ name, content, mayaJson, psycologyJson, rawResponse, time, 
                 p: 2,
                 bgcolor: "#fece8d",
                 border: "none",
-                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                // boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
             }}>
-                {/* Avatar */}
+
                 <Box sx={{
                     position: "absolute",
                     top: -33,
@@ -87,6 +101,19 @@ const MayaIntro = ({ name, content, mayaJson, psycologyJson, rawResponse, time, 
                     <img src="/svg/maya.png" style={{ width: 50 }} alt="Maya" />
                 </Box>
 
+                {name && (
+                    <Typography sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 12,
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        color: 'rgba(0,0,0,0.5)'
+                    }}>
+                        {name}
+                    </Typography>
+                )}
+
                 {isSafetyWarning ? (
                     <Box sx={{ mt: 2, mb: 1.5 }}>
                         <Typography sx={{ fontSize: '1.05rem', lineHeight: 1.4, color: '#333', mb: 1, textAlign: 'center', fontWeight: 700 }}>
@@ -97,9 +124,16 @@ const MayaIntro = ({ name, content, mayaJson, psycologyJson, rawResponse, time, 
                         </Typography>
                     </Box>
                 ) : (
-                    <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 2, mb: 1, textAlign: 'left', fontWeight: 500, whiteSpace: 'pre-line' }}>
-                        {name && <strong>Namaste {name}, </strong>}{content}
-                    </Typography>
+                    <Box sx={{ mt: 1, mb: 1 }}> {/* Increased mt to avoid overlap with name */}
+                        {title && (
+                            <Typography sx={{ fontSize: '1.05rem', lineHeight: 1.4, color: '#333', mb: 1, fontWeight: 700, textAlign: 'center' }}>
+                                {title}
+                            </Typography>
+                        )}
+                        <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', textAlign: 'left', fontWeight: 500, whiteSpace: 'pre-line' }}>
+                            {content}
+                        </Typography>
+                    </Box>
                 )}
 
                 {/* JSON Output View for Maya Intro */}
@@ -142,7 +176,7 @@ const MayaIntro = ({ name, content, mayaJson, psycologyJson, rawResponse, time, 
 
                 {time && (
                     <Typography sx={{
-                        fontSize: '0.75rem',
+                        fontSize: '0.7rem',
                         opacity: 0.8,
                         position: 'absolute',
                         bottom: 6,
@@ -175,50 +209,6 @@ const TranslationIndicator = ({ text, sx }) => (
     </Box>
 );
 
-const FadeInRoleLabel = ({ isUser, name, ml, mr }) => {
-    const [isVisible, setIsVisible] = React.useState(false);
-    const labelRef = React.useRef(null);
-
-    React.useEffect(() => {
-        const rootElement = document.getElementById('chat-scroll-container');
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                setIsVisible(entry.isIntersecting);
-            },
-            {
-                root: rootElement,
-                rootMargin: '0px 0px -150px 0px', // Hides the label 120px before the bottom to avoid the curved footer
-                threshold: 0
-            }
-        );
-
-        if (labelRef.current) {
-            observer.observe(labelRef.current);
-        }
-
-        return () => observer.disconnect();
-    }, []);
-
-    return (
-        <Typography
-            ref={labelRef}
-            sx={{
-                fontSize: '0.75rem',
-                color: isUser ? '#acacac' : '#acacac',
-                // ml: ml !== undefined ? ml : (isUser ? 0 : 1),
-                // mr: mr !== undefined ? mr : (isUser ? 1 : 0),
-                fontWeight: isUser ? 400 : 400,
-                opacity: isVisible ? 1 : 0,
-                transition: 'opacity 0.3s ease-in-out',
-                position: 'relative',
-                pointerEvents: 'none',
-                mb: 0
-            }}
-        >
-            {name}
-        </Typography>
-    );
-};
 
 // Helper to safely render text with bold (**text**) and newlines (\n)
 const FormattedText = ({ text, sx }) => {
@@ -401,7 +391,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
     const hasCalledComplete = useRef(false);
 
     const pleaseWaitMessages = [
-        "Astrologer is typing..."
+        "Astrologer is typing"
     ];
 
     const scrollToBottom = () => {
@@ -578,96 +568,50 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
                 </Box>
             ))}
 
-            {isBuffering && waitMessage && (
-                <Box sx={{
-                    position: 'fixed',
-                    bottom: 80,
-                    left: 0,
-                    right: 0,
-                    minHeight: 25,
-                    height: 'auto',
-                    mx: 'auto',
-                    width: 'max-content',
-                    minWidth: '20%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    zIndex: 10,
-                    pointerEvents: 'none',
-                    bgcolor: '#fece8d',
-                    borderRadius: '50px',
-                    px: 3,
-                    py: 0.5
-                }}>
-                    <Typography
-                        sx={{
-                            fontSize: "0.9rem",
-                            fontWeight: 400,
-                            display: "inline-block",
-                            overflow: "hidden",
-                            "@keyframes letterBounceAppear": {
-                                "0%": { opacity: 0 },
-                                "10%": { opacity: 1 },
-                                "15%, 85%": { opacity: 1 },
-                                "100%": { opacity: 0 }
-                            },
+
+
+
+
+            {
+                isThisActiveReport && (reportState === 'CONFIRMING' || reportState === 'PREPARING' || reportState === 'READY') && (
+                    <MayaTemplateBox
+                        name={userName.split(' ')[0]}
+                        content={`detailed predictions on ${activeCategory || 'your query'} are chargeable ₹49.`}
+                        buttonLabel={reportState === 'CONFIRMING' ? "Pay for detailed answer" : "Paid for detailed answer"}
+                        onButtonClick={() => handleReportGeneration(activeCategory, 'PAY')}
+                        loading={reportState === 'PAYING' || reportState === 'PREPARING'}
+                        disabled={reportState === 'PAYING' || reportState === 'PREPARING' || reportState === 'READY'}
+                    />
+                )
+            }
+
+            {
+                isThisActiveReport && (reportState === 'PREPARING' || reportState === 'READY') && (
+                    <MayaTemplateBox
+                        content={<>The detailed answer will be available in the <strong>"Detailed Reports"</strong> section of your home screen.<br /><br />Once prepared you'll be notified here.</>}
+                        loading={reportState === 'PREPARING'}
+                    />
+                )
+            }
+
+            {
+                (hasReport || (isThisActiveReport && reportState === 'READY')) && (
+                    <NotificationBox
+                        content={hasReport ? `The detailed answer on ${msgObj.report_category || 'your query'} is ready.` : `The detailed answer on ${activeCategory || 'your query'} is ready.`}
+                        buttonLabel="Download Report"
+                        onButtonClick={() => {
+                            if (hasReport && reportId) {
+                                handleReportGeneration(msgObj.report_category, 'DOWNLOAD_EXISTING', null, reportId);
+                            } else {
+                                handleReportGeneration(activeCategory, 'DOWNLOAD');
+                            }
                         }}
-                    >
-                        {waitMessage.split("").map((char, index) => (
-                            <Box
-                                component="span"
-                                key={index}
-                                sx={{
-                                    display: "inline-block",
-                                    whiteSpace: char === " " ? "pre" : "normal",
-                                    opacity: 0,
-                                    animation: "letterBounceAppear 3.5s infinite",
-                                    animationDelay: `${index * 0.1}s`,
-                                }}
-                            >
-                                {char}
-                            </Box>
-                        ))}
-                    </Typography>
-                </Box>
-            )}
-
-
-            {isThisActiveReport && (reportState === 'CONFIRMING' || reportState === 'PREPARING' || reportState === 'READY') && (
-                <MayaTemplateBox
-                    name={userName.split(' ')[0]}
-                    content={`detailed predictions on ${activeCategory || 'your query'} are chargeable ₹49.`}
-                    buttonLabel={reportState === 'CONFIRMING' ? "Pay for detailed answer" : "Paid for detailed answer"}
-                    onButtonClick={() => handleReportGeneration(activeCategory, 'PAY')}
-                    loading={reportState === 'PAYING' || reportState === 'PREPARING'}
-                    disabled={reportState === 'PAYING' || reportState === 'PREPARING' || reportState === 'READY'}
-                />
-            )}
-
-            {isThisActiveReport && (reportState === 'PREPARING' || reportState === 'READY') && (
-                <MayaTemplateBox
-                    content={<>The detailed answer will be available in the <strong>"Detailed Reports"</strong> section of your home screen.<br /><br />Once prepared you'll be notified here.</>}
-                    loading={reportState === 'PREPARING'}
-                />
-            )}
-
-            {(hasReport || (isThisActiveReport && reportState === 'READY')) && (
-                <NotificationBox
-                    content={hasReport ? `The detailed answer on ${msgObj.report_category || 'your query'} is ready.` : `The detailed answer on ${activeCategory || 'your query'} is ready.`}
-                    buttonLabel="Download Report"
-                    onButtonClick={() => {
-                        if (hasReport && reportId) {
-                            handleReportGeneration(msgObj.report_category, 'DOWNLOAD_EXISTING', null, reportId);
-                        } else {
-                            handleReportGeneration(activeCategory, 'DOWNLOAD');
-                        }
-                    }}
-                />
-            )}
+                    />
+                )
+            }
 
             <div ref={textEndRef} style={{ height: 1 }} />
-        </Box>
+        </Box >
     );
 };
 
@@ -754,6 +698,7 @@ const Chat = () => {
     const processedNewSession = useRef(false);
     const isAutoScrolling = useRef(false);
     const scrollTimeout = useRef(null);
+    const latestGurujiRef = useRef(null); // ref to the top of the latest guruji response
 
     // Dynamic timer to force re-renders for status ticks
     const [currentTime, setCurrentTime] = useState(Date.now());
@@ -974,7 +919,13 @@ const Chat = () => {
     }, []);
 
     useEffect(() => {
-        scrollToBottom();
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg?.role === 'assistant' && latestGurujiRef.current) {
+            // Scroll to the top of the new assistant message so it's readable from the start
+            latestGurujiRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            scrollToBottom();
+        }
     }, [messages]);
 
     useEffect(() => {
@@ -1233,11 +1184,11 @@ const Chat = () => {
         setLoading(true);
         setIsBuffering(true);
         scrollToBottom();
-        setWaitMessage("Sending to your astrologer...");
+        // setWaitMessage("Sending to your astrologer...");
 
         // After a random 1.5–3s delay (natural feel, approx when Maya finishes), switch to "Astrologer is typing..."
         const waitDelay = Math.floor(Math.random() * (5000 - 3000 + 1)) + 3000; // random between 3000ms and 5000ms
-        const waitMsgTimer = setTimeout(() => setWaitMessage("Astrologer is typing..."), waitDelay);
+        const waitMsgTimer = setTimeout(() => setWaitMessage("Astrologer is typing"), waitDelay);
 
 
         try {
@@ -1815,6 +1766,7 @@ const Chat = () => {
                         return (
                             <MayaIntro
                                 key={i}
+                                title={msg.title || msg.mayaJson?.title || "Title"}
                                 name={i === 0 ? userName : null}
                                 content={msg.content}
                                 mayaJson={msg.mayaJson}
@@ -1832,8 +1784,8 @@ const Chat = () => {
                     if (gurujiData && msg.assistant === 'guruji') {
                         const startedCond = !msg.animating || gurujiStarted.has(i);
                         return (
-                            <Box key={i} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 0, width: '100%' }}>
-                                {startedCond && <FadeInRoleLabel isUser={false} name="Guruji" ml={1} />}
+                            <Box key={i} ref={i === messages.length - 1 ? latestGurujiRef : null} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 0, width: '100%' }}>
+                                {startedCond && <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0 }}>Guruji</Typography>}
                                 <Box sx={{ flex: 1, maxWidth: '85%' }}>
                                     <SequentialResponse
                                         isPaidResponse={messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment}
@@ -1978,7 +1930,7 @@ const Chat = () => {
                         return (
                             <Box key={i} sx={{ width: '100%', mb: 0 }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 1 }}>
-                                    <FadeInRoleLabel isUser={true} name="User" mr={1} />
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0 }}>You</Typography>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
                                             p: '12px 16px 14px 12px',
@@ -2034,12 +1986,9 @@ const Chat = () => {
                                 mb: 1
                             }}
                         >
-                            <FadeInRoleLabel
-                                isUser={msg.role === 'user'}
-                                name={msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
-                                ml={msg.role !== 'user' ? 1 : 0}
-                                mr={msg.role === 'user' ? 1 : 0}
-                            />
+                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0 }}>
+                                {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
+                            </Typography>
                             <Box sx={{
                                 display: 'flex',
                                 alignItems: 'flex-start',
@@ -2185,61 +2134,94 @@ const Chat = () => {
                     );
                 })}
 
-                {/* Global Wait Message (for both Maya and Guruji) */}
-                {isBuffering && waitMessage && (
+                {/* Dot Loader + Astrologer typing - both at same fixed position */}
+                {isBuffering && (
                     <Box sx={{
                         position: 'fixed',
                         bottom: 80,
                         left: 0,
                         right: 0,
-                        minHeight: 25,
-                        height: 'auto',
                         mx: 'auto',
                         width: 'max-content',
-                        minWidth: '20%',
                         display: 'flex',
-                        flexDirection: 'column',
                         justifyContent: 'center',
                         alignItems: 'center',
                         zIndex: 10,
                         pointerEvents: 'none',
-                        bgcolor: '#fece8d',
-                        borderRadius: '50px',
-                        px: 3,
-                        py: 0.5
+                        minWidth: '180px',
+                        ...(waitMessage ? {
+                            bgcolor: '#fece8d',
+                            borderRadius: '50px',
+                            px: 3,
+                            py: 0.5,
+                            minHeight: 25,
+                        } : {
+                            bgcolor: 'transparent',
+                        })
                     }}>
-                        <Typography
-                            sx={{
-                                fontSize: "0.9rem",
-                                fontWeight: 400,
-                                display: "inline-block",
-                                overflow: "hidden",
-                                "@keyframes letterBounceAppear": {
-                                    "0%": { opacity: 0 },
-                                    "10%": { opacity: 1 },
-                                    "15%, 85%": { opacity: 1 },
-                                    "100%": { opacity: 0 }
-                                },
-                            }}
-                        >
-                            {waitMessage.split("").map((char, index) => (
-                                <Box
-                                    component="span"
-                                    key={index}
-                                    sx={{
-                                        display: "inline-block",
-                                        whiteSpace: char === " " ? "pre" : "normal",
-                                        opacity: 0,
-                                        animation: "letterBounceAppear 3.5s infinite",
-                                        animationDelay: `${index * 0.1}s`,
-                                    }}
-                                >
-                                    {char}
-                                </Box>
-                            ))}
-                        </Typography>
+                        {!waitMessage ? (
+                            /* 3-dot loader — shown right after user sends */
+                            <Box sx={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                                {[0, 1, 2].map((i) => (
+                                    <Box
+                                        key={i}
+                                        component="span"
+                                        sx={{
+                                            width: 6,
+                                            height: 6,
+                                            backgroundColor: '#2F3148',
+                                            borderRadius: '50%',
+                                            display: 'inline-block',
+                                            "@keyframes micro-pulse": {
+                                                "0%, 80%, 100%": { transform: 'scale(0.8)', opacity: 0.35 },
+                                                "40%": { transform: 'scale(1.2)', backgroundColor: '#5D6189', opacity: 1 }
+                                            },
+                                            animation: 'micro-pulse 1s ease-in-out infinite both',
+                                            animationDelay: i === 0 ? '-0.32s' : i === 1 ? '-0.16s' : '0s',
+                                        }}
+                                    />
+                                ))}
+                            </Box>
+                        ) : (
+                            /* Typewriter animation for "Astrologer is typing" */
+                            <Box
+                                component="span"
+                                sx={{
+                                    fontFamily: "'Roboto', sans-serif",
+                                    fontSize: "14px",
+                                    fontWeight: 500,
+                                    color: "#2F3148",
+                                    display: "block",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    borderRight: "2px solid #2F3148",
+                                    width: 0,
+                                    maxWidth: "fit-content",
+                                    "@keyframes human-typing": {
+                                        "0%": { width: 0, opacity: 1 },
+                                        "12%": { width: "5em" },
+                                        "20%": { width: "5em" },
+                                        "45%": { width: "9.5em" },
+                                        "55%": { width: "9.5em" },
+                                        "75%": { width: "100%" },
+                                        "98%": { width: "100%", opacity: 1 },
+                                        "99%": { width: 0, opacity: 0 },
+                                        "100%": { width: 0, opacity: 0 },
+                                    },
+                                    "@keyframes cursor-blink": {
+                                        "0%, 100%": { borderColor: "transparent" },
+                                        "50%": { borderColor: "#2F3148" },
+                                    },
+                                    animation: "human-typing 7s linear infinite, cursor-blink 0.8s step-end infinite",
+                                }}
+                            >
+                                {waitMessage}
+                            </Box>
+                        )}
                     </Box>
                 )}
+
+
 
                 <div ref={messagesEndRef} />
             </Box>
@@ -2278,98 +2260,100 @@ const Chat = () => {
             )} */}
 
             {/* Summary & Feedback Modal */}
-            {summary && (
-                <Box sx={{ position: 'fixed', inset: 0, bgcolor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
-                    <Box sx={{
-                        bgcolor: 'white',
-                        p: 4,
-                        borderRadius: 5,
-                        maxWidth: 500,
-                        width: '100%',
-                        boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
-                        position: 'relative',
-                        maxHeight: '90vh',
-                        overflowY: 'auto',
-                        '&::-webkit-scrollbar': { display: 'none' },
-                        msOverflowStyle: 'none',
-                        scrollbarWidth: 'none'
-                    }}>
-                        <Box sx={{ position: 'absolute', top: 0, right: 0, p: 2, zIndex: 2 }}>
-                            <img src="/svg/header_stars.svg" style={{ width: 100, opacity: 0.1 }} alt="Stars" />
+            {
+                summary && (
+                    <Box sx={{ position: 'fixed', inset: 0, bgcolor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+                        <Box sx={{
+                            bgcolor: 'white',
+                            p: 4,
+                            borderRadius: 5,
+                            maxWidth: 500,
+                            width: '100%',
+                            boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+                            position: 'relative',
+                            maxHeight: '90vh',
+                            overflowY: 'auto',
+                            '&::-webkit-scrollbar': { display: 'none' },
+                            msOverflowStyle: 'none',
+                            scrollbarWidth: 'none'
+                        }}>
+                            <Box sx={{ position: 'absolute', top: 0, right: 0, p: 2, zIndex: 2 }}>
+                                <img src="/svg/header_stars.svg" style={{ width: 100, opacity: 0.1 }} alt="Stars" />
+                            </Box>
+
+                            {!feedbackSubmitted ? (
+                                <Box sx={{ position: 'relative', zIndex: 1 }}>
+                                    <Typography variant="h5" sx={{ fontWeight: 900, mb: 1, color: '#F36A2F' }}>Session Insights</Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: '#999', display: 'block', mb: 3 }}>COMPLETED CONSULTATION</Typography>
+
+                                    <Box sx={{ bgcolor: '#FFF6EB', p: 3, borderRadius: 3, borderLeft: '6px solid #F36A2F', mb: 4 }}>
+                                        <Typography sx={{ fontStyle: 'italic', fontSize: '0.95rem', color: '#555', lineHeight: 1.7 }}>
+                                            "{summary}"
+                                        </Typography>
+                                    </Box>
+
+                                    <Box sx={{ mb: 4 }}>
+                                        <Typography sx={{ fontWeight: 800, color: '#333', mb: 1 }}>Rate Guruji's Wisdom</Typography>
+                                        <Rating
+                                            value={feedback.rating}
+                                            onChange={(_, v) => setFeedback(prev => ({ ...prev, rating: v }))}
+                                            size="large"
+                                            sx={{ color: '#F36A2F' }}
+                                        />
+                                        <TextField
+                                            fullWidth
+                                            multiline
+                                            rows={2}
+                                            placeholder="Add a thought..."
+                                            value={feedback.comment}
+                                            onChange={(e) => setFeedback(prev => ({ ...prev, comment: e.target.value }))}
+                                            sx={{ mt: 2, '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: '#fbfbfb' } }}
+                                        />
+                                    </Box>
+
+                                    <Box sx={{ display: 'flex', gap: 2 }}>
+                                        <ListItemButton onClick={() => setSummary(null)} sx={{ borderRadius: 2, justifyContent: 'center', bgcolor: '#F3F4F6' }}>
+                                            Review Chat
+                                        </ListItemButton>
+                                        <ListItemButton
+                                            onClick={handleFeedbackSubmit}
+                                            disabled={submittingFeedback || feedback.rating === 0}
+                                            sx={{ borderRadius: 2, justifyContent: 'center', bgcolor: '#F36A2F', color: 'white', '&:hover': { bgcolor: '#FF7A28' } }}
+                                        >
+                                            {submittingFeedback ? <CircularProgress size={20} color="inherit" /> : 'Submit & Close'}
+                                        </ListItemButton>
+                                    </Box>
+                                </Box>
+                            ) : (
+                                <Box sx={{ textAlign: 'center', py: 4 }}>
+                                    <Typography variant="h5" sx={{ fontWeight: 900, mb: 1, color: '#F36A2F' }}>Session Insights</Typography>
+                                    <Box sx={{ bgcolor: '#FFF6EB', p: 3, borderRadius: 3, borderLeft: '6px solid #F36A2F', mb: 4, textAlign: 'left' }}>
+                                        <Typography sx={{ fontStyle: 'italic', fontSize: '0.95rem', color: '#555', lineHeight: 1.7 }}>
+                                            "{summary}"
+                                        </Typography>
+                                    </Box>
+
+                                    <Box sx={{ width: 80, height: 80, bgcolor: '#E8F5E9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3 }}>
+                                        <Box sx={{ color: '#4CAF50', fontSize: 40 }}>✓</Box>
+                                    </Box>
+                                    <Typography variant="h5" sx={{ fontWeight: 900, mb: 1 }}>Gratitude!</Typography>
+                                    <Typography variant="body2" sx={{ color: '#666', mb: 4 }}>
+                                        Your feedback has been cast into the heavens.
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                                        <ListItemButton onClick={handleNewChat} sx={{ borderRadius: 2, justifyContent: 'center', bgcolor: '#F36A2F', color: 'white' }}>
+                                            New Journey
+                                        </ListItemButton>
+                                        <ListItemButton onClick={handleLogout} sx={{ borderRadius: 2, justifyContent: 'center', bgcolor: '#f0f0f0' }}>
+                                            Logout
+                                        </ListItemButton>
+                                    </Box>
+                                </Box>
+                            )}
                         </Box>
-
-                        {!feedbackSubmitted ? (
-                            <Box sx={{ position: 'relative', zIndex: 1 }}>
-                                <Typography variant="h5" sx={{ fontWeight: 900, mb: 1, color: '#F36A2F' }}>Session Insights</Typography>
-                                <Typography variant="caption" sx={{ fontWeight: 800, color: '#999', display: 'block', mb: 3 }}>COMPLETED CONSULTATION</Typography>
-
-                                <Box sx={{ bgcolor: '#FFF6EB', p: 3, borderRadius: 3, borderLeft: '6px solid #F36A2F', mb: 4 }}>
-                                    <Typography sx={{ fontStyle: 'italic', fontSize: '0.95rem', color: '#555', lineHeight: 1.7 }}>
-                                        "{summary}"
-                                    </Typography>
-                                </Box>
-
-                                <Box sx={{ mb: 4 }}>
-                                    <Typography sx={{ fontWeight: 800, color: '#333', mb: 1 }}>Rate Guruji's Wisdom</Typography>
-                                    <Rating
-                                        value={feedback.rating}
-                                        onChange={(_, v) => setFeedback(prev => ({ ...prev, rating: v }))}
-                                        size="large"
-                                        sx={{ color: '#F36A2F' }}
-                                    />
-                                    <TextField
-                                        fullWidth
-                                        multiline
-                                        rows={2}
-                                        placeholder="Add a thought..."
-                                        value={feedback.comment}
-                                        onChange={(e) => setFeedback(prev => ({ ...prev, comment: e.target.value }))}
-                                        sx={{ mt: 2, '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: '#fbfbfb' } }}
-                                    />
-                                </Box>
-
-                                <Box sx={{ display: 'flex', gap: 2 }}>
-                                    <ListItemButton onClick={() => setSummary(null)} sx={{ borderRadius: 2, justifyContent: 'center', bgcolor: '#F3F4F6' }}>
-                                        Review Chat
-                                    </ListItemButton>
-                                    <ListItemButton
-                                        onClick={handleFeedbackSubmit}
-                                        disabled={submittingFeedback || feedback.rating === 0}
-                                        sx={{ borderRadius: 2, justifyContent: 'center', bgcolor: '#F36A2F', color: 'white', '&:hover': { bgcolor: '#FF7A28' } }}
-                                    >
-                                        {submittingFeedback ? <CircularProgress size={20} color="inherit" /> : 'Submit & Close'}
-                                    </ListItemButton>
-                                </Box>
-                            </Box>
-                        ) : (
-                            <Box sx={{ textAlign: 'center', py: 4 }}>
-                                <Typography variant="h5" sx={{ fontWeight: 900, mb: 1, color: '#F36A2F' }}>Session Insights</Typography>
-                                <Box sx={{ bgcolor: '#FFF6EB', p: 3, borderRadius: 3, borderLeft: '6px solid #F36A2F', mb: 4, textAlign: 'left' }}>
-                                    <Typography sx={{ fontStyle: 'italic', fontSize: '0.95rem', color: '#555', lineHeight: 1.7 }}>
-                                        "{summary}"
-                                    </Typography>
-                                </Box>
-
-                                <Box sx={{ width: 80, height: 80, bgcolor: '#E8F5E9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3 }}>
-                                    <Box sx={{ color: '#4CAF50', fontSize: 40 }}>✓</Box>
-                                </Box>
-                                <Typography variant="h5" sx={{ fontWeight: 900, mb: 1 }}>Gratitude!</Typography>
-                                <Typography variant="body2" sx={{ color: '#666', mb: 4 }}>
-                                    Your feedback has been cast into the heavens.
-                                </Typography>
-                                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-                                    <ListItemButton onClick={handleNewChat} sx={{ borderRadius: 2, justifyContent: 'center', bgcolor: '#F36A2F', color: 'white' }}>
-                                        New Journey
-                                    </ListItemButton>
-                                    <ListItemButton onClick={handleLogout} sx={{ borderRadius: 2, justifyContent: 'center', bgcolor: '#f0f0f0' }}>
-                                        Logout
-                                    </ListItemButton>
-                                </Box>
-                            </Box>
-                        )}
                     </Box>
-                </Box>
-            )}
+                )
+            }
 
 
             <style>{`
@@ -2466,7 +2450,7 @@ const Chat = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+        </Box >
     );
 };
 
