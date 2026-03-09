@@ -276,12 +276,12 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
             {buttonLabel && !loading && (
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'right', position: 'absolute', bottom: -20, right: 10 }}>
                     <Button
-                        onClick={onButtonClick}
-                        // disabled={disabled}
+                        onClick={disabled ? undefined : onButtonClick}
+                        disabled={disabled}
                         startIcon={<DoneAllOutlinedIcon />}
                         sx={{
-                            bgcolor: 'white',
-                            color: '#54a170',
+                            bgcolor: disabled ? '#e0e0e0' : 'white',
+                            color: disabled ? '#aaa' : '#54a170',
                             px: 3,
                             py: 0.8,
                             borderRadius: 10,
@@ -289,9 +289,9 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
                             fontSize: '0.9rem',
                             fontWeight: 600,
                             border: '2px solid #54a170',
-                            //  border: disabled ? '2px solid #ccc' : '2px solid #54a170',
-                            // '&:hover': { bgcolor: disabled ? '#e0e0e0' : '#f0fdf4' },
-                            cursor: disabled ? 'not-allowed' : 'pointer'
+                            '&:hover': { bgcolor: disabled ? '#e0e0e0' : '#f0fdf4' },
+                            cursor: disabled ? 'not-allowed' : 'pointer',
+                            pointerEvents: disabled ? 'none' : 'auto',
                         }}
                     >
                         {buttonLabel}
@@ -1574,6 +1574,7 @@ const Chat = () => {
 
     const handleChatPayment = async (amount, mobile) => {
         // Temporary Bypass: Alert Success and proceed
+        setChatPaymentState('PAYING'); // disable button immediately
         // alert("Payment successful!");
         handleChatSuccess("MOCK_PAYMENT_ID", amount);
         return;
@@ -1966,10 +1967,20 @@ const Chat = () => {
                                 <MayaTemplateBox
                                     name={userName.split(' ')[0]}
                                     content={`personalized answer to your concern is chargeable ₹${msg.chat_payment_amount || 39}.`}
-                                    buttonLabel={chatPaymentState === 'REQUIRED' || chatPaymentState === 'IDLE' ? `Pay ₹${msg.chat_payment_amount || 39} to get answer` : "Processing..."}
+                                    buttonLabel={(() => {
+                                        const lastPaymentMsgIdx = messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1);
+                                        if (i < lastPaymentMsgIdx) return "No longer active";
+                                        return chatPaymentState === 'REQUIRED' || chatPaymentState === 'IDLE'
+                                            ? `Pay ₹${msg.chat_payment_amount || 39} to get answer`
+                                            : "Processing...";
+                                    })()}
                                     onButtonClick={() => handleChatPayment(msg.chat_payment_amount || 39, localStorage.getItem('mobile'))}
-                                    loading={chatPaymentState === 'PAYING'}
-                                    disabled={chatPaymentState === 'PAYING' || chatPaymentState === 'COMPLETE'}
+                                    loading={chatPaymentState === 'PAYING' && i === messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1)}
+                                    disabled={(() => {
+                                        const lastPaymentMsgIdx = messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1);
+                                        if (i < lastPaymentMsgIdx) return true;
+                                        return chatPaymentState === 'PAYING' || chatPaymentState === 'COMPLETE';
+                                    })()}
                                 />
                             </Box>
                         );
