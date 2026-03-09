@@ -190,7 +190,7 @@ const Dashboard = () => {
                     overflowY: 'auto',
                     "&::-webkit-scrollbar": { display: "none" },
                     scrollbarWidth: "none",
-                    mt: 12,
+                    mt: 10,
                     pb: 12,
                     px: 3
                 }}>
@@ -226,35 +226,35 @@ const Dashboard = () => {
                             </Typography>
                         </Box>
                     )}
-                    <Box sx={{ textAlign: "center", display: "flex", justifyContent: "space-around", flexWrap: 'wrap', gap: 2, mb: 2.5 }}>
+                    <Box sx={{ textAlign: "center", display: "flex", justifyContent: "space-around", flexWrap: 'wrap', gap: 2, mb: 5 }}>
                         <Box onClick={() => handleAction('/profile')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '65px', height: '65px', display: "flex", justifyContent: "center", alignItems: "center" }}>
+                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '36px', height: '36px', display: "flex", justifyContent: "center", alignItems: "center" }}>
                                 <img src="/svg/user.svg" alt="" style={{ width: '35px', height: '35px' }} />
                             </Box>
-                            <Typography fontSize={16} mt={.3} width={90} >Edit profiles</Typography>
+                            <Typography fontSize={14} mt={.3} width={90} color="#574228">Edit profiles</Typography>
                         </Box>
                         <Box onClick={() => handleAction('/wallet')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '65px', height: '65px', display: "flex", justifyContent: "center", alignItems: "center" }}>
+                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '36px', height: '36px', display: "flex", justifyContent: "center", alignItems: "center" }}>
                                 <img src="/svg/wallet-white.svg" alt="" style={{ width: '35px', height: '35px' }} />
                             </Box>
-                            <Typography fontSize={16} mt={.3} width={75} >Recharge</Typography>
+                            <Typography fontSize={14} mt={.3} width={75} color="#574228">Recharge</Typography>
                         </Box>
                         <Box onClick={() => handleAction('/wallet/recharge-history')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '65px', height: '65px', display: "flex", justifyContent: "center", alignItems: "center" }}>
+                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '36px', height: '36px', display: "flex", justifyContent: "center", alignItems: "center" }}>
                                 <img src="/svg/payments.svg" alt="" style={{ width: '35px', height: '35px' }} />
                             </Box>
-                            <Typography fontSize={16} mt={.3} width={75} >Recharge</Typography>
+                            <Typography fontSize={14} mt={.3} width={75} color="#574228">Payments</Typography>
                         </Box>
-                        <Box onClick={() => handleAction('/detailed-reports')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '65px', height: '65px', display: "flex", justifyContent: "center", alignItems: "center" }}>
+                        <Box onClick={() => handleAction('https://www.clickastro.com/horoscope-package')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
+                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '36px', height: '36px', display: "flex", justifyContent: "center", alignItems: "center" }}>
                                 <img src="/svg/detailed_report.svg" alt="" style={{ width: '35px', height: '35px' }} />
                             </Box>
-                            <Typography fontSize={16} mt={.3} width={75} margin={'auto'}>Detailed Reports</Typography>
+                            <Typography fontSize={14} mt={.3} width={75} margin={'auto'}>Horoscope</Typography>
                         </Box>
                     </Box>
 
                     <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
-                        <Typography fontSize={18} fontWeight={600} mb={1.5} color="#dc5d35">
+                        <Typography fontSize={16} fontWeight={600} mb={.5} color="#dc5d35">
                             Your today {signName ? `(${signName})` : ""}:
                         </Typography>
                         <Box sx={{ bgcolor: '#fff', p: 3, borderRadius: 2, width: '100%', minHeight: 150, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
@@ -265,7 +265,7 @@ const Dashboard = () => {
                                     fontSize={15}
                                     fontWeight={500}
                                     color={prediction && (prediction.includes("log") || prediction.includes("prepared")) ? "text.secondary" : "#444"}
-                                    textAlign={prediction && (prediction.includes("log") || prediction.includes("prepared")) ? 'center' : 'justify'}
+                                    textAlign={prediction && (prediction.includes("log") || prediction.includes("prepared")) ? 'left' : 'justify'}
                                     lineHeight={1.6}
                                     dangerouslySetInnerHTML={{ __html: prediction || "Fetching your prediction..." }}
                                 />
@@ -276,28 +276,46 @@ const Dashboard = () => {
                                 </Typography>
                             )}
                         </Box>
-                        {!isLoggedIn && (
+                        {!isLoggedIn ? (
                             <PrimaryButton
                                 label="Login"
                                 onClick={() => navigate("/")}
-
                                 sx={{
                                     bgcolor: "#54a170",
                                     color: "#fff",
                                     borderRadius: 50,
                                     width: "120px",
-                                    // border: "2px solid #ffffff",
                                     p: 0.5,
                                     fontWeight: 'normal',
                                     fontSize: 16,
                                     position: "relative",
-                                    // top: 140,
                                     left: "80%",
                                     transform: "translateX(-50%)",
                                     zIndex: 1100,
                                     mb: 3,
                                     top: -18,
-                                }} />
+                                }}
+                            />
+                        ) : (
+                            <PrimaryButton
+                                label="Know more"
+                                // onClick={() => navigate("/chat")}
+                                sx={{
+                                    bgcolor: "#d75f38",
+                                    color: "#fff",
+                                    borderRadius: 50,
+                                    width: "120px",
+                                    p: 0.5,
+                                    fontWeight: 'normal',
+                                    fontSize: 16,
+                                    position: "relative",
+                                    left: "80%",
+                                    transform: "translateX(-50%)",
+                                    zIndex: 1100,
+                                    mb: 3,
+                                    top: -18,
+                                }}
+                            />
                         )}
                     </Box>
                 </Box>
