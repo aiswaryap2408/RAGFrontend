@@ -59,7 +59,7 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary, isAnimating }) 
                 <Box
                     sx={{
                         flex: 1,
-                        bgcolor: (loading || isAnimating) ? "#e0e0e0" : "#ffffff",
+                        bgcolor: (loading || isAnimating) ? "none" : "#ffffff",
                         borderRadius: 30,
                         px: 2,
                         display: "flex",
@@ -91,6 +91,7 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary, isAnimating }) 
                             lineHeight: 1.5,
                             maxHeight: 52,
                             overflowY: "auto",
+                            display: (loading || summary || isAnimating) ? "none" : "flex",
                             py: 0,
                             "& textarea": {
                                 maxHeight: 52,
@@ -108,7 +109,7 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary, isAnimating }) 
                         height: 48,
                         bgcolor: (loading || isAnimating) ? "#e0e0e0" : "#ffffff",
                         borderRadius: "50%",
-                        display: "flex",
+                        display: (loading || isAnimating) ? "none" : "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: message.trim() && !loading && !summary && !isAnimating && userStatus === 'ready' ? "pointer" : "default",

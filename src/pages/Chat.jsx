@@ -2152,7 +2152,8 @@ const Chat = () => {
                 {isBuffering && (
                     <Box sx={{
                         position: 'fixed',
-                        bottom: 80,
+                        // bottom: 80,
+                        bottom: 18,
                         left: 0,
                         right: 0,
                         mx: 'auto',
@@ -2160,16 +2161,20 @@ const Chat = () => {
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
-                        zIndex: 10,
+                        zIndex: 10000,
+                        // zIndex: 10,
                         pointerEvents: 'none',
                         minWidth: '180px',
                         ...(waitMessage ? {
-                            bgcolor: '#fece8d',
+                            // bgcolor: '#fece8d',
+                            bgcolor: '#67687a',
                             borderRadius: '50px',
                             px: 3,
-                            py: 0.3,
+                            // py: 0.3,
+                            py: 0.8,
                             minHeight: 20,
                         } : {
+                            bottom: 30,
                             bgcolor: 'transparent',
                         })
                     }}>
@@ -2183,12 +2188,14 @@ const Chat = () => {
                                         sx={{
                                             width: 5,
                                             height: 5,
-                                            backgroundColor: '#2F3148',
+                                            // backgroundColor: '#2F3148',
+                                            backgroundColor: '#646577',
                                             borderRadius: '50%',
                                             display: 'inline-block',
                                             "@keyframes micro-pulse": {
                                                 "0%, 80%, 100%": { transform: 'scale(0.8)', opacity: 0.35 },
-                                                "40%": { transform: 'scale(1.2)', backgroundColor: '#5D6189', opacity: 1 }
+                                                // "40%": { transform: 'scale(1.2)', backgroundColor: '#5D6189', opacity: 1 }
+                                                "40%": { transform: 'scale(1.2)', backgroundColor: '#a0a3ab', opacity: 1 }
                                             },
                                             animation: 'micro-pulse 1s ease-in-out infinite both',
                                             animationDelay: i === 0 ? '-0.32s' : i === 1 ? '-0.16s' : '0s',
@@ -2204,7 +2211,8 @@ const Chat = () => {
                                     fontFamily: "'Roboto', sans-serif",
                                     fontSize: "12px",
                                     fontWeight: 500,
-                                    color: "#2F3148",
+                                    // color: "#2F3148",
+                                    color: "#fff",
                                     display: "block",
                                     whiteSpace: "nowrap",
                                     overflow: "hidden",
@@ -2224,7 +2232,8 @@ const Chat = () => {
                                     },
                                     "@keyframes cursor-blink": {
                                         "0%, 100%": { borderColor: "transparent" },
-                                        "50%": { borderColor: "#2F3148" },
+                                        // "50%": { borderColor: "#2F3148" },
+                                        "50%": { borderColor: "#fff" },
                                     },
                                     animation: "human-typing 7s linear infinite, cursor-blink 0.8s step-end infinite",
                                 }}
