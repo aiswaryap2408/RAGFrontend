@@ -60,6 +60,8 @@ const AdminDashboard = () => {
     const [mayaJsonEnabled, setMayaJsonEnabled] = useState(false);
     const [gurujiJsonEnabled, setGurujiJsonEnabled] = useState(false);
     const [psycologyJsonEnabled, setPsycologyJsonEnabled] = useState(false);
+    const [geminiTemperature, setGeminiTemperature] = useState(1.0);
+    const [geminiTopP, setGeminiTopP] = useState(0.95);
 
     // RAG Tester State
     const [testFile, setTestFile] = useState(null);
@@ -202,6 +204,29 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleUpdateTemperature = async (e) => {
+        const newValue = parseFloat(e.target.value);
+        setGeminiTemperature(newValue);
+        // Note: debouncing this could be a good idea for actual prod, but since it's admin testing it's fine
+        try {
+            const api = await import('../../api');
+            await api.updateSystemSettings('gemini_temperature', newValue);
+        } catch (err) {
+            console.error("Failed to update Gemini temperature", err);
+        }
+    };
+
+    const handleUpdateTopP = async (e) => {
+        const newValue = parseFloat(e.target.value);
+        setGeminiTopP(newValue);
+        try {
+            const api = await import('../../api');
+            await api.updateSystemSettings('gemini_top_p', newValue);
+        } catch (err) {
+            console.error("Failed to update Gemini top-p", err);
+        }
+    };
+
     const handleToggleWallet = async () => {
         try {
             const newState = !walletEnabled;
@@ -224,6 +249,8 @@ const AdminDashboard = () => {
                     if (typeof data.maya_json_enabled !== 'undefined') setMayaJsonEnabled(data.maya_json_enabled);
                     if (typeof data.guruji_json_enabled !== 'undefined') setGurujiJsonEnabled(data.guruji_json_enabled);
                     if (typeof data.psycology_json_enabled !== 'undefined') setPsycologyJsonEnabled(data.psycology_json_enabled);
+                    if (typeof data.gemini_temperature !== 'undefined') setGeminiTemperature(data.gemini_temperature);
+                    if (typeof data.gemini_top_p !== 'undefined') setGeminiTopP(data.gemini_top_p);
                 }
             } catch (e) {
                 console.error("Failed to fetch settings", e);
@@ -509,13 +536,13 @@ const AdminDashboard = () => {
                         label="Guruji Short Prompt"
                         themeColor="orange"
                     />
-                    <NavButton
-                        active={activeTab === 'report-prompt'}
+                    {/* <NavButton */}
+                    {/* active={activeTab === 'report-prompt'}
                         onClick={() => setActiveTab('report-prompt')}
                         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
                         label="Guruji Detailed Prompt"
-                        themeColor="emerald"
-                    />
+                        themeColor="emerald" */}
+                    {/* /> */}
                     <NavButton
                         active={activeTab === 'psychology'}
                         onClick={() => setActiveTab('psychology')}
@@ -916,6 +943,58 @@ const AdminDashboard = () => {
                                     >
                                         <span className={`inline-block h-4 w-4 bg-white rounded-full transition-transform ${psycologyJsonEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
+                                </div>
+
+                                {/* Gemini Temperature Slider */}
+                                <div className="flex flex-col pt-6 border-t border-slate-800/60 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="font-black text-slate-200">Gemini Temperature</h3>
+                                            <p className="text-xs text-slate-500">Controls the randomness of Gurujis Gemini response</p>
+                                        </div>
+                                        <div className="bg-slate-800 px-3 py-1 rounded-lg">
+                                            <span className="text-sm font-bold text-slate-300">{geminiTemperature.toFixed(1)}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-xs font-bold text-slate-500">0.0</span>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="2"
+                                            step="0.1"
+                                            value={geminiTemperature}
+                                            onChange={handleUpdateTemperature}
+                                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                        />
+                                        <span className="text-xs font-bold text-slate-500">2.0</span>
+                                    </div>
+                                </div>
+
+                                {/* Gemini Top-P Slider */}
+                                <div className="flex flex-col pt-6 border-t border-slate-800/60 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="font-black text-slate-200">Gemini Top-P</h3>
+                                            <p className="text-xs text-slate-500">Controls the nucleus sampling of Gurujis Gemini response</p>
+                                        </div>
+                                        <div className="bg-slate-800 px-3 py-1 rounded-lg">
+                                            <span className="text-sm font-bold text-slate-300">{geminiTopP.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-xs font-bold text-slate-500">0.0</span>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="1"
+                                            step="0.01"
+                                            value={geminiTopP}
+                                            onChange={handleUpdateTopP}
+                                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                        />
+                                        <span className="text-xs font-bold text-slate-500">1.0</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
