@@ -2167,8 +2167,8 @@ const Chat = () => {
                                         key={i}
                                         component="span"
                                         sx={{
-                                            width: 6,
-                                            height: 6,
+                                            width: 5,
+                                            height: 5,
                                             backgroundColor: '#2F3148',
                                             borderRadius: '50%',
                                             display: 'inline-block',
@@ -2188,7 +2188,7 @@ const Chat = () => {
                                 component="span"
                                 sx={{
                                     fontFamily: "'Roboto', sans-serif",
-                                    fontSize: "14px",
+                                    fontSize: "12px",
                                     fontWeight: 500,
                                     color: "#2F3148",
                                     display: "block",
