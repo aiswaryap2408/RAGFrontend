@@ -62,6 +62,7 @@ const AdminDashboard = () => {
     const [psycologyJsonEnabled, setPsycologyJsonEnabled] = useState(false);
     const [geminiTemperature, setGeminiTemperature] = useState(1.0);
     const [geminiTopP, setGeminiTopP] = useState(0.95);
+    const [geminiTopK, setGeminiTopK] = useState(40);
 
     // RAG Tester State
     const [testFile, setTestFile] = useState(null);
@@ -227,6 +228,17 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleUpdateTopK = async (e) => {
+        const newValue = parseFloat(e.target.value);
+        setGeminiTopK(newValue);
+        try {
+            const api = await import('../../api');
+            await api.updateSystemSettings('gemini_top_k', newValue);
+        } catch (err) {
+            console.error("Failed to update Gemini top-k", err);
+        }
+    };
+
     const handleToggleWallet = async () => {
         try {
             const newState = !walletEnabled;
@@ -251,6 +263,7 @@ const AdminDashboard = () => {
                     if (typeof data.psycology_json_enabled !== 'undefined') setPsycologyJsonEnabled(data.psycology_json_enabled);
                     if (typeof data.gemini_temperature !== 'undefined') setGeminiTemperature(data.gemini_temperature);
                     if (typeof data.gemini_top_p !== 'undefined') setGeminiTopP(data.gemini_top_p);
+                    if (typeof data.gemini_top_k !== 'undefined') setGeminiTopK(data.gemini_top_k);
                 }
             } catch (e) {
                 console.error("Failed to fetch settings", e);
@@ -971,6 +984,10 @@ const AdminDashboard = () => {
                                     </div>
                                 </div>
 
+
+
+
+
                                 {/* Gemini Top-P Slider */}
                                 <div className="flex flex-col pt-6 border-t border-slate-800/60 space-y-4">
                                     <div className="flex items-center justify-between">
@@ -994,6 +1011,32 @@ const AdminDashboard = () => {
                                             className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                                         />
                                         <span className="text-xs font-bold text-slate-500">1.0</span>
+                                    </div>
+                                </div>
+
+                                {/* Gemini Top-k Slider */}
+                                <div className="flex flex-col pt-6 border-t border-slate-800/60 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="font-black text-slate-200">Gemini Top-k</h3>
+                                            <p className="text-xs text-slate-500">Controls the nucleus sampling of Gurujis Gemini response</p>
+                                        </div>
+                                        <div className="bg-slate-800 px-3 py-1 rounded-lg">
+                                            <span className="text-sm font-bold text-slate-300">{geminiTopK.toFixed(1)}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-xs font-bold text-slate-500">1.0</span>
+                                        <input
+                                            type="range"
+                                            min="1"
+                                            max="100"
+                                            step="1"
+                                            value={geminiTopK}
+                                            onChange={handleUpdateTopK}
+                                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                        />
+                                        <span className="text-xs font-bold text-slate-500">100</span>
                                     </div>
                                 </div>
                             </div>
