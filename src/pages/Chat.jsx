@@ -486,6 +486,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
     const bubbleSx = {
         p: '12px 16px 14px 12px',
         borderRadius: ' 2px 10px 10px 10px',
+        borderLeft: ' 2.5px solid #dc5d35',
         bgcolor: isPaidResponse ? '#fef6eb' : '#f1f1f1',
         color: isPaidResponse ? '#3e2723' : '#000000',
         // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
@@ -1773,7 +1774,7 @@ const Chat = () => {
                                 mayaJson={msg.mayaJson}
                                 psycologyJson={msg.psycologyJson}
                                 rawResponse={msg.rawResponse}
-                                time={msg.time}
+                                // time={msg.time}
                                 jsonVisibility={jsonVisibility}
                                 onLabelClick={handleLabelClick}
                             />
@@ -1935,8 +1936,9 @@ const Chat = () => {
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
                                             p: '12px 16px 14px 12px',
-                                            borderRadius: '10px 0 10px 10px',
+                                            borderRadius: '10px 2px 10px 10px',
                                             bgcolor: '#2f3148',
+                                            borderRight: '2.5px solid #54A170',
                                             color: '#fff',
                                             // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                             position: 'relative',
@@ -2013,6 +2015,7 @@ const Chat = () => {
                                     <Box sx={{
                                         p: '12px 16px 18px 12px',
                                         borderRadius: '10px 2px 10px 10px',
+                                        borderRight: '2.5px solid #54A170',
                                         bgcolor: msg.role === 'user' ? (msg.requires_chat_payment ? '#2f3148' : '#e2e2e2') : (messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '#fef6eb' : '#f1f1f1'),
                                         color: msg.role === 'user' ? (msg.requires_chat_payment ? '#ffffff' : '#000000') : (messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '#3e2723' : '#000000'),
                                         // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
