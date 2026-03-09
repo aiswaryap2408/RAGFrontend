@@ -1903,7 +1903,7 @@ const Chat = () => {
                                         msg.mayaJson.MSG_LANGUAGE.toLowerCase() !== 'en' &&
                                         msg.mayaJson.MSG_LANGUAGE.toLowerCase() !== 'english' && (
                                             <TranslationIndicator
-                                                text={`Translated to your language / language style by MAYA`}
+                                                text={`Translated to your language / language style by MAYA AI`}
                                                 sx={{ mt: reportState === 'IDLE' ? '3px' : '3px', position: 'relative', top: -12 }}
                                             />
                                         )}
@@ -1958,7 +1958,7 @@ const Chat = () => {
                                     {showTranslationIndicator && (
                                         <TranslationIndicator
                                             // text={`Translated from English to ${msg.mayaJson.language_detected} for the user`}
-                                            text={`Translated to astrologer's language by MAYA`}
+                                            text={`Translated to astrologer's language by MAYA AI`}
                                             sx={{ mt: reportState === 'IDLE' ? '3px' : '3px', position: 'relative', top: 0 }}
                                         />
                                     )}
@@ -2125,8 +2125,8 @@ const Chat = () => {
                             {showTranslationIndicator && (
                                 <TranslationIndicator
                                     text={msg.role === 'user'
-                                        ? `Translated to astrologer's language by MAYA`
-                                        : `Translated to your language / language style by MAYA`
+                                        ? `Translated to astrologer's language by MAYA AI`
+                                        : `Translated to your language / language style by MAYA AI`
                                     }
                                 />
                             )}
