@@ -2153,8 +2153,8 @@ const Chat = () => {
                             bgcolor: '#fece8d',
                             borderRadius: '50px',
                             px: 3,
-                            py: 0.5,
-                            minHeight: 25,
+                            py: 0.3,
+                            minHeight: 20,
                         } : {
                             bgcolor: 'transparent',
                         })
