@@ -44,6 +44,8 @@ export const regenerateReport = (mobile) => api.post(`/auth/regenerate-report/${
 
 
 export const sendMessage = (mobile, message, history, sessionId) => api.post('/auth/chat', { mobile, message, history, session_id: sessionId });
+export const getGurujiResponse = (mobile, message, history, sessionId, paymentId = null) =>
+    api.post('/auth/chat/guruji', { mobile, message, history, session_id: sessionId, payment_id: paymentId });
 export const endChat = (mobile, history, sessionId) => api.post('/auth/end-chat', { mobile, history, session_id: sessionId });
 export const startSession = (mobile, sessionId) => api.post('/auth/start-session', { mobile, session_id: sessionId });
 export const getChatHistory = (mobile) => api.get(`/auth/history/${mobile}`);
