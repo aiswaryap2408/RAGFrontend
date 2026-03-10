@@ -1199,7 +1199,7 @@ const Chat = () => {
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 assistant: 'maya',
-                content: 'Guruji is currently deep in meditation. Please try again later.',
+                content: 'Guruji is not available right now. Please try again after some time.',
                 time: getCurrentTime()
             }]);
         } finally {
@@ -1837,6 +1837,14 @@ const Chat = () => {
                 {messages.map((msg, i) => {
                     const idx = i; // Use idx for the current message index
 
+                    let isPaidUserMsg = false;
+                    for (let j = i - 1; j >= 0; j--) {
+                        if (messages[j].role === 'user') {
+                            isPaidUserMsg = !!messages[j].requires_chat_payment;
+                            break;
+                        }
+                    }
+
                     if (msg.assistant === 'maya') {
                         if (!msg.content || msg.content.trim() === '') {
                             return null;
@@ -1866,7 +1874,7 @@ const Chat = () => {
                                 {startedCond && <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0 }}>Guruji</Typography>}
                                 <Box sx={{ flex: 1, maxWidth: '85%' }}>
                                     <SequentialResponse
-                                        isPaidResponse={messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment}
+                                        isPaidResponse={isPaidUserMsg}
                                         gurujiJson={gurujiData}
                                         bubbles={msg.bubbles || []}
                                         delays={msg.delays || []}
@@ -2094,8 +2102,8 @@ const Chat = () => {
                                         p: '12px 16px 18px 12px',
                                         borderRadius: '10px 2px 10px 10px',
                                         borderRight: '2.5px solid #54A170',
-                                        bgcolor: msg.role === 'user' ? (msg.requires_chat_payment ? '#2f3148' : '#e2e2e2') : (messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '#fef6eb' : '#f1f1f1'),
-                                        color: msg.role === 'user' ? (msg.requires_chat_payment ? '#ffffff' : '#000000') : (messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '#3e2723' : '#000000'),
+                                        bgcolor: msg.role === 'user' ? (msg.requires_chat_payment ? '#2f3148' : '#e2e2e2') : (isPaidUserMsg ? '#fef6eb' : '#f1f1f1'),
+                                        color: msg.role === 'user' ? (msg.requires_chat_payment ? '#ffffff' : '#000000') : (isPaidUserMsg ? '#3e2723' : '#000000'),
                                         // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                         // border: msg.role !== 'user' && messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '1px solid #ffd54f' : 'none',
                                         position: 'relative',
