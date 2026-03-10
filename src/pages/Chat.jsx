@@ -486,6 +486,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
     const bubbleSx = {
         p: '12px 16px 14px 12px',
         borderRadius: ' 2px 10px 10px 10px',
+        borderLeft: ' 2.5px solid #dc5d35',
         bgcolor: isPaidResponse ? '#fef6eb' : '#f1f1f1',
         color: isPaidResponse ? '#3e2723' : '#000000',
         // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
@@ -1773,7 +1774,7 @@ const Chat = () => {
                                 mayaJson={msg.mayaJson}
                                 psycologyJson={msg.psycologyJson}
                                 rawResponse={msg.rawResponse}
-                                time={msg.time}
+                                // time={msg.time}
                                 jsonVisibility={jsonVisibility}
                                 onLabelClick={handleLabelClick}
                             />
@@ -1935,8 +1936,9 @@ const Chat = () => {
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
                                             p: '12px 16px 14px 12px',
-                                            borderRadius: '10px 0 10px 10px',
+                                            borderRadius: '10px 2px 10px 10px',
                                             bgcolor: '#2f3148',
+                                            borderRight: '2.5px solid #54A170',
                                             color: '#fff',
                                             // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                             position: 'relative',
@@ -2013,6 +2015,7 @@ const Chat = () => {
                                     <Box sx={{
                                         p: '12px 16px 18px 12px',
                                         borderRadius: '10px 2px 10px 10px',
+                                        borderRight: '2.5px solid #54A170',
                                         bgcolor: msg.role === 'user' ? (msg.requires_chat_payment ? '#2f3148' : '#e2e2e2') : (messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '#fef6eb' : '#f1f1f1'),
                                         color: msg.role === 'user' ? (msg.requires_chat_payment ? '#ffffff' : '#000000') : (messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '#3e2723' : '#000000'),
                                         // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
@@ -2149,7 +2152,8 @@ const Chat = () => {
                 {isBuffering && (
                     <Box sx={{
                         position: 'fixed',
-                        bottom: 80,
+                        // bottom: 80,
+                        bottom: 18,
                         left: 0,
                         right: 0,
                         mx: 'auto',
@@ -2157,16 +2161,20 @@ const Chat = () => {
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
-                        zIndex: 10,
+                        zIndex: 10000,
+                        // zIndex: 10,
                         pointerEvents: 'none',
                         minWidth: '180px',
                         ...(waitMessage ? {
-                            bgcolor: '#fece8d',
+                            // bgcolor: '#fece8d',
+                            bgcolor: '#67687a',
                             borderRadius: '50px',
                             px: 3,
-                            py: 0.3,
+                            // py: 0.3,
+                            py: 0.8,
                             minHeight: 20,
                         } : {
+                            bottom: 30,
                             bgcolor: 'transparent',
                         })
                     }}>
@@ -2180,12 +2188,14 @@ const Chat = () => {
                                         sx={{
                                             width: 5,
                                             height: 5,
-                                            backgroundColor: '#2F3148',
+                                            // backgroundColor: '#2F3148',
+                                            backgroundColor: '#646577',
                                             borderRadius: '50%',
                                             display: 'inline-block',
                                             "@keyframes micro-pulse": {
                                                 "0%, 80%, 100%": { transform: 'scale(0.8)', opacity: 0.35 },
-                                                "40%": { transform: 'scale(1.2)', backgroundColor: '#5D6189', opacity: 1 }
+                                                // "40%": { transform: 'scale(1.2)', backgroundColor: '#5D6189', opacity: 1 }
+                                                "40%": { transform: 'scale(1.2)', backgroundColor: '#a0a3ab', opacity: 1 }
                                             },
                                             animation: 'micro-pulse 1s ease-in-out infinite both',
                                             animationDelay: i === 0 ? '-0.32s' : i === 1 ? '-0.16s' : '0s',
@@ -2201,7 +2211,8 @@ const Chat = () => {
                                     fontFamily: "'Roboto', sans-serif",
                                     fontSize: "12px",
                                     fontWeight: 500,
-                                    color: "#2F3148",
+                                    // color: "#2F3148",
+                                    color: "#fff",
                                     display: "block",
                                     whiteSpace: "nowrap",
                                     overflow: "hidden",
@@ -2221,7 +2232,8 @@ const Chat = () => {
                                     },
                                     "@keyframes cursor-blink": {
                                         "0%, 100%": { borderColor: "transparent" },
-                                        "50%": { borderColor: "#2F3148" },
+                                        // "50%": { borderColor: "#2F3148" },
+                                        "50%": { borderColor: "#fff" },
                                     },
                                     animation: "human-typing 7s linear infinite, cursor-blink 0.8s step-end infinite",
                                 }}
