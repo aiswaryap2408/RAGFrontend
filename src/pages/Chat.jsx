@@ -360,6 +360,31 @@ const NotificationBox = ({ content, buttonLabel, onButtonClick }) => (
     </Box>
 );
 
+const UserMessageTimer = ({ arrivalTime, children }) => {
+    const [isAnimating, setIsAnimating] = useState(() => {
+        if (!arrivalTime) return false;
+        return Date.now() - arrivalTime < 3000;
+    });
+
+    useEffect(() => {
+        if (!arrivalTime) {
+            setIsAnimating(false);
+            return;
+        }
+        const timeElapsed = Date.now() - arrivalTime;
+        if (timeElapsed < 3000) {
+            const timer = setTimeout(() => {
+                setIsAnimating(false);
+            }, 3000 - timeElapsed);
+            return () => clearTimeout(timer);
+        } else {
+            setIsAnimating(false);
+        }
+    }, [arrivalTime]);
+
+    return <>{children(isAnimating)}</>;
+};
+
 const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = [], animate = false, onComplete, onFirstBubble, messages, handleReportGeneration, reportState, activeCategory, userName, time, index, activeReportIndex, isPaidResponse = false }) => {
     const msgObj = messages[index] || {};
     const isThisActiveReport = index === activeReportIndex;
@@ -708,6 +733,30 @@ const Chat = () => {
         return () => clearInterval(interval);
     }, []);
 
+    // Synchronize waitMessage overlay with user message animation
+    const [userMsgPhase, setUserMsgPhase] = useState(2); // 0: Animating(0-3s), 1: Single Tick(3-4.5s), 2: Double Tick(>4.5s)
+    const lastUserMsg = messages.slice().reverse().find(m => m.role === 'user');
+
+    useEffect(() => {
+        if (lastUserMsg && lastUserMsg.arrivalTime) {
+            const elapsed = Date.now() - lastUserMsg.arrivalTime;
+            if (elapsed < 3000) {
+                setUserMsgPhase(0);
+                const t1 = setTimeout(() => {
+                    setUserMsgPhase(1);
+                    const t2 = setTimeout(() => setUserMsgPhase(2), 1500);
+                }, 3000 - elapsed);
+                return () => clearTimeout(t1);
+            } else if (elapsed < 4500) {
+                setUserMsgPhase(1);
+                const t2 = setTimeout(() => setUserMsgPhase(2), 4500 - elapsed);
+                return () => clearTimeout(t2);
+            } else {
+                setUserMsgPhase(2);
+            }
+        }
+    }, [lastUserMsg?.arrivalTime]);
+
     const scrollToBottom = () => {
         if (messagesEndRef.current) {
             isAutoScrolling.current = true;
@@ -725,31 +774,33 @@ const Chat = () => {
         if (msg.role !== 'user') return null;
 
         const nextMsg = messages[idx + 1];
+        const isLatestExchange = idx === messages.findLastIndex(m => m.role === 'user');
 
-        if (!nextMsg || nextMsg.role !== 'assistant') {
+        // Stage 1.5: Enforce Single Tick Phase for 1.5s after animation finishes
+        if (isLatestExchange && userMsgPhase === 1) {
             return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
         }
 
-        // Check if a Guruji response has arrived or is actively being processed/animating
+        // Check if a Guruji response has arrived
         const hasGurujiAnswer = messages.slice(idx + 1, idx + 3).some(m =>
             m.assistant === 'guruji' || !!m.guruji_json || !!m.gurujiJson
         );
 
-        // Stage 3 & 4: If Guruji is processing or animating -> Blue double tick
-        // We use waitMessage as a proxy for the current global processing state for the latest exchange
         const isGurujiActive = waitMessage === "Sending to Astrologer" || waitMessage === "Astrologer is typing...";
-        const isLatestExchange = idx === messages.findLastIndex(m => m.role === 'user');
+        const isMayaActive = waitMessage === "Sending to Maya";
 
+        // Stage 3: Sent to Astrologer (Blue Double Tick)
         if (hasGurujiAnswer || (isGurujiActive && isLatestExchange)) {
             return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: '#34B7F1' }} />;
         }
 
-        // Stage 2: If Maya responded and triggered Guruji selection -> Grey double tick
-        if (nextMsg.assistant === 'maya' && nextMsg.trigger_guruji) {
+        // Stage 2: Sent/Sending to Maya (Grey Double Tick)
+        // If there is ANY response, or Maya is actively processing the latest message
+        if (nextMsg || (isMayaActive && isLatestExchange)) {
             return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
         }
 
-        // Stage 1 / Maya-only: Grey single tick
+        // Stage 1: Single Tick (Message is sent, default fallback)
         return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
     };
     const handleScroll = (e) => {
@@ -1213,7 +1264,7 @@ const Chat = () => {
         const text = typeof msg === 'string' ? msg : input;
         if (!text.trim() || loading || userStatus !== 'ready') return;
 
-        const userMsg = { role: 'user', content: text, time: getCurrentTime(), timestamp: new Date().toISOString() };
+        const userMsg = { role: 'user', content: text, time: getCurrentTime(), timestamp: new Date().toISOString(), arrivalTime: Date.now() };
         setMessages(prev => [...prev, userMsg]);
         if (typeof msg !== 'string') setInput('');
 
@@ -2075,264 +2126,375 @@ const Chat = () => {
                     }
 
                     return (
-                        <Box
-                            key={i}
-                            sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                                maxWidth: '100%',
-                                mb: 1
-                            }}
-                        >
-                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0 }}>
-                                {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
-                            </Typography>
-                            <Box sx={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: 1.5,
-                                flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
-                                maxWidth: '90%',
+                        <UserMessageTimer key={i} arrivalTime={msg.role === 'user' ? msg.arrivalTime : null}>
+                            {(isAnimating) => (
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                                        maxWidth: '100%',
+                                        mb: 1
+                                    }}
+                                >
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0 }}>
+                                        {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: .5, justifyContent: 'flex-end' }}>
+                                        <Box sx={{
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            gap: 1.5,
+                                            flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
+                                            maxWidth: '100%',
 
-                            }}>
-                                {/* ... message contents ... */}
-                                {msg.content && msg.content.trim() !== '' && (
-                                    <Box sx={{
-                                        p: '12px 16px 18px 12px',
-                                        borderRadius: '10px 2px 10px 10px',
-                                        borderRight: '2.5px solid #54A170',
-                                        bgcolor: msg.role === 'user' ? (msg.requires_chat_payment ? '#2f3148' : '#e2e2e2') : (isPaidUserMsg ? '#fef6eb' : '#f1f1f1'),
-                                        color: msg.role === 'user' ? (msg.requires_chat_payment ? '#ffffff' : '#000000') : (isPaidUserMsg ? '#3e2723' : '#000000'),
-                                        // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-                                        // border: msg.role !== 'user' && messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '1px solid #ffd54f' : 'none',
-                                        position: 'relative',
-                                        maxWidth: '325px',
-                                        minWidth: '100px',
-                                        width: 'fit-content',
-                                        overflowWrap: "break-word",
-                                        wordBreak: "break-word",
-                                        whiteSpace: "pre-line",
-                                    }}>
-                                        <FormattedText
-                                            text={msg.content}
-                                            sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}
-                                        />
+                                        }}>
+                                            {/* ... message contents ... */}
+                                            {msg.content && msg.content.trim() !== '' && (
+                                                <Box sx={{
+                                                    p: '12px 16px 18px 12px',
+                                                    borderRadius: '10px 2px 10px 10px',
+                                                    borderRight: '2.5px solid #54A170',
+                                                    bgcolor: msg.role === 'user' ? (msg.requires_chat_payment ? '#2f3148' : '#e2e2e2') : (isPaidUserMsg ? '#fef6eb' : '#f1f1f1'),
+                                                    color: msg.role === 'user' ? (msg.requires_chat_payment ? '#ffffff' : '#000000') : (isPaidUserMsg ? '#3e2723' : '#000000'),
+                                                    // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                                                    // border: msg.role !== 'user' && messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '1px solid #ffd54f' : 'none',
+                                                    position: 'relative',
+                                                    maxWidth: '325px',
+                                                    minWidth: '100px',
+                                                    width: 'fit-content',
+                                                    overflowWrap: "break-word",
+                                                    wordBreak: "break-word",
+                                                    whiteSpace: "pre-line",
+                                                }}>
+                                                    <FormattedText
+                                                        text={msg.content}
+                                                        sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}
+                                                    />
 
-                                        {/* JSON Output View (for regular messages) */}
-                                        {((msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) || (msg.psycologyJson && jsonVisibility.psycology)) && (
-                                            <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)', textAlign: 'right', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                                                {(msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) && (
-                                                    <Typography
-                                                        onClick={() => handleLabelClick(msg.mayaJson, 'RECEPTIONIST CLASSIFICATION')}
+                                                    {/* JSON Output View (for regular messages) */}
+                                                    {((msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) || (msg.psycologyJson && jsonVisibility.psycology)) && (
+                                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)', textAlign: 'right', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                                                            {(msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) && (
+                                                                <Typography
+                                                                    onClick={() => handleLabelClick(msg.mayaJson, 'RECEPTIONIST CLASSIFICATION')}
+                                                                    sx={{
+                                                                        fontSize: '0.65rem',
+                                                                        color: '#F36A2F',
+                                                                        fontWeight: 800,
+                                                                        cursor: 'pointer',
+                                                                        textTransform: 'uppercase',
+                                                                        textDecoration: 'underline',
+                                                                        '&:hover': { opacity: 0.8 }
+                                                                    }}
+                                                                >
+                                                                    Maya JSON
+                                                                </Typography>
+                                                            )}
+                                                            {(msg.psycologyJson && jsonVisibility.psycology) && (
+                                                                <Typography
+                                                                    onClick={() => handleLabelClick(msg.psycologyJson, 'USER PSYCHOLOGY')}
+                                                                    sx={{
+                                                                        fontSize: '0.65rem',
+                                                                        color: '#F36A2F',
+                                                                        fontWeight: 800,
+                                                                        cursor: 'pointer',
+                                                                        textTransform: 'uppercase',
+                                                                        textDecoration: 'underline',
+                                                                        '&:hover': { opacity: 0.8 }
+                                                                    }}
+                                                                >
+                                                                    Psychology
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                    )}
+
+                                                    {/* Additional Debug Labels for Regular Guruji Bubble */}
+                                                    {(msg.assistant === 'guruji' && jsonVisibility.guruji) && (
+                                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(255,255,255,0.2)', display: 'flex', gap: 1.5, justifyContent: 'flex-end' }}>
+                                                            {msg.context && (
+                                                                <Typography
+                                                                    onClick={() => handleLabelClick(msg.context, 'RAG CHUNKS')}
+                                                                    sx={{
+                                                                        fontSize: '0.65rem',
+                                                                        color: 'rgba(255,255,255,0.7)',
+                                                                        fontWeight: 800,
+                                                                        cursor: 'pointer',
+                                                                        textTransform: 'uppercase',
+                                                                        textDecoration: 'underline',
+                                                                        '&:hover': { color: 'white' }
+                                                                    }}
+                                                                >
+                                                                    RAG
+                                                                </Typography>
+                                                            )}
+                                                            {msg.metrics && (
+                                                                <Typography
+                                                                    onClick={() => handleLabelClick(msg.metrics, 'MODELLING METRICS')}
+                                                                    sx={{
+                                                                        fontSize: '0.65rem',
+                                                                        color: 'rgba(255,255,255,0.8)',
+                                                                        fontWeight: 800,
+                                                                        cursor: 'pointer',
+                                                                        textTransform: 'uppercase',
+                                                                        textDecoration: 'underline',
+                                                                        '&:hover': { color: 'white' }
+                                                                    }}
+                                                                >
+                                                                    Modelling %
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                    )}
+
+
+                                                    {/* Timestamp moved inside the bubble */}
+                                                    <Box
                                                         sx={{
-                                                            fontSize: '0.65rem',
-                                                            color: '#F36A2F',
-                                                            fontWeight: 800,
-                                                            cursor: 'pointer',
-                                                            textTransform: 'uppercase',
-                                                            textDecoration: 'underline',
-                                                            '&:hover': { opacity: 0.8 }
+                                                            fontSize: '10px',
+                                                            opacity: 0.8,
+                                                            position: 'absolute',
+                                                            bottom: 2,
+                                                            right: 8,
+                                                            color: msg.role === 'user' ? (msg.requires_chat_payment ? 'rgba(255,255,255,0.7)' : '#494848') : '#494848',
+                                                            fontWeight: 500,
+                                                            pt: 1,
+                                                            display: 'flex',
+                                                            alignItems: 'center'
                                                         }}
                                                     >
-                                                        Maya JSON
-                                                    </Typography>
-                                                )}
-                                                {(msg.psycologyJson && jsonVisibility.psycology) && (
-                                                    <Typography
-                                                        onClick={() => handleLabelClick(msg.psycologyJson, 'USER PSYCHOLOGY')}
-                                                        sx={{
-                                                            fontSize: '0.65rem',
-                                                            color: '#F36A2F',
-                                                            fontWeight: 800,
-                                                            cursor: 'pointer',
-                                                            textTransform: 'uppercase',
-                                                            textDecoration: 'underline',
-                                                            '&:hover': { opacity: 0.8 }
-                                                        }}
-                                                    >
-                                                        Psychology
-                                                    </Typography>
-                                                )}
-                                            </Box>
-                                        )}
+                                                        {msg.time}
+                                                        {(!isAnimating || msg.role !== 'user') && renderStatusTicks(i)}
+                                                    </Box>
 
-                                        {/* Additional Debug Labels for Regular Guruji Bubble */}
-                                        {(msg.assistant === 'guruji' && jsonVisibility.guruji) && (
-                                            <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(255,255,255,0.2)', display: 'flex', gap: 1.5, justifyContent: 'flex-end' }}>
-                                                {msg.context && (
-                                                    <Typography
-                                                        onClick={() => handleLabelClick(msg.context, 'RAG CHUNKS')}
-                                                        sx={{
-                                                            fontSize: '0.65rem',
-                                                            color: 'rgba(255,255,255,0.7)',
-                                                            fontWeight: 800,
-                                                            cursor: 'pointer',
-                                                            textTransform: 'uppercase',
-                                                            textDecoration: 'underline',
-                                                            '&:hover': { color: 'white' }
-                                                        }}
-                                                    >
-                                                        RAG
-                                                    </Typography>
-                                                )}
-                                                {msg.metrics && (
-                                                    <Typography
-                                                        onClick={() => handleLabelClick(msg.metrics, 'MODELLING METRICS')}
-                                                        sx={{
-                                                            fontSize: '0.65rem',
-                                                            color: 'rgba(255,255,255,0.8)',
-                                                            fontWeight: 800,
-                                                            cursor: 'pointer',
-                                                            textTransform: 'uppercase',
-                                                            textDecoration: 'underline',
-                                                            '&:hover': { color: 'white' }
-                                                        }}
-                                                    >
-                                                        Modelling %
-                                                    </Typography>
-                                                )}
-                                            </Box>
-                                        )}
+                                                </Box>
 
+                                            )}
 
-                                        {/* Timestamp moved inside the bubble */}
-                                        <Box
-                                            sx={{
-                                                fontSize: '10px',
-                                                opacity: 0.8,
-                                                position: 'absolute',
-                                                bottom: 2,
-                                                right: 8,
-                                                color: msg.role === 'user' ? (msg.requires_chat_payment ? 'rgba(255,255,255,0.7)' : '#494848') : '#494848',
-                                                fontWeight: 500,
-                                                pt: 1,
-                                                display: 'flex',
-                                                alignItems: 'center'
-                                            }}
-                                        >
-                                            {msg.time}
-                                            {renderStatusTicks(i)}
                                         </Box>
+                                        {/* timer animation for user msg */}
+                                        {isAnimating && msg.role === 'user' && (
+                                            <Box
+                                                sx={{
+                                                    m: 0,
+                                                    display: "flex",
+                                                    justifyContent: "center",
+                                                    alignItems: "center",
+                                                    height: "auto",
+                                                    backgroundColor: "#fdfaf6",
+                                                }}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        position: "relative",
+                                                        width: 40,
+                                                        height: 40,
+                                                        overflow: "hidden",
+                                                    }}
+                                                >
+                                                    <Box
+                                                        component="svg"
+                                                        viewBox="0 0 36 36"
+                                                        sx={{
+                                                            transform: "rotate(-90deg)",
+                                                            width: 40,
+                                                            height: 40,
+                                                            display: "block",
+                                                        }}
+                                                    >
+                                                        {/* Background circle */}
+                                                        <Box
+                                                            component="circle"
+                                                            cx="18"
+                                                            cy="18"
+                                                            r="15"
+                                                            sx={{
+                                                                fill: "none",
+                                                                strokeWidth: 3,
+                                                                stroke: "#eeeeee",
+                                                            }}
+                                                        />
 
+                                                        {/* Animated border circle */}
+                                                        <Box
+                                                            component="circle"
+                                                            cx="18"
+                                                            cy="18"
+                                                            r="15"
+                                                            sx={{
+                                                                fill: "none",
+                                                                strokeWidth: 3,
+                                                                stroke: "#1C1F46",
+                                                                strokeLinecap: "round",
+                                                                strokeDasharray: 95,
+                                                                strokeDashoffset: 95,
+                                                                animation: "fillBorder 3s linear forwards",
+                                                            }}
+                                                        />
+                                                    </Box>
+
+                                                    {/* Close icon */}
+                                                    <Box
+                                                        sx={{
+                                                            position: "absolute",
+                                                            top: "50%",
+                                                            left: "50%",
+                                                            width: 15,
+                                                            height: 15,
+                                                            transform: "translate(-50%, -50%)",
+
+                                                            "&::before, &::after": {
+                                                                content: '""',
+                                                                position: "absolute",
+                                                                top: "50%",
+                                                                left: 0,
+                                                                width: "100%",
+                                                                height: "2px",
+                                                                backgroundColor: "#1C1F46",
+                                                                borderRadius: "1px",
+                                                            },
+
+                                                            "&::before": {
+                                                                transform: "rotate(45deg)",
+                                                            },
+
+                                                            "&::after": {
+                                                                transform: "rotate(-45deg)",
+                                                            },
+                                                        }}
+                                                    />
+
+                                                    {/* keyframes */}
+                                                    <Box
+                                                        sx={{
+                                                            "@keyframes fillBorder": {
+                                                                from: { strokeDashoffset: 95 },
+                                                                to: { strokeDashoffset: 0 },
+                                                            },
+                                                        }}
+                                                    />
+                                                </Box>
+                                            </Box>
+                                        )}
                                     </Box>
-
-                                )}
-
-                            </Box>
-
-                            {/* Translation Indicator */}
-                            {showTranslationIndicator && (
-                                <TranslationIndicator
-                                    text={msg.role === 'user'
-                                        ? `Translated to astrologer's language by MAYA AI`
-                                        : `Translated to your language / language style by MAYA AI`
-                                    }
-                                />
+                                    {/* Translation Indicator */}
+                                    {showTranslationIndicator && (
+                                        <TranslationIndicator
+                                            text={msg.role === 'user'
+                                                ? `Translated to astrologer's language by MAYA AI`
+                                                : `Translated to your language / language style by MAYA AI`
+                                            }
+                                        />
+                                    )}
+                                </Box>
                             )}
-                        </Box>
+                        </UserMessageTimer>
                     );
                 })}
 
                 {/* Dot Loader + Astrologer typing - both at same fixed position */}
-                {isBuffering && (
-                    <Box sx={{
-                        position: 'fixed',
-                        // bottom: 80,
-                        bottom: 18,
-                        left: 0,
-                        right: 0,
-                        mx: 'auto',
-                        width: 'max-content',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        zIndex: 10000,
-                        // zIndex: 10,
-                        pointerEvents: 'none',
-                        minWidth: '180px',
-                        ...(waitMessage ? {
-                            // bgcolor: '#fece8d',
-                            bgcolor: '#67687a',
-                            borderRadius: '50px',
-                            px: 3,
-                            // py: 0.3,
-                            py: 0.8,
-                            minHeight: 20,
-                        } : {
-                            bottom: 30,
-                            bgcolor: 'transparent',
-                        })
-                    }}>
-                        {!waitMessage ? (
-                            /* 3-dot loader — shown right after user sends */
-                            <Box sx={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-                                {[0, 1, 2].map((i) => (
-                                    <Box
-                                        key={i}
-                                        component="span"
-                                        sx={{
-                                            width: 5,
-                                            height: 5,
-                                            // backgroundColor: '#2F3148',
-                                            backgroundColor: '#646577',
-                                            borderRadius: '50%',
-                                            display: 'inline-block',
-                                            "@keyframes micro-pulse": {
-                                                "0%, 80%, 100%": { transform: 'scale(0.8)', opacity: 0.35 },
-                                                // "40%": { transform: 'scale(1.2)', backgroundColor: '#5D6189', opacity: 1 }
-                                                "40%": { transform: 'scale(1.2)', backgroundColor: '#a0a3ab', opacity: 1 }
-                                            },
-                                            animation: 'micro-pulse 1s ease-in-out infinite both',
-                                            animationDelay: i === 0 ? '-0.32s' : i === 1 ? '-0.16s' : '0s',
-                                        }}
-                                    />
-                                ))}
-                            </Box>
-                        ) : (
-                            /* Typewriter animation for "Astrologer is typing" */
-                            <Box
-                                component="span"
-                                sx={{
-                                    fontFamily: "'Roboto', sans-serif",
-                                    fontSize: "12px",
-                                    fontWeight: 500,
-                                    // color: "#2F3148",
-                                    color: "#fff",
-                                    display: "block",
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    borderRight: "2px solid #2F3148",
-                                    width: 0,
-                                    maxWidth: "fit-content",
-                                    "@keyframes human-typing": {
-                                        "0%": { width: 0, opacity: 1 },
-                                        "12%": { width: "5em" },
-                                        "20%": { width: "5em" },
-                                        "45%": { width: "9.5em" },
-                                        "55%": { width: "9.5em" },
-                                        "75%": { width: "100%" },
-                                        "98%": { width: "100%", opacity: 1 },
-                                        "99%": { width: 0, opacity: 0 },
-                                        "100%": { width: 0, opacity: 0 },
-                                    },
-                                    "@keyframes cursor-blink": {
-                                        "0%, 100%": { borderColor: "transparent" },
-                                        // "50%": { borderColor: "#2F3148" },
-                                        "50%": { borderColor: "#fff" },
-                                    },
-                                    animation: "human-typing 7s linear infinite, cursor-blink 0.8s step-end infinite",
-                                }}
-                            >
-                                {waitMessage}
-                            </Box>
-                        )}
-                    </Box>
-                )}
+                {isBuffering && userMsgPhase === 2 && (() => {
+                    const isDotLoaderPhase = !waitMessage || waitMessage === "Sending to Maya" || waitMessage === "Sending to Astrologer" || waitMessage === "Sending to astrologer";
+                    return (
+                        <Box sx={{
+                            position: 'fixed',
+                            // bottom: 80,
+                            bottom: 18,
+                            left: 0,
+                            right: 0,
+                            mx: 'auto',
+                            width: 'max-content',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            zIndex: 10000,
+                            // zIndex: 10,
+                            pointerEvents: 'none',
+                            minWidth: '180px',
+                            ...(!isDotLoaderPhase ? {
+                                // bgcolor: '#fece8d',
+                                bgcolor: '#67687a',
+                                borderRadius: '50px',
+                                px: 3,
+                                // py: 0.3,
+                                py: 0.8,
+                                minHeight: 20,
+                            } : {
+                                bottom: 30,
+                                bgcolor: 'transparent',
+                            })
+                        }}>
+                            {isDotLoaderPhase ? (
+                                /* 3-dot loader — shown right after user sends */
+                                <Box sx={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                                    {[0, 1, 2].map((i) => (
+                                        <Box
+                                            key={i}
+                                            component="span"
+                                            sx={{
+                                                width: 5,
+                                                height: 5,
+                                                // backgroundColor: '#2F3148',
+                                                backgroundColor: '#646577',
+                                                borderRadius: '50%',
+                                                display: 'inline-block',
+                                                "@keyframes micro-pulse": {
+                                                    "0%, 80%, 100%": { transform: 'scale(0.8)', opacity: 0.35 },
+                                                    // "40%": { transform: 'scale(1.2)', backgroundColor: '#5D6189', opacity: 1 }
+                                                    "40%": { transform: 'scale(1.2)', backgroundColor: '#a0a3ab', opacity: 1 }
+                                                },
+                                                animation: 'micro-pulse 1s ease-in-out infinite both',
+                                                animationDelay: i === 0 ? '-0.32s' : i === 1 ? '-0.16s' : '0s',
+                                            }}
+                                        />
+                                    ))}
+                                </Box>
+                            ) : (
+                                /* Typewriter animation for "Astrologer is typing" */
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        fontFamily: "'Roboto', sans-serif",
+                                        fontSize: "12px",
+                                        fontWeight: 500,
+                                        // color: "#2F3148",
+                                        color: "#fff",
+                                        display: "block",
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        borderRight: "2px solid #2F3148",
+                                        width: 0,
+                                        maxWidth: "fit-content",
+                                        "@keyframes human-typing": {
+                                            "0%": { width: 0, opacity: 1 },
+                                            "12%": { width: "5em" },
+                                            "20%": { width: "5em" },
+                                            "45%": { width: "9.5em" },
+                                            "55%": { width: "9.5em" },
+                                            "75%": { width: "100%" },
+                                            "98%": { width: "100%", opacity: 1 },
+                                            "99%": { width: 0, opacity: 0 },
+                                            "100%": { width: 0, opacity: 0 },
+                                        },
+                                        "@keyframes cursor-blink": {
+                                            "0%, 100%": { borderColor: "transparent" },
+                                            // "50%": { borderColor: "#2F3148" },
+                                            "50%": { borderColor: "#fff" },
+                                        },
+                                        animation: "human-typing 7s linear infinite, cursor-blink 0.8s step-end infinite",
+                                    }}
+                                >
+                                    {waitMessage}
+                                </Box>
+                            )}
+                        </Box>
+                    );
+                })()}
 
 
 
-                <div ref={messagesEndRef} />
+                < div ref={messagesEndRef} />
             </Box>
 
             <ChatInputFooter
