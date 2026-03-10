@@ -24,16 +24,21 @@ const ConsultFooter = ({ onConsult }) => {
             <Box
                 sx={{
                     mt: "auto",
-                    width: "100%",
+                    width: { xs: '100%', sm: 450 },
                     pt: 1,
                     textAlign: "center",
                     minHeight: '20px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    position: 'sticky',
+                    position: 'fixed',
+                    bottom: 0,
+                    // left: 0,
+                    // right: 0,
+                    // mx: 'auto',
                     bgcolor: '#2f3148',
                     overflow: 'visible',
+                    zIndex: 100,
                 }}
             >
                 {/* Left curve */}
@@ -158,7 +163,7 @@ const ConsultFooter = ({ onConsult }) => {
                         </Typography>
                     </Box>
                 </Box>
-            </Box>
+            </Box >
         </>
     );
 };
