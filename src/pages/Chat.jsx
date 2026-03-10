@@ -786,7 +786,7 @@ const Chat = () => {
             m.assistant === 'guruji' || !!m.guruji_json || !!m.gurujiJson
         );
 
-        const isGurujiActive = waitMessage === "Sending to Astrologer" || waitMessage === "Astrologer is typing...";
+        const isGurujiActive = waitMessage === "Sending to Astrologer" || waitMessage === "Astrologer is typing";
         const isMayaActive = waitMessage === "Sending to Maya";
 
         // Stage 3: Sent to Astrologer (Blue Double Tick)
@@ -1220,7 +1220,7 @@ const Chat = () => {
 
         try {
             const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId);
-            setWaitMessage("Astrologer is typing...");
+            setWaitMessage("Astrologer is typing");
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id } = res.data;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
