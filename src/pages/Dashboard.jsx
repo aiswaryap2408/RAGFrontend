@@ -311,7 +311,7 @@ const Dashboard = () => {
                                     position: "relative",
                                     left: "80%",
                                     transform: "translateX(-50%)",
-                                    zIndex: 1100,
+                                    zIndex: 10,
                                     mb: 3,
                                     top: -18,
                                 }}
