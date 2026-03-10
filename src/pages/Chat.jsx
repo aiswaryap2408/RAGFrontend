@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import api, { sendMessage, endChat, startSession, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment } from '../api';
+import api, { sendMessage, getGurujiResponse, endChat, startSession, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment } from '../api';
 import axios from 'axios';
 
 import {
@@ -726,33 +726,30 @@ const Chat = () => {
 
         const nextMsg = messages[idx + 1];
 
-        // Dynamic time updates matching user specifications
-        const msgTime = msg.timestamp ? new Date(msg.timestamp).getTime() : Date.now();
-        const now = currentTime;
-        const elapsedSecs = (now - msgTime) / 1000;
-        const isExpired = elapsedSecs > 300; // 5 mins fallback
-
         if (!nextMsg || nextMsg.role !== 'assistant') {
-            if (elapsedSecs < 5) {
-                return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
-            }
+            return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
+        }
+
+        // Check if a Guruji response has arrived or is actively being processed/animating
+        const hasGurujiAnswer = messages.slice(idx + 1, idx + 3).some(m =>
+            m.assistant === 'guruji' || !!m.guruji_json || !!m.gurujiJson
+        );
+
+        // Stage 3 & 4: If Guruji is processing or animating -> Blue double tick
+        // We use waitMessage as a proxy for the current global processing state for the latest exchange
+        const isGurujiActive = waitMessage === "Sending to Astrologer" || waitMessage === "Astrologer is typing...";
+        const isLatestExchange = idx === messages.findLastIndex(m => m.role === 'user');
+
+        if (hasGurujiAnswer || (isGurujiActive && isLatestExchange)) {
+            return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: '#34B7F1' }} />;
+        }
+
+        // Stage 2: If Maya responded and triggered Guruji selection -> Grey double tick
+        if (nextMsg.assistant === 'maya' && nextMsg.trigger_guruji) {
             return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
         }
 
-        // Check if Maya or Guruji responded
-        const isGuruji = nextMsg.assistant === 'guruji' || !!nextMsg.gurujiJson;
-        const isMaya = nextMsg.assistant === 'maya' || !!nextMsg.mayaJson;
-
-        if (isGuruji) {
-            if (elapsedSecs < 5) {
-                return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
-            } else {
-                return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: '#34B7F1' }} />;
-            }
-        } else if (isMaya || isExpired) {
-            return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
-        }
-
+        // Stage 1 / Maya-only: Grey single tick
         return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
     };
     const handleScroll = (e) => {
@@ -1164,6 +1161,54 @@ const Chat = () => {
         };
     }, []);
 
+
+    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null) => {
+        setLoading(true);
+        setIsBuffering(true);
+        setWaitMessage("Sending to Astrologer");
+
+        try {
+            const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId);
+            setWaitMessage("Astrologer is typing...");
+            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id } = res.data;
+
+            if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
+
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: answer,
+                assistant: 'guruji',
+                metrics,
+                context,
+                amount,
+                rawResponse: res.data,
+                mayaJson: tryParseJson(maya_json),
+                gurujiJson: tryParseJson(guruji_json),
+                psycologyJson: tryParseJson(psycology_json),
+                bubbles: bubbles || [],
+                delays: delays || [],
+                animating: true,
+                message_id: message_id,
+                time: timestamp ? formatTime(timestamp) : getCurrentTime(),
+                timestamp: timestamp || new Date().toISOString(),
+                arrivalTime: Date.now()
+            }]);
+            if (guruji_json) setIsAnimating(true);
+        } catch (err) {
+            console.error("Guruji Error:", err);
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                assistant: 'maya',
+                content: 'Guruji is currently deep in meditation. Please try again later.',
+                time: getCurrentTime()
+            }]);
+        } finally {
+            setLoading(false);
+            // setIsBuffering(false); // Keep buffering if Guruji is about to respond/animating
+            // setWaitMessage("");
+        }
+    };
+
     const handleSend = async (msg = null) => {
         const text = typeof msg === 'string' ? msg : input;
         if (!text.trim() || loading || userStatus !== 'ready') return;
@@ -1185,13 +1230,10 @@ const Chat = () => {
         setLoading(true);
         setIsBuffering(true);
         scrollToBottom();
-        // setWaitMessage("Sending to your astrologer...");
-
-        // After a random 1.5–3s delay (natural feel, approx when Maya finishes), switch to "Astrologer is typing..."
-        const waitDelay = Math.floor(Math.random() * (5000 - 3000 + 1)) + 3000; // random between 3000ms and 5000ms
-        const waitMsgTimer = setTimeout(() => setWaitMessage("Astrologer is typing"), waitDelay);
+        setWaitMessage("Sending to Maya");
 
 
+        let trigger_guruji_flag = false;
         try {
             const mobile = localStorage.getItem('mobile');
             if (!mobile) {
@@ -1247,14 +1289,15 @@ const Chat = () => {
                 return;
             }
 
-            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id } = res.data;
+            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id, trigger_guruji } = res.data;
+            trigger_guruji_flag = trigger_guruji;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 content: answer,
-                assistant: assistant || 'guruji',
+                assistant: assistant || 'maya',
                 metrics,
                 context,
                 amount,
@@ -1267,9 +1310,18 @@ const Chat = () => {
                 animating: true,
                 message_id: message_id,
                 time: timestamp ? formatTime(timestamp) : getCurrentTime(),
-                timestamp: timestamp || new Date().toISOString()
+                timestamp: timestamp || new Date().toISOString(),
+                arrivalTime: Date.now(),
+                trigger_guruji: trigger_guruji // Store this for tick logic
+
             }]);
-            if (guruji_json) setIsAnimating(true);
+            if (trigger_guruji) {
+                setWaitMessage("Sending to Astrologer");
+                setIsBuffering(true);
+                await fetchGurujiResponse(mobile, text, history, sessionId);
+            }
+
+
         } catch (err) {
             console.error("Chat Error:", err);
             // If it's a 404/401/403, the interceptor will handle redirect to login
@@ -1284,8 +1336,11 @@ const Chat = () => {
             }
         } finally {
             setLoading(false);
-            setIsBuffering(false);
-            setWaitMessage("");
+            if (!trigger_guruji_flag) {
+                setIsBuffering(false);
+                setWaitMessage("");
+            }
+            scrollToBottom();
         }
     };
 
@@ -1504,6 +1559,7 @@ const Chat = () => {
     };
 
     const handleChatSuccess = async (paymentId, amount) => {
+        let trigger_guruji_flag = false;
         try {
             setChatPaymentState('COMPLETE');
             setThankYouAction('CHAT_PAYMENT');
@@ -1519,6 +1575,10 @@ const Chat = () => {
             setThankYouOpen(false);
 
             // Proceed to process the message after payment
+            setLoading(true);
+            setIsBuffering(true);
+            setWaitMessage("Sending to astrologer");
+
             const lastUserMsg = messages.find(m => m.message_id === pendingMessageId);
             const mobile = localStorage.getItem('mobile');
             const history = messages.slice(1, messages.findIndex(m => m.message_id === pendingMessageId));
@@ -1531,7 +1591,8 @@ const Chat = () => {
                 payment_id: paymentId
             });
 
-            const { answer, metrics, context, assistant, wallet_balance, amount: cost, maya_json, guruji_json, timestamp, message_id } = chatRes.data;
+            const { answer, metrics, context, assistant, wallet_balance, amount: cost, maya_json, guruji_json, timestamp, message_id, trigger_guruji } = chatRes.data;
+            trigger_guruji_flag = trigger_guruji;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
@@ -1560,16 +1621,31 @@ const Chat = () => {
                     animating: true,
                     message_id: message_id,
                     time: timestamp ? formatTime(timestamp) : getCurrentTime(),
-                    timestamp: timestamp || new Date().toISOString()
+                    timestamp: timestamp || new Date().toISOString(),
+                    trigger_guruji: trigger_guruji
                 }];
             });
             if (guruji_json) setIsAnimating(true);
+
+            // Trigger Guruji stage if indicated
+            if (trigger_guruji) {
+                setWaitMessage("Sending to Astrologer");
+                setIsBuffering(true);
+                await fetchGurujiResponse(mobile, lastUserMsg.content, history, sessionId, paymentId);
+            }
+
             setChatPaymentState('IDLE');
             setPendingMessageId(null);
         } catch (err) {
             console.error("Chat success processing failed:", err);
             alert("Error processing your request. Please contact support.");
             setChatPaymentState('REQUIRED');
+        } finally {
+            setLoading(false);
+            if (!trigger_guruji_flag) {
+                setIsBuffering(false);
+                setWaitMessage("");
+            }
         }
     };
 
@@ -1797,6 +1873,8 @@ const Chat = () => {
                                         animate={msg.animating}
                                         onComplete={() => {
                                             setIsAnimating(false);
+                                            setIsBuffering(false);
+                                            setWaitMessage("");
                                             setMessages(prev => prev.map((m, idx) =>
                                                 idx === i ? { ...m, animating: false } : m
                                             ));
