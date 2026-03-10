@@ -3,6 +3,7 @@ import { Box, Typography } from "@mui/material";
 import GlobalStyles from "@mui/material/GlobalStyles";
 import { useNavigate } from "react-router-dom";
 import './consultFooter.css';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 const ConsultFooter = ({ onConsult }) => {
     const navigate = useNavigate();
@@ -55,7 +56,10 @@ const ConsultFooter = ({ onConsult }) => {
                     alt="Right curve"
                     sx={{ position: "absolute", top: '-45px', right: 0, width: "100px" }}
                 />
-
+                <Box sx={{ position: "absolute", top: '-82px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <FiberManualRecordIcon sx={{ color: '#00ff03', fontSize: 26, animation: 'cf-pulse 2s infinite' }} />
+                    <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#dc5d35' }}>Astrologer is online now</Typography>
+                </Box>
                 {/* Animated Start Consultation Button */}
                 <Box
                     component="button"
@@ -163,7 +167,7 @@ const ConsultFooter = ({ onConsult }) => {
                         </Typography>
                     </Box>
                 </Box>
-            </Box >
+            </Box>
         </>
     );
 };
