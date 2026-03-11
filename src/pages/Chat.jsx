@@ -772,6 +772,7 @@ const Chat = () => {
     const renderStatusTicks = (idx) => {
         const msg = messages[idx];
         if (msg.role !== 'user') return null;
+        if (msg.isQueued) return null;
 
         const nextMsg = messages[idx + 1];
         const isLatestExchange = idx === messages.findLastIndex(m => m.role === 'user');
@@ -1274,16 +1275,89 @@ const Chat = () => {
         }
     };
 
+    const [messageQueue, setMessageQueue] = useState([]);
+    const debounceTimerRef = useRef(null);
+    const [isUserTyping, setIsUserTyping] = useState(false);
+    const [timerKey, setTimerKey] = useState(Date.now());
+
+    // Effect to handle Typing interrupts and 3s sending delay
+    useEffect(() => {
+        if (isUserTyping && messageQueue.length > 0) {
+            // User started typing! Pause the timer, do nothing.
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+                debounceTimerRef.current = null;
+            }
+        } else if (!isUserTyping && messageQueue.length > 0) {
+            // Typing stopped or just sent a message. Start/restart timer.
+            const now = Date.now();
+            setTimerKey(now);
+
+            // Sync arrival time for queued messages so they restart animation together
+            setMessages(prev => {
+                const next = [...prev];
+                const lastIdx = next.length - 1;
+                // Since we append, there is exactly ONE queued user message at the very end.
+                if (lastIdx >= 0 && next[lastIdx].role === 'user' && next[lastIdx].isQueued) {
+                    next[lastIdx] = { ...next[lastIdx], arrivalTime: now };
+                }
+                return next;
+            });
+
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+            debounceTimerRef.current = setTimeout(() => {
+                processQueue(messageQueue);
+                setMessageQueue([]);
+                debounceTimerRef.current = null;
+            }, 3000);
+        }
+
+        return () => {
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        };
+    }, [isUserTyping, messageQueue]);
+
     const handleSend = async (msg = null) => {
         const text = typeof msg === 'string' ? msg : input;
         if (!text.trim() || loading || userStatus !== 'ready') return;
 
-        const userMsg = { role: 'user', content: text, time: getCurrentTime(), timestamp: new Date().toISOString(), arrivalTime: Date.now() };
-        setMessages(prev => [...prev, userMsg]);
+        const now = Date.now();
+        setMessages(prev => {
+            const next = [...prev];
+            const lastIdx = next.length - 1;
+            // If the last message is ALSO queued, just append to it visually.
+            // This treats the whole clump as one combined user input bubble!
+            if (lastIdx >= 0 && next[lastIdx].role === 'user' && next[lastIdx].isQueued) {
+                next[lastIdx] = {
+                    ...next[lastIdx],
+                    content: next[lastIdx].content + '\n\n' + text,
+                    arrivalTime: now,
+                    time: getCurrentTime() // Update time to latest send
+                };
+            } else {
+                const userMsg = { role: 'user', content: text, time: getCurrentTime(), timestamp: new Date().toISOString(), arrivalTime: now, isQueued: true };
+                next.push(userMsg);
+            }
+            return next;
+        });
+
         if (typeof msg !== 'string') setInput('');
 
+        // Add to state queue; this naturally triggers the useEffect which starts the 3s timer
+        setMessageQueue(prev => [...prev, text]);
+
+        // Because the message is sent, the user is no longer typing
+        setIsUserTyping(false);
+
+        scrollToBottom();
+    };
+
+    const processQueue = async (queuedMessages) => {
+        if (queuedMessages.length === 0 || loading || userStatus !== 'ready') return;
+
+        const combinedText = queuedMessages.join('\n\n');
+
         // Reset global report state for the new interaction ONLY if not preparing a report
-        // If a report is preparing, we keep the state to show the preparation status for the old message
         if (reportState === 'IDLE' || reportState === 'READY') {
             setReportState('IDLE');
             setReadyReportData(null);
@@ -1297,18 +1371,42 @@ const Chat = () => {
         scrollToBottom();
         setWaitMessage("Sending to Maya");
 
-
         let trigger_guruji_flag = false;
         try {
             const mobile = localStorage.getItem('mobile');
             if (!mobile) {
-                // Session expired - redirect to login
                 localStorage.clear();
                 navigate('/');
                 return;
             }
-            const history = messages.slice(1);
-            const res = await sendMessage(mobile, text, history, sessionId);
+
+            // In React Strict Mode, setMessages can be called twice, so NEVER put an API side effect inside it!
+            // Instead, we derive the history synchronously from the CURRENT 'messages' closure.
+            // Since this function is debounced, 'messages' array from the last render before timers completed
+            // contains the queued message block exactly as its last element.
+            let historyWithoutNewlyQueued = messages.length > 1 ? messages.slice(1, -1) : [];
+            // Remove the 'isQueued' flag from history objects just to be clean
+            historyWithoutNewlyQueued = historyWithoutNewlyQueued.map(m => m.isQueued ? { ...m, isQueued: false } : m);
+
+            setMessages(prev => {
+                // Mark all currently queued messages as no longer queued in the UI
+                return prev.map(m => m.isQueued ? { ...m, isQueued: false } : m);
+            });
+
+            // Call backend ONCE securely outside the state setter.
+            sendToBackend(mobile, combinedText, historyWithoutNewlyQueued);
+
+        } catch (err) {
+            console.error("Queue Processing Error:", err);
+            setLoading(false);
+            setIsBuffering(false);
+        }
+    };
+
+    const sendToBackend = async (mobile, combinedText, history) => {
+        let trigger_guruji_flag = false;
+        try {
+            const res = await sendMessage(mobile, combinedText, history, sessionId);
 
             // Handle rate limit / offline
             if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
@@ -1350,7 +1448,7 @@ const Chat = () => {
 
                 setChatPaymentState('REQUIRED');
                 setPendingMessageId(res.data.message_id);
-                setActiveQuestion(text);
+                setActiveQuestion(combinedText);
                 return;
             }
 
@@ -1383,7 +1481,7 @@ const Chat = () => {
             if (trigger_guruji) {
                 setWaitMessage("Sending to Astrologer");
                 setIsBuffering(true);
-                await fetchGurujiResponse(mobile, text, history, sessionId);
+                await fetchGurujiResponse(mobile, combinedText, history, sessionId);
             }
 
 
@@ -1901,6 +1999,7 @@ const Chat = () => {
             >
                 {messages.map((msg, i) => {
                     const idx = i; // Use idx for the current message index
+                    const isLastQueuedMsg = i === messages.findLastIndex(m => m.isQueued);
 
                     let isPaidUserMsg = false;
                     for (let j = i - 1; j >= 0; j--) {
@@ -2288,8 +2387,9 @@ const Chat = () => {
 
                                         </Box>
                                         {/* timer animation for user msg */}
-                                        {isAnimating && msg.role === 'user' && (
+                                        {msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user' && (
                                             <Box
+                                                key={timerKey}
                                                 sx={{
                                                     m: 0,
                                                     display: "flex",
@@ -2513,6 +2613,7 @@ const Chat = () => {
 
             <ChatInputFooter
                 onSend={handleSend}
+                onTyping={setIsUserTyping}
                 userStatus={userStatus}
                 loading={loading}
                 summary={summary}
