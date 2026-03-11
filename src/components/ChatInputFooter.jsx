@@ -6,7 +6,7 @@ import {
 import SendIcon from "@mui/icons-material/Send";
 import { useState } from "react";
 
-const ChatInputFooter = ({ onSend, userStatus, loading, summary, isAnimating }) => {
+const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAnimating }) => {
     const [message, setMessage] = useState("");
 
     const handleSend = () => {
@@ -78,7 +78,10 @@ const ChatInputFooter = ({ onSend, userStatus, loading, summary, isAnimating }) 
                                         "Preparing..."
                         }
                         value={message}
-                        onChange={(e) => setMessage(e.target.value)}
+                        onChange={(e) => {
+                            setMessage(e.target.value);
+                            if (onTyping) onTyping(e.target.value.length > 0);
+                        }}
                         onKeyPress={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
