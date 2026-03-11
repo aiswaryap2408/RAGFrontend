@@ -59,6 +59,8 @@ export const getUserDetails = (mobile) => api.get(`/admin/user-details/${mobile}
 export const getSystemPrompt = () => api.get('/admin/system-prompt');
 export const updateSystemPrompt = (prompt) => api.post('/admin/system-prompt', { prompt });
 export const getLoginLogs = (params) => api.get('/admin/login-logs', { params });
+export const getSubscriptionPlans = () => api.get('/admin/subscription/plans');
+export const toggleUserSubscription = (mobile, planId) => api.post('/admin/subscription/toggle', { mobile, plan_id: planId });
 
 export const getMayaPrompt = () => api.get('/admin/maya-prompt');
 export const updateMayaPrompt = (prompt) => api.post('/admin/maya-prompt', { prompt });

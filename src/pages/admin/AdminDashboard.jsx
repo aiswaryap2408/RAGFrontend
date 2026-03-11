@@ -10,7 +10,9 @@ import {
     getUserDetails,
     getBalance as getUserWallet,
     getTransactionHistory as getUserTransactions,
-    toggleWalletSystem
+    toggleWalletSystem,
+    getSubscriptionPlans,
+    toggleUserSubscription
 } from '../../api';
 
 const NavButton = ({ active, onClick, icon, label, themeColor }) => {
@@ -72,8 +74,14 @@ const AdminDashboard = () => {
     const [testMessages, setTestMessages] = useState([]);
     const [testChatLoading, setTestChatLoading] = useState(false);
 
+    // Subscriptions
+    const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+    const [selectedPlanId, setSelectedPlanId] = useState('');
+    const [subscriptionToggleLoading, setSubscriptionToggleLoading] = useState(false);
+
     useEffect(() => {
         fetchUsers();
+        fetchPlans();
 
         // Handle URL parameters for navigation
         const params = new URLSearchParams(window.location.search);
@@ -109,6 +117,17 @@ const AdminDashboard = () => {
             setFilteredUsers([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchPlans = async () => {
+        try {
+            const { data } = await getSubscriptionPlans();
+            if (data && data.plans) {
+                setSubscriptionPlans(data.plans);
+            }
+        } catch (err) {
+            console.error("Failed to fetch subscription plans", err);
         }
     };
 
@@ -150,6 +169,32 @@ const AdminDashboard = () => {
             console.error("Failed to fetch user details", err);
         } finally {
             setDetailsLoading(false);
+        }
+    };
+
+    const handleToggleSubscription = async () => {
+        if (!userDetails.user?.mobile || !selectedPlanId) return;
+        setSubscriptionToggleLoading(true);
+        try {
+            const { data } = await toggleUserSubscription(userDetails.user.mobile, selectedPlanId);
+            setUserDetails(prev => ({
+                ...prev,
+                user: {
+                    ...prev.user,
+                    is_subscribed: data.is_subscribed,
+                    subscription_plan: data.subscription_plan
+                },
+                profile: {
+                    ...prev.profile,
+                    is_subscribed: data.is_subscribed,
+                    subscription_plan: data.subscription_plan
+                }
+            }));
+            setSelectedPlanId('');
+        } catch (err) {
+            console.error("Failed to toggle subscription", err);
+        } finally {
+            setSubscriptionToggleLoading(false);
         }
     };
 
@@ -855,7 +900,7 @@ const AdminDashboard = () => {
                                         {detailTab === 'profile' && (
                                             <div className="flex-1 overflow-y-auto p-12 bg-black flex justify-center custom-scrollbar">
                                                 <div className="max-w-xl w-full">
-                                                    <h3 className="text-2xl font-black text-white mb-8">Personal DNA</h3>
+                                                    <h3 className="text-2xl font-black text-white mb-8">Personal Details</h3>
                                                     <div className="grid grid-cols-2 gap-6">
                                                         {[
                                                             { label: 'Name', value: userDetails.profile?.name },
@@ -871,6 +916,52 @@ const AdminDashboard = () => {
                                                             </div>
                                                         ))}
                                                     </div>
+
+                                                    <div className="mt-12">
+                                                        <h3 className="text-2xl font-black text-white mb-6">Subscription</h3>
+                                                        <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800/60 flex flex-col space-y-4">
+                                                            <div className="flex justify-between items-center">
+                                                                <div>
+                                                                    <p className="text-[10px] uppercase tracking-widest text-slate-500 font-black mb-1">Status</p>
+                                                                    {userDetails.profile?.is_subscribed ? (
+                                                                        <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-black">ACTIVE</span>
+                                                                    ) : (
+                                                                        <span className="bg-slate-800 text-slate-400 border border-slate-700 px-3 py-1 rounded-full text-xs font-black">INACTIVE</span>
+                                                                    )}
+                                                                </div>
+                                                                {userDetails.profile?.is_subscribed && userDetails.profile?.subscription_plan && (
+                                                                    <div className="text-right">
+                                                                        <p className="text-[10px] uppercase tracking-widest text-slate-500 font-black mb-1">Current Plan</p>
+                                                                        <p className="text-white font-bold">{userDetails.profile.subscription_plan.name}</p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="pt-4 border-t border-slate-800 flex items-end space-x-4">
+                                                                <div className="flex-1">
+                                                                    <label className="text-[10px] uppercase tracking-widest text-slate-500 font-black mb-2 block">Action</label>
+                                                                    <select
+                                                                        className="w-full bg-slate-800 border border-slate-700 text-white text-sm rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500"
+                                                                        value={selectedPlanId}
+                                                                        onChange={(e) => setSelectedPlanId(e.target.value)}
+                                                                    >
+                                                                        <option value="">Select a plan</option>
+                                                                        <option value="none">Disable Subscription</option>
+                                                                        {subscriptionPlans.map(plan => (
+                                                                            <option key={plan.plan_id} value={plan.plan_id}>Enable {plan.name} (₹{plan.price})</option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                                <button
+                                                                    onClick={handleToggleSubscription}
+                                                                    disabled={!selectedPlanId || subscriptionToggleLoading}
+                                                                    className={`px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${!selectedPlanId || subscriptionToggleLoading ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40 hover:-translate-y-0.5'}`}
+                                                                >
+                                                                    {subscriptionToggleLoading ? 'Updating...' : 'Update'}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
                                                 </div>
                                             </div>
                                         )}
