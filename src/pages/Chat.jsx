@@ -782,9 +782,14 @@ const Chat = () => {
         }
 
         // Check if a Guruji response has arrived
-        const hasGurujiAnswer = messages.slice(idx + 1, idx + 3).some(m =>
-            m.assistant === 'guruji' || !!m.guruji_json || !!m.gurujiJson
-        );
+        let hasGurujiAnswer = false;
+        for (let j = idx + 1; j < messages.length; j++) {
+            if (messages[j].role === 'user') break;
+            if (messages[j].assistant === 'guruji' || !!messages[j].guruji_json || !!messages[j].gurujiJson) {
+                hasGurujiAnswer = true;
+                break;
+            }
+        }
 
         const isGurujiActive = waitMessage === "Sending to Astrologer" || waitMessage === "Astrologer is typing";
         const isMayaActive = waitMessage === "Sending to Maya";
@@ -794,8 +799,17 @@ const Chat = () => {
             return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: '#34B7F1' }} />;
         }
 
+        // Check if next message is a Maya fallback/error/template message
+        if (nextMsg && nextMsg.assistant === 'maya' &&
+            (
+                ['error', 'offline', 'unavailable'].some(kw => nextMsg.content?.toLowerCase().includes(kw)) ||
+                nextMsg.mayaJson?.is_safety_warning || // Safety warning templates
+                !nextMsg.trigger_guruji // Any other Maya-only terminal response
+            )) {
+            return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
+        }
+
         // Stage 2: Sent/Sending to Maya (Grey Double Tick)
-        // If there is ANY response, or Maya is actively processing the latest message
         if (nextMsg || (isMayaActive && isLatestExchange)) {
             return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
         }
