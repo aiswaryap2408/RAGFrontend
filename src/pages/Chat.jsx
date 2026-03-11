@@ -127,11 +127,11 @@ const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse,
                     <Box sx={{ mt: 1, mb: 1 }}> {/* Increased mt to avoid overlap with name */}
                         {title && (
                             <Typography sx={{ fontSize: '1.05rem', lineHeight: 1.4, color: '#333', mb: 1, fontWeight: 700, textAlign: 'center' }}>
-                                {title}
+                                {typeof title === 'object' ? (title.message || title.title || JSON.stringify(title)) : title}
                             </Typography>
                         )}
                         <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', textAlign: 'left', fontWeight: 500, whiteSpace: 'pre-line' }}>
-                            {content}
+                            {typeof content === 'object' ? (content.message || JSON.stringify(content)) : content}
                         </Typography>
                     </Box>
                 )}
@@ -1897,14 +1897,14 @@ const Chat = () => {
                     }
 
                     if (msg.assistant === 'maya') {
-                        if (!msg.content || msg.content.trim() === '') {
+                        if (!msg.content || (typeof msg.content === 'string' && msg.content.trim() === '')) {
                             return null;
                         }
                         return (
                             <MayaIntro
                                 key={i}
                                 title={msg.title || msg.mayaJson?.title || "Title"}
-                                name={i === 0 ? userName : null}
+                                // name={i === 0 ? userName : null}
                                 content={msg.content}
                                 mayaJson={msg.mayaJson}
                                 psycologyJson={msg.psycologyJson}
