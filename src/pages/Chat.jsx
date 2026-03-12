@@ -2618,6 +2618,7 @@ const Chat = () => {
                 loading={loading}
                 summary={summary}
                 isAnimating={isAnimating}
+                userMsgPhase={userMsgPhase}
             />
             {/* Same overlays as before (Inactivity, Summary, Drawer) */}
             {/* ... preserved ... */}
