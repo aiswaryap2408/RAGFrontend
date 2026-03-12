@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
     Box,
     InputBase,
@@ -7,13 +7,21 @@ import SendIcon from "@mui/icons-material/Send";
 
 const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, inputValue, setInputValue, isBuffering }) => {
 
+    const inputRef = useRef(null);
+
     // Gate: block send when backend is processing, chat ended, or astrologer is typing (buffering)
     const isBlocked = loading || !!summary || isBuffering;
 
     const handleSend = () => {
         if (!inputValue.trim() || isBlocked || userStatus !== 'ready') return;
         onSend(inputValue);
-        // Do not clear the input here because Chat.jsx expects onSend to handle it or it clears it itself.
+        
+        // Keep focus on input to prevent mobile keyboard from closing
+        setTimeout(() => {
+            if (inputRef.current) {
+                inputRef.current.focus();
+            }
+        }, 10);
     };
 
     return (
@@ -50,6 +58,7 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, input
                     }}
                 >
                     <InputBase
+                        inputRef={inputRef}
                         fullWidth
                         multiline
                         maxRows={4}
@@ -100,6 +109,7 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, input
                         transition: 'background-color 0.3s ease',
                     }}
                     onClick={handleSend}
+                    onMouseDown={(e) => e.preventDefault()} // Prevent clicking from taking focus away from input
                 >
                     <SendIcon sx={{ color: isBlocked ? "#999" : "#2f3148", transition: 'color 0.3s ease' }} />
                 </Box>
