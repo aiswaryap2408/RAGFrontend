@@ -1370,8 +1370,7 @@ const Chat = () => {
 
         // Remove the queued messages from the visual chat history
         setMessages(prev => {
-            // Find the index of the first queued message.
-            // Since they are grouped at the end, we can just filter out isQueued.
+
             return prev.filter(m => !m.isQueued);
         });
 
