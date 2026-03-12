@@ -72,6 +72,11 @@ export const getPsycologyPrompt = () => api.get('/admin/psycology-prompt');
 export const updatePsycologyPrompt = (prompt) => api.post('/admin/psycology-prompt', { prompt });
 export const getPsycologyPromptHistory = () => api.get('/admin/psycology-prompt/history');
 
+export const getMonetizationRules = () => api.get('/admin/monetization-rules/');
+export const createMonetizationRule = (data) => api.post('/admin/monetization-rules/', data);
+export const updateMonetizationRule = (id, data) => api.put(`/admin/monetization-rules/${id}`, data);
+export const deleteMonetizationRule = (id) => api.delete(`/admin/monetization-rules/${id}`);
+
 // Chat Tester Endpoints
 export const testUpload = (formData) => api.post('/admin/test-upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
