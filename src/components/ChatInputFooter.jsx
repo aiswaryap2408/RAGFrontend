@@ -6,7 +6,7 @@ import {
 import SendIcon from "@mui/icons-material/Send";
 
 const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, inputValue, setInputValue, isBuffering }) => {
-    
+
     // Gate: block send when backend is processing, chat ended, or astrologer is typing (buffering)
     const isBlocked = loading || !!summary || isBuffering;
 
@@ -52,6 +52,7 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, input
                     <InputBase
                         fullWidth
                         multiline
+                        maxRows={4}
                         placeholder={
                             isBlocked ? "" :
                                 userStatus === 'ready' ? "Type your message..." :
@@ -73,16 +74,14 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, input
                         sx={{
                             fontSize: 14,
                             lineHeight: 1.5,
-                            maxHeight: 52,
-                            overflowY: "auto",
                             display: isBlocked ? "none" : "flex",
-                            py: 0,
+                            py: 1,
+                            px: 1,
                             "& textarea": {
-                                maxHeight: 52,
-                                overflowY: "auto",
+                                overflowY: "auto !important",
+                                "&::-webkit-scrollbar": { display: "block" },
+                                scrollbarWidth: "none",
                             },
-                            "&::-webkit-scrollbar": { display: "none" },
-                            scrollbarWidth: "none",
                         }}
                     />
                 </Box>
