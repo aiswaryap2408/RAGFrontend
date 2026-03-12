@@ -6,7 +6,7 @@ import {
 import SendIcon from "@mui/icons-material/Send";
 import { useState } from "react";
 
-const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAnimating }) => {
+const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAnimating, userMsgPhase }) => {
     const [message, setMessage] = useState("");
 
     const handleSend = () => {
@@ -17,7 +17,7 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAni
 
 
     return (
-        <Box sx={{ position: "fixed", width: { xs: '100%', sm: 450 }, bottom: 0, zIndex: 1000, display: { xs: (loading || summary || isAnimating) ? 'none' : 'block', sm: 'block' } }}>
+        <Box sx={{ position: "fixed", width: { xs: '100%', sm: 450 }, bottom: 0, zIndex: 1000 }}>
             {/* Bottom Curves */}
             <Box sx={{ display: "flex", justifyContent: "space-between", position: "relative", top: '8px' }}>
                 {/* <Box
@@ -59,7 +59,7 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAni
                 <Box
                     sx={{
                         flex: 1,
-                        bgcolor: (loading || isAnimating) ? "none" : "#ffffff",
+                        bgcolor: ((loading || isAnimating) && userMsgPhase === 2) ? "none" : "#ffffff",
                         borderRadius: 30,
                         px: 2,
                         display: "flex",
@@ -72,7 +72,7 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAni
                         fullWidth
                         multiline
                         placeholder={
-                            (loading || summary || isAnimating) ? "" :
+                            ((loading || summary || isAnimating) && userMsgPhase === 2) ? "" :
                                 userStatus === 'ready' ? "Type your message..." :
                                     userStatus === 'failed' ? "Registration failed. Please re-register." :
                                         "Preparing..."
@@ -94,7 +94,7 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAni
                             lineHeight: 1.5,
                             maxHeight: 52,
                             overflowY: "auto",
-                            display: (loading || summary || isAnimating) ? "none" : "flex",
+                            display: ((loading || summary || isAnimating) && userMsgPhase === 2) ? "none" : "flex",
                             py: 0,
                             "& textarea": {
                                 maxHeight: 52,
@@ -110,9 +110,9 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAni
                     sx={{
                         width: 48,
                         height: 48,
-                        bgcolor: (loading || isAnimating) ? "#e0e0e0" : "#ffffff",
+                        bgcolor: ((loading || isAnimating) && userMsgPhase === 2) ? "#e0e0e0" : "#ffffff",
                         borderRadius: "50%",
-                        display: (loading || isAnimating) ? "none" : "flex",
+                        display: ((loading || isAnimating) && userMsgPhase === 2) ? "none" : "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: message.trim() && !loading && !summary && !isAnimating && userStatus === 'ready' ? "pointer" : "default",
@@ -120,7 +120,7 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAni
                     }}
                     onClick={handleSend}
                 >
-                    <SendIcon sx={{ color: (loading || isAnimating) ? "#999" : "#2f3148", transition: 'color 0.3s ease' }} />
+                    <SendIcon sx={{ color: ((loading || isAnimating) && userMsgPhase === 2) ? "#999" : "#2f3148", transition: 'color 0.3s ease' }} />
                 </Box>
             </Box>
         </Box>
