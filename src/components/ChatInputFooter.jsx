@@ -17,7 +17,7 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAni
 
 
     return (
-        <Box sx={{ position: "fixed", width: { xs: '100%', sm: 450 }, bottom: 0, zIndex: 1000 }}>
+        <Box sx={{ position: "fixed", width: { xs: '100%', sm: 450 }, bottom: 0, zIndex: 1000, display: { xs: (loading || summary || isAnimating) ? 'none' : 'block', sm: 'block' } }}>
             {/* Bottom Curves */}
             <Box sx={{ display: "flex", justifyContent: "space-between", position: "relative", top: '8px' }}>
                 {/* <Box

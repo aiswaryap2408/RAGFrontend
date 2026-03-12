@@ -1330,7 +1330,7 @@ const Chat = () => {
             if (lastIdx >= 0 && next[lastIdx].role === 'user' && next[lastIdx].isQueued) {
                 next[lastIdx] = {
                     ...next[lastIdx],
-                    content: next[lastIdx].content + '\n\n' + text,
+                    content: next[lastIdx].content + '\n' + text,
                     arrivalTime: now,
                     time: getCurrentTime() // Update time to latest send
                 };
