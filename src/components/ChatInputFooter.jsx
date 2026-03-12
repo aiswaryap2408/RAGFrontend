@@ -4,62 +4,43 @@ import {
     InputBase,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
-import { useState } from "react";
 
-const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAnimating, userMsgPhase }) => {
-    const [message, setMessage] = useState("");
+const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, inputValue, setInputValue, isBuffering }) => {
+    
+    // Gate: block send when backend is processing, chat ended, or astrologer is typing (buffering)
+    const isBlocked = loading || !!summary || isBuffering;
 
     const handleSend = () => {
-        if (!message.trim() || loading || summary || isAnimating || userStatus !== 'ready') return;
-        onSend(message);
-        setMessage("");
+        if (!inputValue.trim() || isBlocked || userStatus !== 'ready') return;
+        onSend(inputValue);
+        // Do not clear the input here because Chat.jsx expects onSend to handle it or it clears it itself.
     };
-
 
     return (
         <Box sx={{ position: "fixed", width: { xs: '100%', sm: 450 }, bottom: 0, zIndex: 1000 }}>
             {/* Bottom Curves */}
             <Box sx={{ display: "flex", justifyContent: "space-between", position: "relative", top: '8px' }}>
-                {/* <Box
-                    sx={{
-                        position: "absolute",
-                        bottom: "100%",
-                        left: 0,
-                        width: 100,
-                        top: '-45px',
-                    }}
-                > */}
                 <Box
                     component="img"
                     src="/svg/bottom_left_open_curve.svg"
                     alt="Left curve"
                     sx={{ width: "100px" }}
                 />
-                {/* </Box> */}
-
-                {/* <Box
-                    sx={{
-                        position: "absolute",
-                        bottom: "100%",
-                        right: 0,
-                        width: 100,
-                        top: '-45px',
-                    }}
-                > */}
                 <Box
                     component="img"
                     src="/svg/bottom_right_open_curve.svg"
                     alt="Right curve"
                     sx={{ width: "100px" }}
                 />
-                {/* </Box> */}
             </Box>
+
             {/* Footer Input Area */}
             <Box sx={{ bgcolor: "#2f3148", px: 2, py: 1.5, display: "flex", gap: 2, alignItems: "center" }}>
+                {/* Input bubble — hides only when loading/summary */}
                 <Box
                     sx={{
                         flex: 1,
-                        bgcolor: ((loading || isAnimating) && userMsgPhase === 2) ? "none" : "#ffffff",
+                        bgcolor: isBlocked ? "none" : "#ffffff",
                         borderRadius: 30,
                         px: 2,
                         display: "flex",
@@ -72,14 +53,14 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAni
                         fullWidth
                         multiline
                         placeholder={
-                            ((loading || summary || isAnimating) && userMsgPhase === 2) ? "" :
+                            isBlocked ? "" :
                                 userStatus === 'ready' ? "Type your message..." :
                                     userStatus === 'failed' ? "Registration failed. Please re-register." :
                                         "Preparing..."
                         }
-                        value={message}
+                        value={inputValue}
                         onChange={(e) => {
-                            setMessage(e.target.value);
+                            setInputValue(e.target.value);
                             if (onTyping) onTyping(e.target.value.length > 0);
                         }}
                         onKeyPress={(e) => {
@@ -88,13 +69,13 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAni
                                 handleSend();
                             }
                         }}
-                        disabled={loading || summary || isAnimating || userStatus !== 'ready'}
+                        disabled={isBlocked || userStatus !== 'ready'}
                         sx={{
                             fontSize: 14,
                             lineHeight: 1.5,
                             maxHeight: 52,
                             overflowY: "auto",
-                            display: ((loading || summary || isAnimating) && userMsgPhase === 2) ? "none" : "flex",
+                            display: isBlocked ? "none" : "flex",
                             py: 0,
                             "& textarea": {
                                 maxHeight: 52,
@@ -106,21 +87,22 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, isAni
                     />
                 </Box>
 
+                {/* Send button — hides only when loading/summary */}
                 <Box
                     sx={{
                         width: 48,
                         height: 48,
-                        bgcolor: ((loading || isAnimating) && userMsgPhase === 2) ? "#e0e0e0" : "#ffffff",
+                        bgcolor: isBlocked ? "#e0e0e0" : "#ffffff",
                         borderRadius: "50%",
-                        display: ((loading || isAnimating) && userMsgPhase === 2) ? "none" : "flex",
+                        display: isBlocked ? "none" : "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        cursor: message.trim() && !loading && !summary && !isAnimating && userStatus === 'ready' ? "pointer" : "default",
+                        cursor: inputValue.trim() && !isBlocked && userStatus === 'ready' ? "pointer" : "default",
                         transition: 'background-color 0.3s ease',
                     }}
                     onClick={handleSend}
                 >
-                    <SendIcon sx={{ color: ((loading || isAnimating) && userMsgPhase === 2) ? "#999" : "#2f3148", transition: 'color 0.3s ease' }} />
+                    <SendIcon sx={{ color: isBlocked ? "#999" : "#2f3148", transition: 'color 0.3s ease' }} />
                 </Box>
             </Box>
         </Box>
