@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Box, Typography, Card, CardContent, Divider, Grid, MenuItem, TextField, Alert, Snackbar } from '@mui/material';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import Subheader from '../components/subheader';
-import { updateProfile } from '../api';
+import { updateProfile, getUserStatus } from '../api';
 
 // import { InputField } from '../components/inputwithIcon';
 import BirthDetailsForm from '../components/BirthDetailsForm';
@@ -61,7 +61,7 @@ const UserProfile = () => {
             }
 
             try {
-                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/auth/user-status/${mobile}`);
+                const res = await getUserStatus(mobile);
                 if (res.data.user_profile) {
                     const profile = res.data.user_profile;
                     setUser(profile);
