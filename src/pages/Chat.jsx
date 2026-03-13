@@ -2477,8 +2477,8 @@ const Chat = () => {
                                                         viewBox="0 0 36 36"
                                                         sx={{
                                                             transform: "rotate(-90deg)",
-                                                            width: 32,
-                                                            height: 32,
+                                                            width: 30,
+                                                            height: 30,
                                                             display: "block",
                                                         }}
                                                     >
@@ -2517,8 +2517,8 @@ const Chat = () => {
                                                     <Box
                                                         sx={{
                                                             position: "absolute",
-                                                            top: "38%",
-                                                            left: "44%",
+                                                            top: "35%",
+                                                            left: "42%",
                                                             width: 13,
                                                             height: 13,
                                                             transform: "translate(-50%, -50%)",
