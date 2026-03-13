@@ -106,15 +106,18 @@ const Verify = () => {
     setInfo("");
     try {
       const res = await verifyOtp(mobile, otpString);
-      const { access_token, is_new_user, user_profile } = res.data;
+      const { access_token, is_new_user, user_profiles, default_profile_id } = res.data;
 
       setAuthToken(access_token);
       localStorage.setItem("mobile", mobile);
+      localStorage.setItem("token", access_token);
 
-      if (user_profile) {
-        localStorage.setItem("token", access_token);
-        localStorage.setItem("userName", user_profile.name || "");
-        localStorage.setItem("userEmail", user_profile.email || "");
+      if (user_profiles && user_profiles.length > 0) {
+        // Find the default profile or fallback to the first one
+        const defaultProfile = user_profiles.find(p => p.referenceid === default_profile_id) || user_profiles[0];
+        localStorage.setItem("userName", defaultProfile.name || "");
+        localStorage.setItem("userEmail", defaultProfile.email || "");
+        localStorage.setItem("currentProfileId", defaultProfile.referenceid);
       }
 
       if (is_new_user) {

@@ -44,8 +44,8 @@ export const regenerateReport = (mobile) => api.post(`/auth/regenerate-report/${
 
 
 export const sendMessage = (mobile, message, history, sessionId) => api.post('/auth/chat', { mobile, message, history, session_id: sessionId });
-export const getGurujiResponse = (mobile, message, history, sessionId, paymentId = null) =>
-    api.post('/auth/chat/guruji', { mobile, message, history, session_id: sessionId, payment_id: paymentId });
+export const getGurujiResponse = (mobile, message, history, sessionId, paymentId = null, referenceid = null) =>
+    api.post('/auth/chat/guruji', { mobile, message, history, session_id: sessionId, payment_id: paymentId, referenceid });
 export const endChat = (mobile, history, sessionId) => api.post('/auth/end-chat', { mobile, history, session_id: sessionId });
 export const startSession = (mobile, sessionId) => api.post('/auth/start-session', { mobile, session_id: sessionId });
 export const getChatHistory = (mobile) => api.get(`/auth/history/${mobile}`);
@@ -95,7 +95,7 @@ export const getWalletStatus = () => api.get('/wallet/status');
 export const getBalance = (mobile) => api.get(`/wallet/balance/${mobile}`);
 export const getTransactionHistory = (mobile) => api.get(`/wallet/history/${mobile}`);
 export const rechargeWallet = (data) => api.post('/wallet/recharge', data);
-export const generateReport = (mobile, category, question = null, sessionId = null, messageId = null) => api.post('/wallet/generate-report', { mobile, category, question, session_id: sessionId, message_id: messageId }, { responseType: 'blob' });
+export const generateReport = (mobile, category, question = null, sessionId = null, messageId = null, referenceid = null) => api.post('/wallet/generate-report', { mobile, category, question, session_id: sessionId, message_id: messageId, referenceid }, { responseType: 'blob' });
 export const toggleWalletSystem = (enabled) => api.post(`/wallet/toggle-system?enabled=${enabled}`);
 export const getDashboardStats = (range = '7D') => api.get(`/admin/stats?range=${range}`);
 export const getUserReports = (mobile) => api.get(`/wallet/reports/${mobile}`);
