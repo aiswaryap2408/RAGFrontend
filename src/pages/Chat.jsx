@@ -1341,7 +1341,8 @@ const Chat = () => {
             return next;
         });
 
-        if (typeof msg !== 'string') setInput('');
+        // Always clear the input field after sending
+        setInput('');
 
         // Add to state queue; this naturally triggers the useEffect which starts the 3s timer
         setMessageQueue(prev => [...prev, text]);
@@ -1352,10 +1353,38 @@ const Chat = () => {
         scrollToBottom();
     };
 
+    const handleEditQueuedMessage = () => {
+        if (messageQueue.length === 0 || loading || userStatus !== 'ready') return;
+
+        // Cancel the timer so the message doesn't get sent
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+            debounceTimerRef.current = null;
+        }
+
+        // Combine all currently queued text to edit
+        const combinedText = messageQueue.join('\n');
+
+        // Put the text back into the input field
+        setInput(combinedText);
+
+        // Remove the queued messages from the visual chat history
+        setMessages(prev => {
+
+            return prev.filter(m => !m.isQueued);
+        });
+
+        // Clear the conceptual queue
+        setMessageQueue([]);
+
+        // Optionally, focus the input field by treating it as if the user is typing again
+        setIsUserTyping(true);
+    };
+
     const processQueue = async (queuedMessages) => {
         if (queuedMessages.length === 0 || loading || userStatus !== 'ready') return;
 
-        const combinedText = queuedMessages.join('\n\n');
+        const combinedText = queuedMessages.join('\n');
 
         // Reset global report state for the new interaction ONLY if not preparing a report
         if (reportState === 'IDLE' || reportState === 'READY') {
@@ -2390,6 +2419,7 @@ const Chat = () => {
                                         {msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user' && (
                                             <Box
                                                 key={timerKey}
+                                                onClick={handleEditQueuedMessage}
                                                 sx={{
                                                     m: 0,
                                                     display: "flex",
@@ -2397,6 +2427,7 @@ const Chat = () => {
                                                     alignItems: "center",
                                                     height: "auto",
                                                     backgroundColor: "#fdfaf6",
+                                                    cursor: "pointer",
                                                 }}
                                             >
                                                 <Box
@@ -2619,6 +2650,9 @@ const Chat = () => {
                 summary={summary}
                 isAnimating={isAnimating}
                 userMsgPhase={userMsgPhase}
+                inputValue={input}
+                setInputValue={setInput}
+                isBuffering={isBuffering}
             />
             {/* Same overlays as before (Inactivity, Summary, Drawer) */}
             {/* ... preserved ... */}
