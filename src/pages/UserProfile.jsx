@@ -17,7 +17,8 @@ const UserProfile = () => {
         name: '', mobile: '', relation: 'Self (This is me)', gender: 'Male', chart_style: 'South Indian', dob: '', tob: '', pob: '', email: '',
         country: '', state: '', region_dist: '', txt_place_search: '',
         longdeg: '', longmin: '', longdir: '', latdeg: '', latmin: '', latdir: '',
-        timezone: '', timezone_name: '', latitude_google: '', longitude_google: '', correction: 0
+        timezone: '', timezone_name: '', latitude_google: '', longitude_google: '', correction: 0,
+        referenceid: ''
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -88,7 +89,8 @@ const UserProfile = () => {
                         timezone_name: profile.timezone_name || '',
                         latitude_google: profile.latitude_google || '',
                         longitude_google: profile.longitude_google || '',
-                        correction: profile.correction || 0
+                        correction: profile.correction || 0,
+                        referenceid: profile.referenceid || ''
                     });
                 } else {
                     setError('Profile not found.');

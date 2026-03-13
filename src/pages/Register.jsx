@@ -198,12 +198,15 @@ const Register = () => {
 
             const payload = { ...details, ...locationFields, mobile };
             const res = await registerUser(payload);
-            const { access_token } = res.data;
+            const { access_token, referenceid } = res.data;
 
             setAuthToken(access_token);
             localStorage.setItem('token', access_token);
             localStorage.setItem('userName', details.name);
             localStorage.setItem('userEmail', details.email);
+            if (referenceid) {
+                localStorage.setItem('currentProfileId', referenceid);
+            }
 
             setTimeout(() => {
                 navigate('/register-success');
