@@ -2436,7 +2436,20 @@ const Chat = () => {
 
                                         </Box>
                                         {/* timer animation for user msg */}
-                                        {msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user' && (
+                                        <Box
+                                            sx={{
+                                                width: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 45 : 0,
+                                                opacity: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 1 : 0,
+                                                overflow: 'hidden',
+                                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                position: 'relative',
+                                                top: '15px',
+                                                pointerEvents: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 'auto' : 'none',
+                                            }}
+                                        >
                                             <Box
                                                 key={timerKey}
                                                 onClick={handleEditQueuedMessage}
@@ -2445,9 +2458,10 @@ const Chat = () => {
                                                     display: "flex",
                                                     justifyContent: "flex-end",
                                                     alignItems: "center",
-                                                    height: "auto",
-                                                    backgroundColor: "#fdfaf6",
+                                                    backgroundColor: "transparent",
                                                     cursor: "pointer",
+                                                    p: .5,
+                                                    minWidth: 40,
                                                 }}
                                             >
                                                 <Box
@@ -2503,8 +2517,8 @@ const Chat = () => {
                                                     <Box
                                                         sx={{
                                                             position: "absolute",
-                                                            top: "40%",
-                                                            left: "40%",
+                                                            top: "38%",
+                                                            left: "44%",
                                                             width: 13,
                                                             height: 13,
                                                             transform: "translate(-50%, -50%)",
@@ -2541,7 +2555,7 @@ const Chat = () => {
                                                     />
                                                 </Box>
                                             </Box>
-                                        )}
+                                        </Box>
                                     </Box>
                                     {/* Translation Indicator */}
                                     {showTranslationIndicator && (
