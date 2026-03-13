@@ -1234,7 +1234,9 @@ const Chat = () => {
         setWaitMessage("Sending to Astrologer");
 
         try {
-            const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId);
+            const referenceid = localStorage.getItem('currentProfileId');
+            const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId, referenceid);
+            // const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId);
             setWaitMessage("Astrologer is typing");
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id } = res.data;
 
@@ -1554,7 +1556,9 @@ const Chat = () => {
                 const msgId = currentMsg?.message_id;
                 console.log("DEBUG: Generating report for message_id:", msgId);
 
-                const res = await generateReport(mobile, category || 'general', question, sessionId, msgId);
+                const referenceid = localStorage.getItem('currentProfileId');
+                // const res = await generateReport(mobile, category || 'general', question, sessionId, msgId);
+                const res = await generateReport(mobile, category || 'general', question, sessionId, msgId, referenceid);
 
                 if (res.data.type === 'application/json') {
                     const reader = new FileReader();
