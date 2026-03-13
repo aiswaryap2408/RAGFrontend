@@ -90,7 +90,8 @@ const Dakshina = ({ open, onClose, onSuccess }) => {
                         // alert("Dakshina received with gratitude! 🙏");
                         if (onClose) onClose();
                         if (onSuccess) {
-                            onSuccess(amount);
+                            // onSuccess(amount);
+                            onSuccess(amount, response);
                         } else {
                             navigate('/chat', { state: { newSession: true } });
                         }

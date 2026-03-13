@@ -511,7 +511,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
     const bubbleSx = {
         p: '12px 16px 14px 12px',
         borderRadius: ' 2px 10px 10px 10px',
-        borderLeft: ' 2.5px solid #dc5d35',
+        borderLeft: isPaidResponse ? ' 2.5px solid #54A170' : 'none',
         bgcolor: isPaidResponse ? '#fef6eb' : '#f1f1f1',
         color: isPaidResponse ? '#3e2723' : '#000000',
         // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
@@ -705,6 +705,7 @@ const Chat = () => {
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
     const [profileDob, setProfileDob] = useState('');
     const [profilebirthstar, setProfileBirthStar] = useState('');
+    const [isSubscribed, setIsSubscribed] = useState(false);
 
     // Multi-step report flow state
     const [reportState, setReportState] = useState('IDLE'); // IDLE, CONFIRMING, PAYING, PREPARING, READY
@@ -1006,6 +1007,7 @@ const Chat = () => {
                 const res = await api.get(`/auth/user-status/${mobile}?t=${Date.now()}`);
                 const status = res.data.status;
                 setUserStatus(status);
+                setIsSubscribed(!!res.data.user_profile?.is_subscribed);
                 if (res.data.user_profile?.name) {
                     setUserName(res.data.user_profile.name);
                     localStorage.setItem('userName', res.data.user_profile.name);
@@ -1061,6 +1063,7 @@ const Chat = () => {
                             const pollRes = await api.get(`/auth/user-status/${mobile}?t=${Date.now()}`);
                             const newStatus = pollRes.data.status;
                             setUserStatus(newStatus);
+                            setIsSubscribed(!!pollRes.data.user_profile?.is_subscribed);
                             if (pollRes.data.wallet_balance !== undefined) {
                                 setWalletBalance(pollRes.data.wallet_balance);
                             }
@@ -1994,7 +1997,8 @@ const Chat = () => {
             <Dakshina
                 open={dakshinaOpen}
                 onClose={() => setDakshinaOpen(false)}
-                onSuccess={(amt) => {
+                // onSuccess={(amt) => {
+                onSuccess={(amt, res) => {
                     const amountPaid = parseFloat(amt);
                     const gratitudePoints = (amountPaid * 0.1).toFixed(1);
 
@@ -2008,7 +2012,9 @@ const Chat = () => {
                         gratitudeMsg: "We've credited 10% of your Dakshina as gratitude points in your wallet",
                         addedLabel: 'added',
                         showWave: true,
-                        referenceId: response.referenceId
+                        // referenceId: response.referenceId,
+                        // referenceId: res?.razorpay_payment_id || 'N/A'
+                        referenceId: response.referenceId || 'N/A'
                     });
                     setThankYouOpen(true);
                 }}
@@ -2071,7 +2077,8 @@ const Chat = () => {
                                 {startedCond && <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0 }}>Guruji</Typography>}
                                 <Box sx={{ flex: 1, maxWidth: '85%' }}>
                                     <SequentialResponse
-                                        isPaidResponse={isPaidUserMsg}
+                                        // isPaidResponse={isPaidUserMsg}
+                                        isPaidResponse={isPaidUserMsg || isSubscribed}
                                         gurujiJson={gurujiData}
                                         bubbles={msg.bubbles || []}
                                         delays={msg.delays || []}
@@ -2300,9 +2307,18 @@ const Chat = () => {
                                                 <Box sx={{
                                                     p: '12px 16px 18px 12px',
                                                     borderRadius: '10px 2px 10px 10px',
-                                                    borderRight: '2.5px solid #54A170',
-                                                    bgcolor: msg.role === 'user' ? (msg.requires_chat_payment ? '#2f3148' : '#e2e2e2') : (isPaidUserMsg ? '#fef6eb' : '#f1f1f1'),
-                                                    color: msg.role === 'user' ? (msg.requires_chat_payment ? '#ffffff' : '#000000') : (isPaidUserMsg ? '#3e2723' : '#000000'),
+                                                    borderRight: (msg.role === 'user' && (msg.requires_chat_payment || isSubscribed)) || (msg.role === 'assistant' && (isPaidUserMsg || isSubscribed))
+                                                        ? '2.5px solid #54A170'
+                                                        : 'none',
+                                                    bgcolor: msg.role === 'user'
+                                                        ? (msg.requires_chat_payment || isSubscribed ? '#2f3148' : '#e2e2e2')
+                                                        : (isPaidUserMsg || isSubscribed ? '#fef6eb' : '#f1f1f1'),
+                                                    color: msg.role === 'user'
+                                                        ? (msg.requires_chat_payment || isSubscribed ? '#ffffff' : '#000000')
+                                                        : (isPaidUserMsg || isSubscribed ? '#3e2723' : '#000000'),
+                                                    // borderRight: '2.5px solid #54A170',
+                                                    // bgcolor: msg.role === 'user' ? (msg.requires_chat_payment ? '#2f3148' : '#e2e2e2') : (isPaidUserMsg ? '#fef6eb' : '#f1f1f1'),
+                                                    // color: msg.role === 'user' ? (msg.requires_chat_payment ? '#ffffff' : '#000000') : (isPaidUserMsg ? '#3e2723' : '#000000'),
                                                     // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                                     // border: msg.role !== 'user' && messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '1px solid #ffd54f' : 'none',
                                                     position: 'relative',
@@ -2420,18 +2436,32 @@ const Chat = () => {
 
                                         </Box>
                                         {/* timer animation for user msg */}
-                                        {msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user' && (
+                                        <Box
+                                            sx={{
+                                                width: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 45 : 0,
+                                                opacity: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 1 : 0,
+                                                overflow: 'hidden',
+                                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                position: 'relative',
+                                                top: '15px',
+                                                pointerEvents: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 'auto' : 'none',
+                                            }}
+                                        >
                                             <Box
                                                 key={timerKey}
                                                 onClick={handleEditQueuedMessage}
                                                 sx={{
                                                     m: 0,
                                                     display: "flex",
-                                                    justifyContent: "center",
+                                                    justifyContent: "flex-end",
                                                     alignItems: "center",
-                                                    height: "auto",
-                                                    backgroundColor: "#fdfaf6",
+                                                    backgroundColor: "transparent",
                                                     cursor: "pointer",
+                                                    p: .5,
+                                                    minWidth: 40,
                                                 }}
                                             >
                                                 <Box
@@ -2447,8 +2477,8 @@ const Chat = () => {
                                                         viewBox="0 0 36 36"
                                                         sx={{
                                                             transform: "rotate(-90deg)",
-                                                            width: 40,
-                                                            height: 40,
+                                                            width: 32,
+                                                            height: 32,
                                                             display: "block",
                                                         }}
                                                     >
@@ -2487,10 +2517,10 @@ const Chat = () => {
                                                     <Box
                                                         sx={{
                                                             position: "absolute",
-                                                            top: "50%",
-                                                            left: "50%",
-                                                            width: 15,
-                                                            height: 15,
+                                                            top: "38%",
+                                                            left: "44%",
+                                                            width: 13,
+                                                            height: 13,
                                                             transform: "translate(-50%, -50%)",
 
                                                             "&::before, &::after": {
@@ -2525,7 +2555,7 @@ const Chat = () => {
                                                     />
                                                 </Box>
                                             </Box>
-                                        )}
+                                        </Box>
                                     </Box>
                                     {/* Translation Indicator */}
                                     {showTranslationIndicator && (
