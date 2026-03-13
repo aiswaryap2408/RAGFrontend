@@ -8,6 +8,7 @@ import AddIcon from '@mui/icons-material/Add';
 import HistoryIcon from '@mui/icons-material/History';
 import Subheader from '../../components/subheader';
 import PrimaryButton from '../../components/PrimaryButton';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 
 const Wallet = () => {
     const [balance, setBalance] = useState(0);
@@ -104,10 +105,12 @@ const Wallet = () => {
     };
 
     const rechargeOptions = [
-        { price: 99 },
-        { price: 199 },
-        { price: 499 },
+        { price: 99, points: 99 },
+        { price: 499, points: 530 },
+        { price: 1999, points: 2150 },
+        { price: 4999, points: 5450 },
     ];
+
 
     return (
         <Box sx={{
@@ -118,7 +121,7 @@ const Wallet = () => {
             overflow: 'hidden'
         }}>
             <Box sx={{ position: 'relative', flexShrink: 0, zIndex: 100, bgcolor: '#FFF6EB' }}>
-                <Subheader title="My Wallet" showBack />
+                <Subheader title="Recharge" showBack />
             </Box>
 
             <Box sx={{
@@ -126,7 +129,7 @@ const Wallet = () => {
                 overflowY: 'auto',
                 position: 'relative',
                 zIndex: 10,
-                mt: 9,
+                mt: 6.5,
                 pt: 4,
                 px: 2,
                 pb: 5,
@@ -136,13 +139,13 @@ const Wallet = () => {
             }}>
                 <Box sx={{ mb: 3 }}>
                     <Typography sx={{ fontWeight: 700, color: '#eb3c34', fontSize: '1rem' }}>Current wallet balance:</Typography>
-                    <Typography sx={{ fontWeight: 500, color: '#53300e', fontSize: '2.5rem' }}>{balance.toLocaleString()}<span style={{ fontSize: '1.5rem', fontWeight: 400 }}> pts</span></Typography>
+                    <Typography sx={{ fontWeight: 500, color: '#53300e', fontSize: '2.5rem', lineHeight: 1.2 }}>{balance.toLocaleString()}<span style={{ fontSize: '1.5rem', fontWeight: 400 }}> pts</span></Typography>
                 </Box>
 
                 {/* Recharge Section */}
                 <Box sx={{ mb: 4 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography sx={{ color: '#eb3c34', fontWeight: 700, fontSize: '1rem' }}>Recharge:</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', mb: 0 }}>
+                        <Typography sx={{ color: '#eb3c34', fontWeight: 700, fontSize: '1rem', mr: 1.5 }}>Recharge:</Typography>
                         <Box
                             sx={{
                                 display: 'flex',
@@ -153,18 +156,20 @@ const Wallet = () => {
                             }}
                             onClick={() => navigate('/wallet/recharge-history')}
                         >
-                            <Typography sx={{ fontWeight: 700, textDecoration: 'underline', fontSize: '0.9rem', mr: 0.5 }}>
-                                Show previous recharges
+                            <Typography sx={{ fontWeight: 700, textDecoration: 'underline', fontSize: '0.9rem', mr: 0 }}>
+                                Show previous recharges<KeyboardArrowRightIcon sx={{ fontSize: '1.8rem', fontWeight: 900, position: 'relative', left: -5 }} />
                             </Typography>
-                            <Box component="span" sx={{ fontSize: '1.2rem', fontWeight: 800 }}>›</Box>
+
                         </Box>
                     </Box>
-
+                    <Typography sx={{ fontWeight: 400, color: '#000000', fontSize: '1rem', mb: 2 }}>Recharge your wallet if you prefer to pay per question. Points will be deducted whenever a question falls under the paid category.</Typography>
+                    <Typography sx={{ fontWeight: 700, color: '#000000', fontSize: '1rem', mb: 1 }}>Remedies and mantras will be provided when applicable.</Typography>
                     {/* Table Container */}
                     <Box sx={{ borderRadius: 1, overflow: 'hidden', bgcolor: '#fff' }}>
                         {/* Table Header */}
-                        <Box sx={{ display: 'flex', bgcolor: '#54a170', p: 1.5 }}>
-                            <Typography sx={{ flex: 1, color: '#fff', fontWeight: 600 }}>Recharge for</Typography>
+                        <Box sx={{ display: 'flex', bgcolor: '#54a170', p: 1, px: 1.5 }}>
+                            <Typography sx={{ flex: 1, color: '#fff', fontWeight: 500, fontSize: '1rem' }}>Recharge for</Typography>
+                            <Typography sx={{ flex: 1, color: '#fff', fontWeight: 500, fontSize: '1rem' }}>You get</Typography>
                             <Box sx={{ width: 120 }} />
                         </Box>
 
@@ -182,8 +187,11 @@ const Wallet = () => {
                                     '&:hover': { bgcolor: '#f9f9f9' }
                                 }}
                             >
-                                <Typography sx={{ flex: 1, fontWeight: 500, color: '#5b5b5b', fontSize: '1.2rem' }}>
-                                    ₹ {option.price} <Box component="span" sx={{ fontWeight: 400, fontSize: '1rem', color: '#5b5b5b' }}></Box>
+                                <Typography sx={{ flex: 1, fontWeight: 400, color: '#5b5b5b', fontSize: '1.3rem' }}>
+                                    ₹ {option.price} <Box component="span" sx={{ fontWeight: 400, fontSize: '.8rem', color: '#5b5b5b' }}>+ GST</Box>
+                                </Typography>
+                                <Typography sx={{ flex: 1, fontWeight: 600, color: '#5b5b5b', fontSize: '1.2rem' }}>
+                                    {option.points} pts
                                 </Typography>
                                 <PrimaryButton
                                     label={loading ? "..." : "Recharge"}
@@ -197,7 +205,8 @@ const Wallet = () => {
                                         textTransform: 'none',
                                         fontWeight: 500,
                                         p: .5,
-                                        width: '120px',
+                                        px: 0,
+                                        width: '110px',
                                         '&:hover': { bgcolor: '#458a5c' }
                                     }}
                                 />
