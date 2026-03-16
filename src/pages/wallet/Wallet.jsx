@@ -145,7 +145,7 @@ const Wallet = () => {
                 {/* Recharge Section */}
                 <Box sx={{ mb: 4 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', mb: 0 }}>
-                        <Typography sx={{ color: '#eb3c34', fontWeight: 700, fontSize: '1rem', mr: 1.5 }}>Recharge:</Typography>
+                        <Typography sx={{ color: '#eb3c34', fontWeight: 700, fontSize: '1.2rem', mr: 1.5 }}>Recharge:</Typography>
                         <Box
                             sx={{
                                 display: 'flex',
@@ -162,8 +162,8 @@ const Wallet = () => {
 
                         </Box>
                     </Box>
-                    <Typography sx={{ fontWeight: 400, color: '#000000', fontSize: '1rem', mb: 2 }}>Recharge your wallet if you prefer to pay per question. Points will be deducted whenever a question falls under the paid category.</Typography>
-                    <Typography sx={{ fontWeight: 700, color: '#000000', fontSize: '1rem', mb: 1 }}>Remedies and mantras will be provided when applicable.</Typography>
+                    <Typography sx={{ fontWeight: 400, color: '#000000', fontSize: '.95rem', mb: 2 }}>Recharge your wallet if you prefer to pay per question. Points will be deducted whenever a question falls under the paid category.</Typography>
+                    <Typography sx={{ fontWeight: 700, color: '#000000', fontSize: '.95rem', mb: 1 }}>Remedies and mantras will be provided when applicable.</Typography>
                     {/* Table Container */}
                     <Box sx={{ borderRadius: 1, overflow: 'hidden', bgcolor: '#fff' }}>
                         {/* Table Header */}
@@ -203,7 +203,7 @@ const Wallet = () => {
                                         color: '#fff',
                                         borderRadius: 50,
                                         textTransform: 'none',
-                                        fontWeight: 500,
+                                        fontWeight: 400,
                                         p: .5,
                                         px: 0,
                                         width: '110px',
@@ -213,6 +213,43 @@ const Wallet = () => {
                             </Box>
                         ))}
                     </Box>
+                </Box>
+
+                {/* Separator */}
+                <Box sx={{ py: 0, textAlign: 'center' }}>
+                    <Typography sx={{ color: '#eb3c34', fontWeight: 700, fontSize: '1.2rem' }}>- or -</Typography>
+                </Box>
+
+                {/* Subscribe Section */}
+                <Box sx={{ mb: 6 }}>
+                    <Typography sx={{ color: '#eb3c34', fontWeight: 700, fontSize: '1.2rem', mb: .3 }}>Subscribe:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '0.95rem', mb: 2, lineHeight: 1.6 }}>
+                        A Monthly or Quarterly subscription is ideal if you wish to interact frequently with the astrologer and receive remedies and mantras whenever applicable.</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '0.95rem', mb: 2, lineHeight: 1.6 }}>
+                        Subscribers receive more detailed insights with every response, and their questions are prioritized over non-subscribed users.
+                    </Typography>
+                    <PrimaryButton
+                        label="Show details"
+                        variant="contained"
+                        onClick={() => navigate('/wallet/subscribe')}
+                        endIcon={<KeyboardArrowRightIcon />}
+                        sx={{
+                            bgcolor: '#54a170',
+                            color: '#fff',
+                            borderRadius: 50,
+                            textTransform: 'none',
+                            fontWeight: 400,
+                            py: .4,
+                            px: 2,
+                            width: 'auto',
+                            '&:hover': { bgcolor: '#458a5c' },
+                            '& .MuiButton-endIcon svg': {
+                                fontSize: 30,
+
+                            },
+
+                        }}
+                    />
                 </Box>
 
                 {/* Transaction History Section */}
@@ -294,10 +331,8 @@ const Wallet = () => {
                         )}
                     </Box>
                 </Box>
-
-
             </Box>
-        </Box>
+        </Box >
     );
 };
 
