@@ -220,40 +220,47 @@ const Dashboard = () => {
                     )} */}
                     {isLoggedIn && (
                         <Box sx={{ mb: 3, display: "flex", justifyContent: "center", mt: 1.5 }}>
-                            <Typography sx={{ fontWeight: 400, color: '#fff', fontSize: '1rem', bgcolor: '#54a170', borderRadius: 5, p: 1, px: 3, display: "flex", alignItems: "center" }}>
-                                <img src="/svg/wallet-white.svg" alt="" style={{ width: '20px', height: '20px', marginRight: '5px', }} />
-                                You have {balance.toLocaleString()} pts
-                            </Typography>
+                            <Box sx={{ bgcolor: '#2f3148', borderRadius: 5, p: 1, px: 3, display: "flex", alignItems: "center" }}>
+                                <Typography sx={{ fontWeight: 400, color: '#fff', fontSize: '1rem', display: 'flex', pr: 2 }}>
+                                    <img src="/svg/wallet-white.svg" alt="" style={{ width: '20px', height: '20px', marginRight: '5px', }} />
+                                    You have {balance.toLocaleString()} pts
+                                </Typography>
+                                <Typography sx={{ color: '#fff' }}>|</Typography>
+                                <Typography sx={{ fontWeight: 400, color: '#fff', fontSize: '1rem', display: 'flex', pl: 2 }}>
+                                    <img src="/svg/wallet-white.svg" alt="" style={{ width: '20px', height: '20px', marginRight: '5px', }} />
+                                    You have {balance.toLocaleString()} pts
+                                </Typography>
+                            </Box>
                         </Box>
                     )}
                     <Box sx={{ textAlign: "center", display: "flex", justifyContent: "space-around", flexWrap: 'wrap', gap: 2, mb: 5 }}>
                         <Box onClick={() => handleAction('/profile')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '36px', height: '36px', display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                <img src="/svg/user.svg" alt="" style={{ width: '35px', height: '35px' }} />
+                            <Box sx={{ bgcolor: "#dc5d35", borderRadius: 1, p: 1, width: '45px', height: '45px', display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                <img src="/svg/user.svg" alt="" style={{ width: '36px', height: '36px' }} />
                             </Box>
                             <Typography fontSize={14} mt={.3} width={90} color="#574228">Edit profiles</Typography>
                         </Box>
                         <Box onClick={() => handleAction('/wallet')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '36px', height: '36px', display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                <img src="/svg/wallet-white.svg" alt="" style={{ width: '35px', height: '35px' }} />
+                            <Box sx={{ bgcolor: "#dc5d35", borderRadius: 1, p: 1, width: '45px', height: '45px', display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                <img src="/svg/wallet-white.svg" alt="" style={{ width: '36px', height: '36px' }} />
                             </Box>
                             <Typography fontSize={14} mt={.3} width={75} color="#574228">Recharge</Typography>
                         </Box>
                         <Box onClick={() => handleAction('/wallet/recharge-history')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '36px', height: '36px', display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                <img src="/svg/payments.svg" alt="" style={{ width: '35px', height: '35px' }} />
+                            <Box sx={{ bgcolor: "#dc5d35", borderRadius: 1, p: 1.5, width: '45px', height: '45px', display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                <img src="/svg/subscribe.svg" alt="" style={{ width: '36px', height: '36px' }} />
                             </Box>
-                            <Typography fontSize={14} mt={.3} width={75} color="#574228">Payments</Typography>
+                            <Typography fontSize={14} mt={.3} width={75} color="#574228">Subscribe</Typography>
                         </Box>
                         <Box onClick={() => handleAction('https://www.clickastro.com/horoscope-package')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Box sx={{ bgcolor: "#2f3148", borderRadius: 1, p: 1, width: '36px', height: '36px', display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                <img src="/svg/detailed_report.svg" alt="" style={{ width: '35px', height: '35px' }} />
+                            <Box sx={{ bgcolor: "#dc5d35", borderRadius: 1, p: 1.5, width: '45px', height: '45px', display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                <img src="/svg/detailed_report.svg" alt="" style={{ width: '36px', height: '36px' }} />
                             </Box>
                             <Typography fontSize={14} mt={.3} width={75} margin={'auto'}>Horoscope</Typography>
                         </Box>
                     </Box>
 
-                    <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
+                    {/* <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
                         <Typography fontSize={16} fontWeight={600} mb={.5} color="#dc5d35">
                             Your today {signName ? `(${signName})` : ""}:
                         </Typography>
@@ -317,7 +324,7 @@ const Dashboard = () => {
                                 }}
                             />
                         )}
-                    </Box>
+                    </Box> */}
                 </Box>
 
                 <ConsultFooter />
