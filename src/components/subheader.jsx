@@ -21,18 +21,19 @@ const Subheader = ({ title, showBack = false, onBack }) => {
                 height: 75,
                 display: "flex",
                 alignItems: "center",
-                px: 2,
+                // px: 2,
 
                 position: "fixed",
                 top: 0,
                 zIndex: 5,
                 bgcolor: "#ffdaa7",
+                // ...sx
             }}
         >
             {showBack && (
                 <IconButton
                     onClick={handleBack}
-                    sx={{ position: "relative", left: -14 }}
+                    sx={{ position: "relative" }}
                 >
                     <KeyboardArrowLeftIcon sx={{ fontSize: 40, color: "#533000" }} />
                 </IconButton>
@@ -41,7 +42,7 @@ const Subheader = ({ title, showBack = false, onBack }) => {
             <Typography
                 variant="h6"
                 sx={{
-                    fontWeight: 600,
+                    fontWeight: 500,
                     color: "#533000",
                     flex: 1,
                     fontSize: "1.1rem",
