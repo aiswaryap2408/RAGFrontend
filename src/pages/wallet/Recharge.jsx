@@ -9,16 +9,24 @@ import Subheader from '../../components/subheader';
 
 const Recharge = () => {
     const [amount, setAmount] = useState('');
+    const [points, setPoints] = useState('');
     const [loading, setLoading] = useState(false);
+    const [configs, setConfigs] = useState([]);
+    const [configsLoading, setConfigsLoading] = useState(true);
     const mobile = localStorage.getItem('mobile');
+    const referenceid = localStorage.getItem('currentProfileId');
     const navigate = useNavigate();
-
-    const presets = [100, 200, 500, 1000];
 
     const [paymentEnabled, setPaymentEnabled] = useState(true);
 
     React.useEffect(() => {
+        if (!referenceid) {
+            console.warn("No profile selected, redirecting to chat");
+            navigate('/chat');
+            return;
+        }
         checkPaymentStatus();
+        fetchConfigs();
         const script = document.createElement('script');
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
         script.async = true;
@@ -28,9 +36,23 @@ const Recharge = () => {
         };
     }, []);
 
+    const fetchConfigs = async () => {
+        setConfigsLoading(true);
+        try {
+            const { getPublicRechargeConfigs } = await import('../../api');
+            const { data } = await getPublicRechargeConfigs();
+            setConfigs(data || []);
+        } catch (e) {
+            console.error("Failed to fetch recharge configs", e);
+        } finally {
+            setConfigsLoading(false);
+        }
+    };
+
     const checkPaymentStatus = async () => {
         try {
-            const { data } = await import('../../api').then(m => m.getSystemSettings());
+            const { getSystemSettings } = await import('../../api');
+            const { data } = await getSystemSettings();
             if (data && typeof data.payment_enabled !== 'undefined') {
                 setPaymentEnabled(data.payment_enabled);
             }
@@ -56,7 +78,7 @@ const Recharge = () => {
             const { createPaymentOrder, verifyPayment } = await import('../../api');
 
             // 1. Create Order
-            const orderRes = await createPaymentOrder(parseFloat(amount), mobile);
+            const orderRes = await createPaymentOrder(parseFloat(amount), mobile, referenceid);
             const order = orderRes.data;
 
             // 2. Open Razorpay
@@ -130,12 +152,6 @@ const Recharge = () => {
                 },
                 scrollbarWidth: "none",
             }}>
-                {/* <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <IconButton onClick={() => navigate('/wallet')} sx={{ color: '#F26A2E', mr: 1 }}>
-                        <ArrowBackIcon />
-                    </IconButton>
-                    <Typography variant="h6" sx={{ fontWeight: 800, color: '#333' }}>Add Credits</Typography>
-                </Box> */}
 
                 {!paymentEnabled && (
                     <Box sx={{ mb: 2, p: 2, bgcolor: '#FFEBEE', color: '#D32F2F', borderRadius: 2, fontSize: '0.85rem', fontWeight: 700, textAlign: 'center' }}>
@@ -175,30 +191,55 @@ const Recharge = () => {
                             }}
                         />
 
-                        <Box sx={{ mt: 3, mb: 4 }}>
-                            <Typography sx={{ mb: 1.5, fontWeight: 700, color: '#666', fontSize: '0.75rem', textTransform: 'uppercase' }}>Quick Refill</Typography>
-                            <Grid container spacing={2}>
-                                {presets.map(p => (
-                                    <Grid item xs={6} key={p}>
-                                        <Button
-                                            fullWidth
-                                            variant={amount == p ? "contained" : "outlined"}
-                                            onClick={() => setAmount(p)}
-                                            sx={{
-                                                borderRadius: 2,
-                                                py: 1,
-                                                fontWeight: 800,
-                                                borderColor: '#FFF0E6',
-                                                bgcolor: amount == p ? '#F26A2E' : 'transparent',
-                                                color: amount == p ? 'white' : '#F26A2E',
-                                                '&:hover': { borderColor: '#F26A2E', bgcolor: amount == p ? '#F26A2E' : '#FFF0E6' }
-                                            }}
-                                        >
-                                            +₹{p}
-                                        </Button>
-                                    </Grid>
-                                ))}
-                            </Grid>
+                        <Box sx={{ mt: 4, mb: 4 }}>
+                            <Typography sx={{ mb: 2, fontWeight: 700, color: '#666', fontSize: '0.75rem', textTransform: 'uppercase' }}>Available Packages</Typography>
+                            {configsLoading ? (
+                                <Typography sx={{ fontSize: '0.75rem', color: '#888' }}>Loading offers...</Typography>
+                            ) : (
+                                <Grid container spacing={2}>
+                                    {configs.map(config => (
+                                        <Grid item xs={6} key={config.config_id}>
+                                            <Button
+                                                fullWidth
+                                                variant={amount == config.amount ? "contained" : "outlined"}
+                                                onClick={() => setAmount(config.amount)}
+                                                sx={{
+                                                    borderRadius: 3,
+                                                    p: 2,
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    gap: 0.5,
+                                                    borderColor: '#FFF0E6',
+                                                    bgcolor: amount == config.amount ? '#F26A2E' : 'white',
+                                                    color: amount == config.amount ? 'white' : '#333',
+                                                    boxShadow: amount == config.amount ? '0 4px 15px rgba(242,106,46,0.2)' : 'none',
+                                                    '&:hover': {
+                                                        borderColor: '#F26A2E',
+                                                        bgcolor: amount == config.amount ? '#F26A2E' : '#FFF0E6'
+                                                    }
+                                                }}
+                                            >
+                                                <Typography sx={{ fontWeight: 900, fontSize: '1.1rem' }}>₹{config.amount}</Typography>
+                                                <Typography sx={{
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: 800,
+                                                    color: amount == config.amount ? 'white' : '#F26A2E',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: 0.5
+                                                }}>
+                                                    {config.points} Points
+                                                </Typography>
+                                            </Button>
+                                        </Grid>
+                                    ))}
+                                    {configs.length === 0 && !configsLoading && (
+                                        <Grid item xs={12}>
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#888', fontStyle: 'italic' }}>No packages available. Enter a custom amount above.</Typography>
+                                        </Grid>
+                                    )}
+                                </Grid>
+                            )}
                         </Box>
 
                         <Button

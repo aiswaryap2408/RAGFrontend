@@ -57,7 +57,10 @@ const Onboarding = () => {
                     navigate('/register');
                 } else {
                     // Start polling
+                    let retryCount = 0;
+                    const maxRetries = 10; // Approx 30 seconds
                     const pollInterval = setInterval(async () => {
+                        retryCount++;
                         try {
                             const pollRes = await getUserStatus(mobile);
                             if (pollRes.data.status === 'ready') {
@@ -68,8 +71,19 @@ const Onboarding = () => {
                                 console.error("Polling: Processing failed, redirecting to register...");
                                 navigate('/register');
                             }
+                            
+                            if (retryCount >= maxRetries) {
+                                console.warn("Polling timeout: Proceeding to dashboard as fallback.");
+                                clearInterval(pollInterval);
+                                navigate('/dashboard');
+                            }
                         } catch (err) {
                             console.error("Polling error", err);
+                            // If polling fails (e.g. CORS error), don't get stuck forever
+                            if (retryCount >= 5) { // Quicker fallback on persistent network/cors errors
+                                clearInterval(pollInterval);
+                                navigate('/dashboard');
+                            }
                         }
                     }, 3000);
                 }
