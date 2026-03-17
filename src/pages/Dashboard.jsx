@@ -327,7 +327,7 @@ const Dashboard = () => {
                     </Box> */}
                 </Box>
 
-                <ConsultFooter label="Start Consultation" showOnlineStatus={true} />
+                <ConsultFooter label="Start Consultation" showOnlineStatus={true} onClick={() => navigate("/chat")} />
 
                 {/* Internal Popup Overlay */}
                 {isProfilePopupOpen && (

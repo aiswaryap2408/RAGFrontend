@@ -53,11 +53,12 @@ const SafeHTML = ({ html }) => {
     const parse = (text) => {
         if (typeof text !== 'string') return text;
 
-        // Split by tags: <b>, </b>, <p...>, </p>, <br.../> AND newlines \n
-        const parts = text.split(/(<(?:b|\/b|p[^>]*|\/p|br[^>]*\/?)>|\n)/i);
+        // Split by tags: <b>, </b>, <p...>, </p>, <br.../>, <span...>, </span> AND newlines (\n\n or \n)
+        const parts = text.split(/(<(?:b|\/b|p[^>]*|\/p|br[^>]*\/?|span[^>]*|\/span)>|\n\n|\n)/i);
 
         const result = [];
         let isBold = false;
+        let currentSpanColor = null;
 
         parts.forEach((part, index) => {
             if (!part) return;
@@ -68,8 +69,16 @@ const SafeHTML = ({ html }) => {
                 isBold = true;
             } else if (lowerPart === '</b>') {
                 isBold = false;
+            } else if (lowerPart.startsWith('<span')) {
+                // Regex to find color: style="color: #54A170" or style='color: #54A170'
+                const colorMatch = part.match(/color:\s*([#\w]+)/i);
+                if (colorMatch) currentSpanColor = colorMatch[1];
+            } else if (lowerPart === '</span>') {
+                currentSpanColor = null;
             } else if (lowerPart === '<br>' || lowerPart.startsWith('<br')) {
                 result.push(<br key={index} />);
+            } else if (lowerPart === '\n\n') {
+                result.push(<Box key={index} sx={{ height: '14px' }} />);
             } else if (lowerPart === '\n') {
                 result.push(<br key={index} />);
             } else if (lowerPart.startsWith('<p')) {
@@ -79,10 +88,15 @@ const SafeHTML = ({ html }) => {
                 result.push(<br key={`br-p-${index}-2`} />);
             } else {
                 // Text content
-                if (isBold) {
-                    result.push(<b key={index}>{part}</b>);
+                let content = part;
+                if (isBold) content = <strong key={`bold-${index}`}>{content}</strong>;
+
+                if (currentSpanColor) {
+                    result.push(<span key={`span-${index}`} style={{ color: currentSpanColor }}>{content}</span>);
+                } else if (isBold) {
+                    result.push(content);
                 } else {
-                    result.push(<React.Fragment key={index}>{part}</React.Fragment>);
+                    result.push(<React.Fragment key={index}>{content}</React.Fragment>);
                 }
             }
         });
@@ -93,7 +107,7 @@ const SafeHTML = ({ html }) => {
     return <React.Fragment>{parse(html)}</React.Fragment>;
 };
 
-const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse, time, jsonVisibility, onLabelClick }) => {
+const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse, time, jsonVisibility, onLabelClick, sx }) => {
     // Filter out fields we don't want to show in the UI debug block
     const getFilteredJson = (json) => {
         if (!json) return null;
@@ -178,7 +192,7 @@ const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse,
                             </Typography>
                         )}
                         <Typography
-                            sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', textAlign: 'left', fontWeight: 500 }}
+                            sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', textAlign: 'left', fontWeight: 500, ...sx }}
                         >
                             <SafeHTML html={typeof content === 'object' ? (content.message || JSON.stringify(content)) : content} />
                         </Typography>
@@ -329,21 +343,22 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
                         disabled={disabled}
                         startIcon={<DoneAllOutlinedIcon />}
                         sx={{
-                            bgcolor: disabled ? '#e0e0e0' : 'white',
-                            color: disabled ? '#aaa' : '#54a170',
+                            bgcolor: disabled ? '#e0e0e0' : '#54a170',
+                            color: disabled ? '#aaa' : '#ffffff',
                             px: 3,
                             py: 0.8,
                             borderRadius: 10,
                             textTransform: 'none',
                             fontSize: '0.9rem',
                             fontWeight: 600,
-                            border: '2px solid #54a170',
-                            '&:hover': { bgcolor: disabled ? '#e0e0e0' : '#f0fdf4' },
+                            border: '2px solid #ffffff',
+                            '&:hover': { bgcolor: disabled ? '#e0e0e0' : '#f0fdf4', color: '#54a170', border: '2px solid #54a170' },
                             cursor: disabled ? 'not-allowed' : 'pointer',
                             pointerEvents: disabled ? 'none' : 'auto',
                         }}
                     >
                         {buttonLabel}
+                        <Typography sx={{ fontSize: '0.9rem', color: '#000', fontWeight: 400, position: 'absolute', bottom: -24 }}>Or ask another question</Typography>
                     </Button>
                 </Box>
             )}
@@ -1382,9 +1397,10 @@ const Chat = () => {
 
         // Delay starting the connection to allow the "move up" animation to show
         setTimeout(() => {
+            const capitalizedUserName = userName ? userName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') : ' ';
             const welcomeMsg = {
                 role: 'assistant',
-                content: `<b>${userName}, welcome.</b>\nI'm <b>MAYA</b>, and I'll assist you during your consultation.\nWhenever you're ready, you may begin your conversation with <b>Guruji</b>.\nYou may ask about your life, your future, or anything that has been on your mind.`,
+                content: `<b>${capitalizedUserName}, welcome.</b>\n\nI'm <b>MAYA</b>, and I'll assist you during your consultation.\n\nWhenever you're ready, you may begin your conversation with <b>Guruji</b>.\n\nYou may ask about your life, your future, or anything that has been on your mind.`,
                 assistant: 'maya',
                 time: getCurrentTime(),
                 timestamp: new Date().toISOString()
@@ -2198,6 +2214,7 @@ const Chat = () => {
                                 // time={msg.time}
                                 jsonVisibility={jsonVisibility}
                                 onLabelClick={handleLabelClick}
+                                sx={{ fontSize: '.9rem', fontWeight: 400 }}
                             />
                         );
                     }
@@ -2401,7 +2418,7 @@ const Chat = () => {
                                 <MayaTemplateBox
                                     name={userName.split(' ')[0]}
                                     content={msg.chat_payment_amount === 0
-                                        ? `This is a premium prediction worth ₹${msg.actual_chat_payment_amount || 39} - but get it for free now. \n\n <span style={{color: '#54A170'}}>Subscribe</span> to get unlimited answers access for a day, month or a quarter.`
+                                        ? `This is a premium prediction worth ₹${msg.actual_chat_payment_amount || 39} - but get it for free now. \n\n <span style="color: #54A170">Subscribe</span> to get unlimited answers access for a day, month or a quarter.`
                                         : `personalized answer to your concern is chargeable ₹${msg.chat_payment_amount || 39}.`}
                                     buttonLabel={(() => {
                                         const lastPaymentMsgIdx = messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1);
@@ -2832,9 +2849,10 @@ const Chat = () => {
                         }}>
                             <MayaIntro
                                 // title="Welcome"
-                                content={`<b>${userName}, welcome.</b>\n\nI'm <b>MAYA</b>, and I'll assist you during your consultation.\n\nWhenever you're ready, you may begin your conversation with <b>Guruji</b>.\n\nYou may ask about your life, your future, or anything that has been on your mind.`}
+                                content={`<b>${userName ? userName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') : ' '}, welcome.</b>\n\nI'm <b>MAYA</b>, and I'll assist you during your consultation.\n\nWhenever you're ready, you may begin your conversation with <b>Guruji</b>.\n\nYou may ask about your life, your future, or anything that has been on your mind.`}
                                 jsonVisibility={jsonVisibility}
                                 onLabelClick={handleLabelClick}
+                                sx={{ fontSize: '.9rem', fontWeight: 400 }}
                             />
                         </Box>
                     </>
