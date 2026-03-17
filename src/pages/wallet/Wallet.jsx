@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getBalance, getTransactionHistory } from '../../api';
+import { getBalance, getTransactionHistory, getPublicRechargeConfigs } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Card, CardContent, IconButton, Button, Divider } from '@mui/material';
+import { Box, Typography, Card, CardContent, IconButton, Button, Divider, CircularProgress } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AddIcon from '@mui/icons-material/Add';
@@ -14,7 +14,10 @@ const Wallet = () => {
     const [balance, setBalance] = useState(0);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [configs, setConfigs] = useState([]);
+    const [configsLoading, setConfigsLoading] = useState(true);
     const mobile = localStorage.getItem('mobile');
+    const referenceid = localStorage.getItem('currentProfileId');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -23,6 +26,7 @@ const Wallet = () => {
             return;
         }
         fetchWalletData();
+        fetchConfigs();
 
         // Load Razorpay script
         const script = document.createElement('script');
@@ -35,6 +39,18 @@ const Wallet = () => {
             }
         };
     }, [mobile]);
+
+    const fetchConfigs = async () => {
+        setConfigsLoading(true);
+        try {
+            const { data } = await getPublicRechargeConfigs();
+            setConfigs(data || []);
+        } catch (e) {
+            console.error("Failed to fetch recharge configs", e);
+        } finally {
+            setConfigsLoading(false);
+        }
+    };
 
     const fetchWalletData = async () => {
         try {
@@ -56,7 +72,7 @@ const Wallet = () => {
             const { createPaymentOrder, verifyPayment } = await import('../../api');
 
             // 1. Create Order
-            const orderRes = await createPaymentOrder(parseFloat(amount), mobile);
+            const orderRes = await createPaymentOrder(parseFloat(amount), mobile, referenceid);
             const order = orderRes.data;
 
             // 2. Open Razorpay
@@ -104,12 +120,6 @@ const Wallet = () => {
         }
     };
 
-    const rechargeOptions = [
-        { price: 99, points: 99 },
-        { price: 499, points: 530 },
-        { price: 1999, points: 2150 },
-        { price: 4999, points: 5450 },
-    ];
 
 
     return (
@@ -174,44 +184,55 @@ const Wallet = () => {
                         </Box>
 
                         {/* Table Rows */}
-                        {rechargeOptions.map((option, index) => (
-                            <Box
-                                key={index}
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    p: 1.5,
-                                    py: 2.5,
-                                    borderBottom: index !== rechargeOptions.length - 1 ? '2px solid #c5c5c5' : 'none',
-                                    transition: 'background 0.2s',
-                                    '&:hover': { bgcolor: '#f9f9f9' }
-                                }}
-                            >
-                                <Typography sx={{ flex: 1, fontWeight: 400, color: '#5b5b5b', fontSize: '1.3rem' }}>
-                                    ₹ {option.price} <Box component="span" sx={{ fontWeight: 400, fontSize: '.8rem', color: '#5b5b5b' }}>+ GST</Box>
-                                </Typography>
-                                <Typography sx={{ flex: 1, fontWeight: 600, color: '#5b5b5b', fontSize: '1.2rem' }}>
-                                    {option.points} pts
-                                </Typography>
-                                <PrimaryButton
-                                    label={loading ? "..." : "Recharge"}
-                                    variant="contained"
-                                    onClick={() => handleRecharge(option.price)}
-                                    disabled={loading}
-                                    sx={{
-                                        bgcolor: '#54a170',
-                                        color: '#fff',
-                                        borderRadius: 50,
-                                        textTransform: 'none',
-                                        fontWeight: 400,
-                                        p: .5,
-                                        px: 0,
-                                        width: '110px',
-                                        '&:hover': { bgcolor: '#458a5c' }
-                                    }}
-                                />
+                        {configsLoading ? (
+                            <Box sx={{ p: 4, textAlign: 'center' }}>
+                                <CircularProgress size={24} sx={{ color: '#54a170' }} />
+                                <Typography sx={{ mt: 1, color: '#666', fontSize: '0.85rem' }}>Loading current offers...</Typography>
                             </Box>
-                        ))}
+                        ) : configs.length === 0 ? (
+                            <Box sx={{ p: 4, textAlign: 'center' }}>
+                                <Typography sx={{ color: '#666', fontSize: '0.85rem' }}>No recharge packages available at the moment.</Typography>
+                            </Box>
+                        ) : (
+                            configs.map((option, index) => (
+                                <Box
+                                    key={index}
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        p: 1.5,
+                                        py: 2.5,
+                                        borderBottom: index !== configs.length - 1 ? '2px solid #c5c5c5' : 'none',
+                                        transition: 'background 0.2s',
+                                        '&:hover': { bgcolor: '#f9f9f9' }
+                                    }}
+                                >
+                                    <Typography sx={{ flex: 1, fontWeight: 400, color: '#5b5b5b', fontSize: '1.3rem' }}>
+                                        ₹ {option.amount} <Box component="span" sx={{ fontWeight: 400, fontSize: '.8rem', color: '#5b5b5b' }}>+ GST</Box>
+                                    </Typography>
+                                    <Typography sx={{ flex: 1, fontWeight: 600, color: '#5b5b5b', fontSize: '1.2rem' }}>
+                                        {option.points} pts
+                                    </Typography>
+                                    <PrimaryButton
+                                        label={loading ? "..." : "Recharge"}
+                                        variant="contained"
+                                        onClick={() => handleRecharge(option.amount)}
+                                        disabled={loading}
+                                        sx={{
+                                            bgcolor: '#54a170',
+                                            color: '#fff',
+                                            borderRadius: 50,
+                                            textTransform: 'none',
+                                            fontWeight: 400,
+                                            p: .5,
+                                            px: 0,
+                                            width: '110px',
+                                            '&:hover': { bgcolor: '#458a5c' }
+                                        }}
+                                    />
+                                </Box>
+                            ))
+                        )}
                     </Box>
                 </Box>
 
