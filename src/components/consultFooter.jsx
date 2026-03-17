@@ -5,8 +5,10 @@ import { useNavigate } from "react-router-dom";
 import './consultFooter.css';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
-const ConsultFooter = ({ onConsult }) => {
+const ConsultFooter = ({ onConsult, label = "Talk to Guruji", showOnlineStatus = false }) => {
     const navigate = useNavigate();
+    const [isFading, setIsFading] = React.useState(false);
+
     return (
         <>
             {/* Inject keyframes for the spinning border ring globally */}
@@ -56,16 +58,28 @@ const ConsultFooter = ({ onConsult }) => {
                     alt="Right curve"
                     sx={{ position: "absolute", top: '-45px', right: 0, width: "100px" }}
                 />
-                <Box sx={{ position: "absolute", top: '-82px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <FiberManualRecordIcon sx={{ color: '#00ff03', fontSize: 26, animation: 'cf-pulse 2s infinite' }} />
-                    <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#dc5d35' }}>Astrologer is online now</Typography>
-                </Box>
+                {!isFading && (
+                    showOnlineStatus ? (
+                        <Box sx={{ position: "absolute", top: '-82px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <FiberManualRecordIcon sx={{ color: '#00ff03', fontSize: 26, animation: 'cf-pulse 2s infinite' }} />
+                            <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#dc5d35' }}>Astrologer is online now</Typography>
+                        </Box>
+                    ) : (
+                        <Box sx={{ position: "absolute", top: '-100px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                            <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#acacac', mx: 3 }}>
+                                People often ask about career, relationships, marriage, muhurthas, remedies, dasa changes or important life decisions.
+                            </Typography>
+                        </Box>
+                    )
+                )}
                 {/* Animated Start Consultation Button */}
                 <Box
                     component="button"
                     onClick={() => {
-                        if (onConsult) onConsult();
-                        navigate("/chat");
+                        setIsFading(true);
+                        setTimeout(() => {
+                            if (onConsult) onConsult();
+                        }, 400); // Wait for fade out
                     }}
                     sx={{
                         position: "absolute",
@@ -78,6 +92,9 @@ const ConsultFooter = ({ onConsult }) => {
                         cursor: "pointer",
                         background: "transparent",
                         overflow: "hidden",
+                        opacity: isFading ? 0 : 1,
+                        transform: isFading ? "translateY(10px) scale(0.95)" : "translateY(0) scale(1)",
+                        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
 
                         "&:active": {
                             transform: "scale(0.97)",
@@ -163,7 +180,7 @@ const ConsultFooter = ({ onConsult }) => {
                         </Box>
 
                         <Typography component="span" sx={{ fontSize: "17px", fontWeight: 500 }}>
-                            Start Consultation
+                            {label}
                         </Typography>
                     </Box>
                 </Box>

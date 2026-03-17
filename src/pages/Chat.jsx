@@ -30,6 +30,7 @@ import Dakshina from '../pages/Dakshina';
 import DoneAllOutlinedIcon from '@mui/icons-material/DoneAllOutlined';
 import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import ThankYou from '../components/Thankyou';
+import ConsultFooter from '../components/consultFooter';
 
 const tryParseJson = (data) => {
     if (!data) return null;
@@ -44,6 +45,52 @@ const tryParseJson = (data) => {
         }
     }
     return null;
+};
+
+const SafeHTML = ({ html }) => {
+    if (!html) return null;
+
+    const parse = (text) => {
+        if (typeof text !== 'string') return text;
+
+        // Split by tags: <b>, </b>, <p...>, </p>, <br.../> AND newlines \n
+        const parts = text.split(/(<(?:b|\/b|p[^>]*|\/p|br[^>]*\/?)>|\n)/i);
+
+        const result = [];
+        let isBold = false;
+
+        parts.forEach((part, index) => {
+            if (!part) return;
+
+            const lowerPart = part.toLowerCase();
+
+            if (lowerPart === '<b>') {
+                isBold = true;
+            } else if (lowerPart === '</b>') {
+                isBold = false;
+            } else if (lowerPart === '<br>' || lowerPart.startsWith('<br')) {
+                result.push(<br key={index} />);
+            } else if (lowerPart === '\n') {
+                result.push(<br key={index} />);
+            } else if (lowerPart.startsWith('<p')) {
+                // p tags handled as simple breaks for now to avoid large gaps
+                if (result.length > 0) result.push(<br key={`br-p-${index}-1`} />);
+            } else if (lowerPart === '</p>') {
+                result.push(<br key={`br-p-${index}-2`} />);
+            } else {
+                // Text content
+                if (isBold) {
+                    result.push(<b key={index}>{part}</b>);
+                } else {
+                    result.push(<React.Fragment key={index}>{part}</React.Fragment>);
+                }
+            }
+        });
+
+        return result;
+    };
+
+    return <React.Fragment>{parse(html)}</React.Fragment>;
 };
 
 const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse, time, jsonVisibility, onLabelClick }) => {
@@ -130,8 +177,10 @@ const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse,
                                 {typeof title === 'object' ? (title.message || title.title || JSON.stringify(title)) : title}
                             </Typography>
                         )}
-                        <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', textAlign: 'left', fontWeight: 500, whiteSpace: 'pre-line' }}>
-                            {typeof content === 'object' ? (content.message || JSON.stringify(content)) : content}
+                        <Typography
+                            sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', textAlign: 'left', fontWeight: 500 }}
+                        >
+                            <SafeHTML html={typeof content === 'object' ? (content.message || JSON.stringify(content)) : content} />
                         </Typography>
                     </Box>
                 )}
@@ -476,11 +525,8 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
 
             const timer = setTimeout(() => {
                 setIsBuffering(false);
-                setVisibleCount(prev => {
-                    const next = prev + 1;
-                    if (prev === 0 && onFirstBubble) onFirstBubble();
-                    return next;
-                });
+                if (visibleCount === 0 && onFirstBubble) onFirstBubble();
+                setVisibleCount(prev => prev + 1);
                 scrollToBottom();
             }, delay);
 
@@ -644,6 +690,13 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
 
 const Chat = () => {
     const [showHeader, setShowHeader] = useState(true);
+    const [sendingWaitMessage, setSendingWaitMessage] = useState("");
+    const [isSendingToBackend, setIsSendingToBackend] = useState(false);
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [isUserTyping, setIsUserTyping] = useState(false);
+    const [messageQueue, setMessageQueue] = useState([]);
+    const [timerKey, setTimerKey] = useState(Date.now());
+    const debounceTimerRef = useRef(null);
     const lastScrollTop = useRef(0);
     const navigate = useNavigate();
     const location = useLocation();
@@ -689,9 +742,7 @@ const Chat = () => {
     // Helper to get current time string
     const getCurrentTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
 
-    const [messages, setMessages] = useState([
-        { role: 'assistant', content: "Welcome! I'll connect you to our astrologer.\nYou may call him as 'Guruji'", assistant: 'maya', time: getCurrentTime(), timestamp: new Date().toISOString() }
-    ]);
+    const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [summary, setSummary] = useState(null);
@@ -717,11 +768,13 @@ const Chat = () => {
     const [jsonModal, setJsonModal] = useState({ open: false, data: null, title: '' });
     const [chatPaymentState, setChatPaymentState] = useState('IDLE'); // IDLE, REQUIRED, PAYING, COMPLETE
     const [pendingMessageId, setPendingMessageId] = useState(null);
-    const [isBuffering, setIsBuffering] = useState(false);
-    const [isAnimating, setIsAnimating] = useState(false);
     const [gurujiStarted, setGurujiStarted] = useState(new Set()); // tracks which guruji msgs have shown at least 1 bubble
-    const [waitMessage, setWaitMessage] = useState("");
+    const [chatStarted, setChatStarted] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [isMovingToTop, setIsMovingToTop] = useState(false);
+    const [connectionText, setConnectionText] = useState('Connecting to Guruji...');
     const messagesEndRef = useRef(null);
+    const containerRef = useRef(null);
     const processedNewSession = useRef(false);
     const isAutoScrolling = useRef(false);
     const scrollTimeout = useRef(null);
@@ -744,14 +797,9 @@ const Chat = () => {
             if (elapsed < 3000) {
                 setUserMsgPhase(0);
                 const t1 = setTimeout(() => {
-                    setUserMsgPhase(1);
-                    const t2 = setTimeout(() => setUserMsgPhase(2), 1500);
+                    setUserMsgPhase(2);
                 }, 3000 - elapsed);
                 return () => clearTimeout(t1);
-            } else if (elapsed < 4500) {
-                setUserMsgPhase(1);
-                const t2 = setTimeout(() => setUserMsgPhase(2), 4500 - elapsed);
-                return () => clearTimeout(t2);
             } else {
                 setUserMsgPhase(2);
             }
@@ -778,10 +826,6 @@ const Chat = () => {
         const nextMsg = messages[idx + 1];
         const isLatestExchange = idx === messages.findLastIndex(m => m.role === 'user');
 
-        // Stage 1.5: Enforce Single Tick Phase for 1.5s after animation finishes
-        if (isLatestExchange && userMsgPhase === 1) {
-            return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
-        }
 
         // Check if a Guruji response has arrived
         let hasGurujiAnswer = false;
@@ -793,8 +837,8 @@ const Chat = () => {
             }
         }
 
-        const isGurujiActive = waitMessage === "Sending to Astrologer" || waitMessage === "Astrologer is typing";
-        const isMayaActive = waitMessage === "Sending to Maya";
+        const isGurujiActive = sendingWaitMessage === "Sending to Astrologer" || sendingWaitMessage === "Astrologer is typing";
+        const isMayaActive = sendingWaitMessage === "Sending to Maya";
 
         // Stage 3: Sent to Astrologer (Blue Double Tick)
         if (hasGurujiAnswer || (isGurujiActive && isLatestExchange)) {
@@ -897,6 +941,7 @@ const Chat = () => {
                                 }));
 
                                 setMessages(mappedHistory);
+                                setChatStarted(mappedHistory.some(m => m.role === 'user'));
 
                                 // Check for unpaid chat messages to resume state
                                 const unpaidMsg = mappedHistory.find(m => m.requires_chat_payment && !m.is_paid);
@@ -944,6 +989,7 @@ const Chat = () => {
 
                             console.log("DEBUG: mappedHistory set, count:", mappedHistory.length);
                             setMessages(mappedHistory);
+                            setChatStarted(mappedHistory.some(m => m.role === 'user'));
 
                             const unpaidMsg = mappedHistory.find(m => m.requires_chat_payment && !m.is_paid);
                             if (unpaidMsg) {
@@ -965,6 +1011,12 @@ const Chat = () => {
         };
         loadHistory();
     }, [location.state]);
+
+    const scrollToTop = () => {
+        if (containerRef.current) {
+            containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
 
     useEffect(() => {
         const fetchJsonSettings = async () => {
@@ -1102,14 +1154,13 @@ const Chat = () => {
 
     const handleNewChat = () => {
         const newSid = `SESS_${Date.now()}`;
-        setMessages([
-            { role: 'assistant', content: "welcome! \n\nI'll connect you to our astrologer.You may call him as 'Guruji'", assistant: 'maya', time: getCurrentTime(), timestamp: new Date().toISOString() }
-        ]);
+        setMessages([]);
         setSessionId(newSid);
         localStorage.setItem('activeSessionId', newSid);
         setSummary(null);
         setFeedback({ rating: 0, comment: '' });
         setFeedbackSubmitted(false);
+        setChatStarted(false);
 
         // Register the new session on the server immediately so it survives page reload
         const mobile = localStorage.getItem('mobile');
@@ -1233,14 +1284,14 @@ const Chat = () => {
 
     const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null) => {
         setLoading(true);
-        setIsBuffering(true);
-        setWaitMessage("Sending to Astrologer");
+        setIsSendingToBackend(true);
+        setSendingWaitMessage("Sending to Astrologer");
 
         try {
             const referenceid = localStorage.getItem('currentProfileId');
             const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId, referenceid);
             // const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId);
-            setWaitMessage("Astrologer is typing");
+            setSendingWaitMessage("Astrologer is typing");
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id } = res.data;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
@@ -1264,7 +1315,12 @@ const Chat = () => {
                 timestamp: timestamp || new Date().toISOString(),
                 arrivalTime: Date.now()
             }]);
-            if (guruji_json) setIsAnimating(true);
+            if (guruji_json) {
+                setIsAnimating(true);
+            } else {
+                setIsSendingToBackend(false);
+                setSendingWaitMessage("");
+            }
         } catch (err) {
             console.error("Guruji Error:", err);
             setMessages(prev => [...prev, {
@@ -1273,17 +1329,15 @@ const Chat = () => {
                 content: 'Guruji is not available right now. Please try again after some time.',
                 time: getCurrentTime()
             }]);
+            setIsSendingToBackend(false);
+            setSendingWaitMessage("");
         } finally {
             setLoading(false);
-            // setIsBuffering(false); // Keep buffering if Guruji is about to respond/animating
-            // setWaitMessage("");
+            // setIsSendingToBackend(false); // Keep buffering if Guruji is about to respond/animating
+            // setSendingWaitMessage("");
         }
     };
 
-    const [messageQueue, setMessageQueue] = useState([]);
-    const debounceTimerRef = useRef(null);
-    const [isUserTyping, setIsUserTyping] = useState(false);
-    const [timerKey, setTimerKey] = useState(Date.now());
 
     // Effect to handle Typing interrupts and 3s sending delay
     useEffect(() => {
@@ -1322,8 +1376,58 @@ const Chat = () => {
         };
     }, [isUserTyping, messageQueue]);
 
-    const handleSend = async (msg = null) => {
-        const text = typeof msg === 'string' ? msg : input;
+    const handleStartConsultation = () => {
+        setIsMovingToTop(true);
+        scrollToTop();
+
+        // Delay starting the connection to allow the "move up" animation to show
+        setTimeout(() => {
+            const welcomeMsg = {
+                role: 'assistant',
+                content: `<b>${userName}, welcome.</b>\nI'm <b>MAYA</b>, and I'll assist you during your consultation.\nWhenever you're ready, you may begin your conversation with <b>Guruji</b>.\nYou may ask about your life, your future, or anything that has been on your mind.`,
+                assistant: 'maya',
+                time: getCurrentTime(),
+                timestamp: new Date().toISOString()
+            };
+
+            // Immediately add welcome message to chat history
+            setMessages([welcomeMsg]);
+            setIsConnecting(true);
+            setConnectionText('Connecting to Guruji...');
+
+            // Simulate connecting animation
+            const connectingTime = Math.floor(Math.random() * 2000) + 3000;
+
+            setTimeout(() => {
+                setConnectionText('Connected to Guruji');
+
+                // Show "Connected" for 2 seconds before opening input and showing messages
+                setTimeout(() => {
+                    const systemMsg = {
+                        role: 'system',
+                        content: 'Connected to Guruji',
+                        time: getCurrentTime(),
+                        timestamp: new Date().toISOString()
+                    };
+                    const mayaConnectedMsg = {
+                        role: 'assistant',
+                        content: `<b>You're now connected with Guruji. He is online.</b>\n\nWhenever you're ready, you may ask your question.`,
+                        assistant: 'maya',
+                        time: getCurrentTime(),
+                        timestamp: new Date().toISOString(),
+                    };
+
+                    setMessages(prev => [...prev, systemMsg, mayaConnectedMsg]);
+                    setChatStarted(true);
+                    setIsConnecting(false);
+                    setIsMovingToTop(false);
+                }, 2000);
+            }, connectingTime);
+        }, 600); // Wait for initial scroll/slide
+    };
+
+    const handleSend = async (content) => {
+        const text = typeof content === 'string' ? content : input;
         if (!text.trim() || loading || userStatus !== 'ready') return;
 
         const now = Date.now();
@@ -1333,14 +1437,16 @@ const Chat = () => {
             // If the last message is ALSO queued, just append to it visually.
             // This treats the whole clump as one combined user input bubble!
             if (lastIdx >= 0 && next[lastIdx].role === 'user' && next[lastIdx].isQueued) {
+                // Combine with newline only if preceding content doesn't end with one
+                const separator = next[lastIdx].content.endsWith('\n') ? '' : '\n';
                 next[lastIdx] = {
                     ...next[lastIdx],
-                    content: next[lastIdx].content + '\n' + text,
+                    content: (next[lastIdx].content + separator + text.trim()).trim(),
                     arrivalTime: now,
-                    time: getCurrentTime() // Update time to latest send
+                    time: getCurrentTime()
                 };
             } else {
-                const userMsg = { role: 'user', content: text, time: getCurrentTime(), timestamp: new Date().toISOString(), arrivalTime: now, isQueued: true };
+                const userMsg = { role: 'user', content: text.trim(), time: getCurrentTime(), timestamp: new Date().toISOString(), arrivalTime: now, isQueued: true };
                 next.push(userMsg);
             }
             return next;
@@ -1389,7 +1495,7 @@ const Chat = () => {
     const processQueue = async (queuedMessages) => {
         if (queuedMessages.length === 0 || loading || userStatus !== 'ready') return;
 
-        const combinedText = queuedMessages.join('\n');
+        const combinedText = queuedMessages.map(m => m.trim()).filter(m => m !== '').join('\n');
 
         // Reset global report state for the new interaction ONLY if not preparing a report
         if (reportState === 'IDLE' || reportState === 'READY') {
@@ -1401,9 +1507,9 @@ const Chat = () => {
         }
 
         setLoading(true);
-        setIsBuffering(true);
+        setIsSendingToBackend(true);
         scrollToBottom();
-        setWaitMessage("Sending to Maya");
+        setSendingWaitMessage("Sending to Maya");
 
         let trigger_guruji_flag = false;
         try {
@@ -1433,7 +1539,7 @@ const Chat = () => {
         } catch (err) {
             console.error("Queue Processing Error:", err);
             setLoading(false);
-            setIsBuffering(false);
+            setIsSendingToBackend(false);
         }
     };
 
@@ -1444,7 +1550,7 @@ const Chat = () => {
 
             // Handle rate limit / offline
             if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
-                setWaitMessage("Astrologer is offline");
+                setSendingWaitMessage("Astrologer is offline");
                 setMessages(prev => [...prev, {
                     role: 'assistant',
                     content: res.data.answer || 'Guruji is currently unavailable. Please try again shortly.',
@@ -1453,14 +1559,14 @@ const Chat = () => {
                     timestamp: res.data.timestamp || new Date().toISOString()
                 }]);
                 setLoading(false);
-                setIsBuffering(false);
+                setIsSendingToBackend(false);
                 return;
             }
 
             if (res.data.requires_payment) {
                 setLoading(false);
-                setIsBuffering(false);
-                setWaitMessage("");
+                setIsSendingToBackend(false);
+                setSendingWaitMessage("");
 
                 // Update the last user message with payment flags
                 setMessages(prev => {
@@ -1471,6 +1577,7 @@ const Chat = () => {
                             ...next[lastIdx],
                             requires_chat_payment: true,
                             chat_payment_amount: res.data.amount,
+                            actual_chat_payment_amount: res.data.actual_amount,
                             is_paid: false,
                             message_id: res.data.message_id,
                             mayaJson: tryParseJson(res.data.maya_json),
@@ -1513,8 +1620,8 @@ const Chat = () => {
 
             }]);
             if (trigger_guruji) {
-                setWaitMessage("Sending to Astrologer");
-                setIsBuffering(true);
+                setSendingWaitMessage("Sending to Astrologer");
+                setIsSendingToBackend(true);
                 await fetchGurujiResponse(mobile, combinedText, history, sessionId);
             }
 
@@ -1534,8 +1641,8 @@ const Chat = () => {
         } finally {
             setLoading(false);
             if (!trigger_guruji_flag) {
-                setIsBuffering(false);
-                setWaitMessage("");
+                setIsSendingToBackend(false);
+                setSendingWaitMessage("");
             }
             scrollToBottom();
         }
@@ -1619,7 +1726,9 @@ const Chat = () => {
             const amount = 49;
 
             // Create Razorpay order
-            const orderRes = await createPaymentOrder(amount, mobile);
+            // const orderRes = await createPaymentOrder(amount, mobile);
+            const referenceid = localStorage.getItem('currentProfileId');
+            const orderRes = await createPaymentOrder(amount, mobile, referenceid);
             const order = orderRes.data;
 
             // Open Razorpay
@@ -1775,8 +1884,8 @@ const Chat = () => {
 
             // Proceed to process the message after payment
             setLoading(true);
-            setIsBuffering(true);
-            setWaitMessage("Sending to astrologer");
+            setIsSendingToBackend(true);
+            setSendingWaitMessage("Sending to astrologer");
 
             const lastUserMsg = messages.find(m => m.message_id === pendingMessageId);
             const mobile = localStorage.getItem('mobile');
@@ -1828,8 +1937,8 @@ const Chat = () => {
 
             // Trigger Guruji stage if indicated
             if (trigger_guruji) {
-                setWaitMessage("Sending to Astrologer");
-                setIsBuffering(true);
+                setSendingWaitMessage("Sending to Astrologer");
+                setIsSendingToBackend(true);
                 await fetchGurujiResponse(mobile, lastUserMsg.content, history, sessionId, paymentId);
             }
 
@@ -1842,8 +1951,8 @@ const Chat = () => {
         } finally {
             setLoading(false);
             if (!trigger_guruji_flag) {
-                setIsBuffering(false);
-                setWaitMessage("");
+                setIsSendingToBackend(false);
+                setSendingWaitMessage("");
             }
         }
     };
@@ -1858,7 +1967,9 @@ const Chat = () => {
         // Original logic preserved below (currently unreachable)
         setChatPaymentState('PAYING');
         try {
-            const orderRes = await createPaymentOrder(amount, mobile);
+            // const orderRes = await createPaymentOrder(amount, mobile);
+            const referenceid = localStorage.getItem('currentProfileId');
+            const orderRes = await createPaymentOrder(amount, mobile, referenceid);
             const { order_id, key } = orderRes.data;
 
             const options = {
@@ -2023,13 +2134,15 @@ const Chat = () => {
 
             {/* Chat Messages Area - Scrollable segment with visible scrollbar */}
             <Box
+                ref={containerRef}
                 onScroll={handleScroll}
                 sx={{
                     flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
                     // overflowY: "auto",
                     px: 3,
                     pb: 14,
-
                     pt: 19,
                     overflowY: "auto",
                     "&::-webkit-scrollbar": { display: "block" },
@@ -2037,7 +2150,28 @@ const Chat = () => {
                 }}
             >
                 {messages.map((msg, i) => {
-                    const idx = i; // Use idx for the current message index
+                    const idx = i;
+
+                    if (msg.role === 'system') {
+                        return (
+                            <Box key={i} sx={{ width: '100%', display: 'flex', justifyContent: 'center', my: 2 }}>
+                                <Typography sx={{
+                                    bgcolor: '#fdf6ec',
+                                    px: 6,
+                                    py: .6,
+                                    borderRadius: 10,
+                                    fontSize: '0.75rem',
+                                    color: '#2e1f0c',
+                                    fontWeight: 400,
+                                    // textTransform: 'uppercase',
+                                    letterSpacing: '0.05em'
+                                }}>
+                                    {msg.content}
+                                </Typography>
+                            </Box>
+                        );
+                    }
+
                     const isLastQueuedMsg = i === messages.findLastIndex(m => m.isQueued);
 
                     let isPaidUserMsg = false;
@@ -2048,14 +2182,14 @@ const Chat = () => {
                         }
                     }
 
-                    if (msg.assistant === 'maya') {
+                    if (msg.assistant === 'maya' && !msg.isSimple) {
                         if (!msg.content || (typeof msg.content === 'string' && msg.content.trim() === '')) {
                             return null;
                         }
                         return (
                             <MayaIntro
                                 key={i}
-                                title={msg.title || msg.mayaJson?.title || "Title"}
+                                title={msg.title || msg.mayaJson?.title || " "}
                                 // name={i === 0 ? userName : null}
                                 content={msg.content}
                                 mayaJson={msg.mayaJson}
@@ -2085,8 +2219,8 @@ const Chat = () => {
                                         animate={msg.animating}
                                         onComplete={() => {
                                             setIsAnimating(false);
-                                            setIsBuffering(false);
-                                            setWaitMessage("");
+                                            setIsSendingToBackend(false);
+                                            setSendingWaitMessage("");
                                             setMessages(prev => prev.map((m, idx) =>
                                                 idx === i ? { ...m, animating: false } : m
                                             ));
@@ -2222,29 +2356,37 @@ const Chat = () => {
                         return (
                             <Box key={i} sx={{ width: '100%', mb: 0 }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 1 }}>
-                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0 }}>You</Typography>
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: 1 }}>You</Typography>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
                                             p: '12px 16px 14px 12px',
-                                            borderRadius: '10px 2px 10px 10px',
-                                            bgcolor: '#2f3148',
-                                            borderRight: '2.5px solid #54A170',
-                                            color: '#fff',
-                                            // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                                            borderRadius: msg.role === 'user' ? '10px 2px 10px 10px' : '2px 10px 10px 10px',
+                                            bgcolor: msg.role === 'user' ? '#2f3148' : '#fece8d',
+                                            borderRight: msg.role === 'user' ? '2.5px solid #54A170' : 'none',
+                                            borderLeft: msg.role !== 'user' ? '2.5px solid #F36A2F' : 'none',
+                                            color: msg.role === 'user' ? '#fff' : '#000',
                                             position: 'relative',
                                             maxWidth: '325px',
                                             minWidth: '100px',
                                             width: 'fit-content',
                                             overflowWrap: "break-word",
                                             wordBreak: "break-word",
-                                            whiteSpace: "pre-line",
                                         }}>
-                                            <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem', m: 0, mb: .5 }}>
-                                                {msg.content}
-                                            </Typography>
-                                            <Typography sx={{ fontSize: '0.625rem', opacity: 0.8, position: 'absolute', bottom: 2, right: 8, color: '#fff', fontWeight: 500, pt: 1, display: 'flex', alignItems: 'center' }}>
+                                            {msg.assistant === 'maya' ? (
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{ lineHeight: 1.6, fontSize: '0.9rem', m: 0, mb: .5 }}
+                                                >
+                                                    <SafeHTML html={msg.content} />
+                                                </Typography>
+                                            ) : (
+                                                <Typography variant="body2" sx={{ lineHeight: 1.6, fontSize: '0.9rem', m: 0, mb: .5, whiteSpace: 'pre-line' }}>
+                                                    {msg.content}
+                                                </Typography>
+                                            )}
+                                            <Typography sx={{ fontSize: '0.625rem', opacity: 0.8, position: 'absolute', bottom: 2, right: 8, color: msg.role === 'user' ? '#fff' : '#333', fontWeight: 500, pt: 1, display: 'flex', alignItems: 'center' }}>
                                                 {msg.time}
-                                                {renderStatusTicks(i)}
+                                                {msg.role === 'user' && renderStatusTicks(i)}
                                             </Typography>
                                         </Box>
                                     </Box>
@@ -2258,15 +2400,18 @@ const Chat = () => {
                                 </Box>
                                 <MayaTemplateBox
                                     name={userName.split(' ')[0]}
-                                    content={`personalized answer to your concern is chargeable ₹${msg.chat_payment_amount || 39}.`}
+                                    content={msg.chat_payment_amount === 0
+                                        ? `This is a premium prediction worth ₹${msg.actual_chat_payment_amount || 39} - but get it for free now. \n\n <span style={{color: '#54A170'}}>Subscribe</span> to get unlimited answers access for a day, month or a quarter.`
+                                        : `personalized answer to your concern is chargeable ₹${msg.chat_payment_amount || 39}.`}
                                     buttonLabel={(() => {
                                         const lastPaymentMsgIdx = messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1);
                                         if (i < lastPaymentMsgIdx) return "No longer active";
                                         return chatPaymentState === 'REQUIRED' || chatPaymentState === 'IDLE'
-                                            ? `Pay ₹${msg.chat_payment_amount || 39} to get answer`
+                                            ? (msg.chat_payment_amount === 0 ? "Get answer for FREE" : `Pay ₹${msg.chat_payment_amount || 39} to get answer`)
                                             : "Processing...";
                                     })()}
-                                    onButtonClick={() => handleChatPayment(msg.chat_payment_amount || 39, localStorage.getItem('mobile'))}
+                                    onButtonClick={() => handleChatPayment(msg.chat_payment_amount !== undefined ? msg.chat_payment_amount : 39, localStorage.getItem('mobile'))}
+                                    // onButtonClick={() => handleChatPayment(msg.chat_payment_amount || 39, localStorage.getItem('mobile'))}
                                     loading={chatPaymentState === 'PAYING' && i === messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1)}
                                     disabled={(() => {
                                         const lastPaymentMsgIdx = messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1);
@@ -2290,7 +2435,7 @@ const Chat = () => {
                                         mb: 1
                                     }}
                                 >
-                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0 }}>
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: .5 }}>
                                         {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                     </Typography>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: .5, justifyContent: 'flex-end' }}>
@@ -2302,7 +2447,6 @@ const Chat = () => {
                                             maxWidth: '100%',
 
                                         }}>
-                                            {/* ... message contents ... */}
                                             {msg.content && msg.content.trim() !== '' && (
                                                 <Box sx={{
                                                     p: '12px 16px 18px 12px',
@@ -2313,14 +2457,11 @@ const Chat = () => {
                                                     bgcolor: msg.role === 'user'
                                                         ? (msg.requires_chat_payment || isSubscribed ? '#2f3148' : '#e2e2e2')
                                                         : (isPaidUserMsg || isSubscribed ? '#fef6eb' : '#f1f1f1'),
+                                                    cursor: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 'pointer' : 'default',
+                                                    pointerEvents: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 'auto' : 'inherit',
                                                     color: msg.role === 'user'
                                                         ? (msg.requires_chat_payment || isSubscribed ? '#ffffff' : '#000000')
                                                         : (isPaidUserMsg || isSubscribed ? '#3e2723' : '#000000'),
-                                                    // borderRight: '2.5px solid #54A170',
-                                                    // bgcolor: msg.role === 'user' ? (msg.requires_chat_payment ? '#2f3148' : '#e2e2e2') : (isPaidUserMsg ? '#fef6eb' : '#f1f1f1'),
-                                                    // color: msg.role === 'user' ? (msg.requires_chat_payment ? '#ffffff' : '#000000') : (isPaidUserMsg ? '#3e2723' : '#000000'),
-                                                    // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-                                                    // border: msg.role !== 'user' && messages[i - 1] && messages[i - 1].role === 'user' && messages[i - 1].requires_chat_payment ? '1px solid #ffd54f' : 'none',
                                                     position: 'relative',
                                                     maxWidth: '325px',
                                                     minWidth: '100px',
@@ -2328,10 +2469,12 @@ const Chat = () => {
                                                     overflowWrap: "break-word",
                                                     wordBreak: "break-word",
                                                     whiteSpace: "pre-line",
-                                                }}>
-                                                    <FormattedText
-                                                        text={msg.content}
-                                                        sx={{ lineHeight: 1.6, fontSize: '0.9rem' }}
+                                                    fontSize: "0.9rem",
+                                                }}
+                                                    onClick={(msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? handleEditQueuedMessage : undefined}
+                                                >
+                                                    <SafeHTML
+                                                        html={msg.content}
                                                     />
 
                                                     {/* JSON Output View (for regular messages) */}
@@ -2448,10 +2591,11 @@ const Chat = () => {
                                                 position: 'relative',
                                                 top: '15px',
                                                 pointerEvents: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 'auto' : 'none',
+                                                zIndex: 10,
                                             }}
                                         >
                                             <Box
-                                                key={timerKey}
+                                                key={msg.arrivalTime}
                                                 onClick={handleEditQueuedMessage}
                                                 sx={{
                                                     m: 0,
@@ -2573,8 +2717,8 @@ const Chat = () => {
                 })}
 
                 {/* Dot Loader + Astrologer typing - both at same fixed position */}
-                {isBuffering && userMsgPhase === 2 && (() => {
-                    const isDotLoaderPhase = !waitMessage || waitMessage === "Sending to Maya" || waitMessage === "Sending to Astrologer" || waitMessage === "Sending to astrologer";
+                {isSendingToBackend && userMsgPhase === 2 && (() => {
+                    const isDotLoaderPhase = !sendingWaitMessage || sendingWaitMessage === "Sending to Maya" || sendingWaitMessage === "Sending to Astrologer" || sendingWaitMessage === "Sending to astrologer";
                     return (
                         <Box sx={{
                             position: 'fixed',
@@ -2664,7 +2808,7 @@ const Chat = () => {
                                         animation: "human-typing 7s linear infinite, cursor-blink 0.8s step-end infinite",
                                     }}
                                 >
-                                    {waitMessage}
+                                    {sendingWaitMessage}
                                 </Box>
                             )}
                         </Box>
@@ -2673,21 +2817,60 @@ const Chat = () => {
 
 
 
+                {!chatStarted && messages.length === 0 && (
+                    <>
+                        <Box sx={{
+                            flex: isMovingToTop ? 0 : 1,
+                            maxHeight: isMovingToTop ? 0 : '100%',
+                            transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                            overflow: 'hidden'
+                        }} />
+                        <Box sx={{
+                            mb: 2,
+                            transform: isMovingToTop ? 'translateY(0)' : 'translateY(0)',
+                            transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}>
+                            <MayaIntro
+                                // title="Welcome"
+                                content={`<b>${userName}, welcome.</b>\n\nI'm <b>MAYA</b>, and I'll assist you during your consultation.\n\nWhenever you're ready, you may begin your conversation with <b>Guruji</b>.\n\nYou may ask about your life, your future, or anything that has been on your mind.`}
+                                jsonVisibility={jsonVisibility}
+                                onLabelClick={handleLabelClick}
+                            />
+                        </Box>
+                    </>
+                )}
+
+                {/* {isConnecting && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 4, gap: 2 }}>
+                        <CircularProgress size={30} sx={{ color: '#F36A2F' }} />
+                        <Typography sx={{ color: '#666', fontSize: '0.9rem', fontWeight: 500 }}>Connecting to Guruji...</Typography>
+                    </Box>
+                )} */}
+
                 < div ref={messagesEndRef} />
             </Box>
 
-            <ChatInputFooter
-                onSend={handleSend}
-                onTyping={setIsUserTyping}
-                userStatus={userStatus}
-                loading={loading}
-                summary={summary}
-                isAnimating={isAnimating}
-                userMsgPhase={userMsgPhase}
-                inputValue={input}
-                setInputValue={setInput}
-                isBuffering={isBuffering}
-            />
+            {!chatStarted && !isConnecting ? (
+                <ConsultFooter
+                    label="Talk to Guruji"
+                    onConsult={handleStartConsultation}
+                />
+            ) : (chatStarted || isConnecting) ? (
+                <ChatInputFooter
+                    onSend={handleSend}
+                    onTyping={setIsUserTyping}
+                    userStatus={userStatus}
+                    loading={loading}
+                    summary={summary}
+                    isAnimating={isAnimating}
+                    userMsgPhase={userMsgPhase}
+                    inputValue={input}
+                    setInputValue={setInput}
+                    isBuffering={isSendingToBackend}
+                    isConnecting={isConnecting}
+                    connectionText={connectionText}
+                />
+            ) : null}
             {/* Same overlays as before (Inactivity, Summary, Drawer) */}
             {/* ... preserved ... */}
 
