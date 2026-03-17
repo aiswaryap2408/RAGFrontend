@@ -18,6 +18,7 @@ const Dakshina = ({ open, onClose, onSuccess }) => {
     const [paymentEnabled, setPaymentEnabled] = useState(true);
     const [loading, setLoading] = useState(false);
     const mobile = localStorage.getItem('mobile');
+    const referenceid = localStorage.getItem('currentProfileId');
     const userName = localStorage.getItem('userName') || 'User';
 
     useEffect(() => {
@@ -68,7 +69,7 @@ const Dakshina = ({ open, onClose, onSuccess }) => {
             const { createPaymentOrder, verifyPayment } = await import('../api');
 
             // 1. Create Order
-            const orderRes = await createPaymentOrder(parseFloat(amount), mobile);
+            const orderRes = await createPaymentOrder(parseFloat(amount), mobile, referenceid);
             const order = orderRes.data;
 
             // 2. Open Razorpay

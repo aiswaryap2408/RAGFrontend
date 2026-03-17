@@ -100,9 +100,14 @@ export const toggleWalletSystem = (enabled) => api.post(`/wallet/toggle-system?e
 export const getDashboardStats = (range = '7D') => api.get(`/admin/stats?range=${range}`);
 export const getUserReports = (mobile) => api.get(`/wallet/reports/${mobile}`);
 export const downloadReportById = (reportId) => api.get(`/wallet/report/${reportId}`, { responseType: 'blob' });
+export const getRechargeConfigs = () => api.get('/admin/recharge-configs');
+export const createRechargeConfig = (data) => api.post('/admin/recharge-configs', data);
+export const updateRechargeConfig = (id, data) => api.put(`/admin/recharge-configs/${id}`, data);
+export const deleteRechargeConfig = (id) => api.delete(`/admin/recharge-configs/${id}`);
+export const getPublicRechargeConfigs = () => api.get('/wallet/recharge-configs');
 
 // Payment Module Endpoints
-export const createPaymentOrder = (amount, mobile) => api.post('/payment/create-order', { amount, mobile });
+export const createPaymentOrder = (amount, mobile, referenceid) => api.post('/payment/create-order', { amount, mobile, referenceid });
 export const verifyPayment = (data) => api.post('/payment/verify', data);
 export const getSystemSettings = () => api.get('/admin/settings');
 export const updateSystemSettings = (key, value) => api.post('/admin/settings', { key, value });
