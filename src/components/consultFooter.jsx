@@ -5,9 +5,12 @@ import { useNavigate } from "react-router-dom";
 import './consultFooter.css';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
-const ConsultFooter = ({ onConsult, label = "Talk to Guruji", showOnlineStatus = false }) => {
+const ConsultFooter = ({ onConsult, onClick, label = "Talk to Guruji", showOnlineStatus = false }) => {
     const navigate = useNavigate();
     const [isFading, setIsFading] = React.useState(false);
+
+    // handle either prop name
+    const handleConsult = onClick || onConsult;
 
     return (
         <>
@@ -78,7 +81,7 @@ const ConsultFooter = ({ onConsult, label = "Talk to Guruji", showOnlineStatus =
                     onClick={() => {
                         setIsFading(true);
                         setTimeout(() => {
-                            if (onConsult) onConsult();
+                            if (handleConsult) handleConsult();
                         }, 400); // Wait for fade out
                     }}
                     sx={{
