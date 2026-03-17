@@ -13,6 +13,8 @@ const Onboarding = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState(null);
     const [showHeader, setShowHeader] = useState(true);
+    const [elapsedTime, setElapsedTime] = useState(0);
+    const [loadingMessage, setLoadingMessage] = useState("Preparing your journey");
     const lastScrollTop = React.useRef(0);
 
     const handleScroll = (e) => {
@@ -48,26 +50,60 @@ const Onboarding = () => {
             }
 
             setIsProcessing(true);
+            setElapsedTime(0);
+            
+            // Timer to track how long processing has taken
+            const timerInterval = setInterval(() => {
+                setElapsedTime(prev => prev + 1);
+            }, 1000);
+
+            // Rotate loading messages
+            const messages = [
+                "Preparing your journey",
+                "Reading your stars",
+                "Consulting the cosmos",
+                "Calculating planetary alignments",
+                "Almost there..."
+            ];
+            let msgIndex = 0;
+            const msgInterval = setInterval(() => {
+                msgIndex = (msgIndex + 1) % messages.length;
+                setLoadingMessage(messages[msgIndex]);
+            }, 5000);
+
+            const cleanup = () => {
+                clearInterval(timerInterval);
+                clearInterval(msgInterval);
+            };
+
             try {
                 const res = await getUserStatus(mobile);
                 if (res.data.status === 'ready') {
+                    cleanup();
+                    setIsProcessing(false);
                     navigate('/dashboard');
                 } else if (res.data.status === 'failed') {
+                    cleanup();
+                    setIsProcessing(false);
                     console.error("Processing failed, redirecting to register...");
                     navigate('/register');
                 } else {
                     // Start polling
                     let retryCount = 0;
-                    const maxRetries = 10; // Approx 30 seconds
+                    const maxRetries = 20; // Approx 60 seconds (double the previous)
                     const pollInterval = setInterval(async () => {
                         retryCount++;
                         try {
                             const pollRes = await getUserStatus(mobile);
                             if (pollRes.data.status === 'ready') {
                                 clearInterval(pollInterval);
+                                cleanup();
+                                setIsProcessing(false);
                                 navigate('/dashboard');
                             } else if (pollRes.data.status === 'failed') {
                                 clearInterval(pollInterval);
+                                cleanup();
+                                setIsProcessing(false);
                                 console.error("Polling: Processing failed, redirecting to register...");
                                 navigate('/register');
                             }
@@ -75,13 +111,16 @@ const Onboarding = () => {
                             if (retryCount >= maxRetries) {
                                 console.warn("Polling timeout: Proceeding to dashboard as fallback.");
                                 clearInterval(pollInterval);
+                                cleanup();
+                                setIsProcessing(false);
                                 navigate('/dashboard');
                             }
                         } catch (err) {
                             console.error("Polling error", err);
-                            // If polling fails (e.g. CORS error), don't get stuck forever
-                            if (retryCount >= 5) { // Quicker fallback on persistent network/cors errors
+                            if (retryCount >= 10) { 
                                 clearInterval(pollInterval);
+                                cleanup();
+                                setIsProcessing(false);
                                 navigate('/dashboard');
                             }
                         }
@@ -89,7 +128,8 @@ const Onboarding = () => {
                 }
             } catch (err) {
                 console.error("Status check failed", err);
-                // Fallback to chat, it has its own polling
+                cleanup();
+                setIsProcessing(false);
                 navigate('/dashboard');
             }
         }
@@ -382,11 +422,27 @@ const Onboarding = () => {
                 }}>
                     <CircularProgress sx={{ color: '#F36A2F', mb: 3 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                        Preparing your journey
+                        {loadingMessage}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#666' }}>
+                    <Typography variant="body2" sx={{ color: '#666', mb: elapsedTime > 15 ? 3 : 0 }}>
                         Generating your personalized horoscope report and preparing the astrological context...
                     </Typography>
+
+                    {elapsedTime > 15 && (
+                        <Box>
+                            <Typography variant="caption" sx={{ display: 'block', mb: 2, color: '#999' }}>
+                                This is taking longer than expected. You can skip and start chatting, your report will be ready in the background.
+                            </Typography>
+                            <PrimaryButton 
+                                label="Skip and Continue" 
+                                onClick={() => {
+                                    setIsProcessing(false);
+                                    navigate('/dashboard');
+                                }} 
+                                sx={{ width: '100%', py: 1 }}
+                            />
+                        </Box>
+                    )}
                 </Box>
             </Modal>
 
