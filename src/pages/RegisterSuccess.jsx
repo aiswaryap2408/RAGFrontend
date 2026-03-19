@@ -17,8 +17,12 @@ const RegisterSuccess = () => {
         }
     }, []);
 
+    const handleBack = () => {
+        navigate(-1);
+    };
+
     return (
-        <>
+        <Box sx={{ bgcolor: "#fdf6ec", minHeight: "100vh" }}>
             <Header />
 
             <Box
@@ -86,22 +90,33 @@ const RegisterSuccess = () => {
                 sx={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "flex-end",
+                    justifyContent: "space-between", // Spread items
                     px: 3,
                     pl: 5,
+                    mb: 2
                 }}
             >
-
+                <Typography 
+                    sx={{ 
+                        fontSize: '.9rem', 
+                        cursor: "pointer", 
+                        color: '#666',
+                        fontWeight: 500,
+                        '&:hover': { color: '#F05A28' }
+                    }} 
+                    onClick={handleBack}
+                >
+                    &lt; Prev
+                </Typography>
 
                 <PrimaryButton
                     label="Get to know MAYA"
-                    sx={{ mt: 2, mb: 2, p: 1.2, height: 48, borderRadius: 5, width: { xs: "70%", sm: "55%" }, float: "right" }}
+                    sx={{ p: 1.2, height: 48, borderRadius: 5, width: { xs: "70%", sm: "55%" } }}
                     onClick={() => navigate('/onboarding')}
                     endIcon={<KeyboardDoubleArrowRightIcon sx={{ fontSize: 24 }} />}
                 />
             </Box>
-
-        </>
+        </Box>
     );
 };
 

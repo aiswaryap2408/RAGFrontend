@@ -246,7 +246,7 @@ const Register = () => {
             <HamburgerMenu />
 
 
-            <Box p={2} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 22 }}>
+            <Box p={2} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 14 }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     {/* Hidden location fields moved to BirthDetailsForm */}
 
