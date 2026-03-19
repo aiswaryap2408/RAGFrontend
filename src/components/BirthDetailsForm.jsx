@@ -25,6 +25,7 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
     const dobRef = React.useRef(null);
     const tobRef = React.useRef(null);
     const pobRef = React.useRef(null);
+    const currentCityRef = React.useRef(null);
 
     React.useEffect(() => {
         // Auto-clear errors when the user fills in the field
@@ -45,6 +46,10 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
                         // Note: If the error is 'Please select a valid birth place from the suggestions dropdown.',
                         // we DO NOT auto-clear it here just because they typed a character. 
                         // It will be cleared explicitly by the 'place_changed' listener in the Places API callback.
+                    } else if (key === 'current_city') {
+                        if (val.trim() !== '') {
+                            keysToClear.push(key);
+                        }
                     } else {
                         // For other fields, just being non-empty is enough to clear "is required"
                         keysToClear.push(key);
@@ -72,6 +77,7 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
                 { key: 'dob', ref: dobRef },
                 { key: 'tob', ref: tobRef },
                 { key: 'pob', ref: pobRef },
+                { key: 'current_city', ref: currentCityRef },
             ].find(field => errors[field.key]);
 
             if (firstErrorField && firstErrorField.ref.current) {
@@ -119,6 +125,21 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
                     }
                 });
                 birthPlaceInput.setAttribute('data-capac-initialized', 'true');
+            }
+
+            const currentCityInput = document.getElementById('current_city');
+            if (currentCityInput && window.clickastro && window.clickastro.places) {
+                if (currentCityInput.getAttribute('data-capac-initialized')) return;
+
+                const capac = new window.clickastro.places.Autocomplete(currentCityInput, { types: ['(cities)'] });
+                capac.inputId = 'capac_' + currentCityInput.id;
+                capac.addListener('place_changed', function () {
+                    const place = this.getPlace();
+                    if (place && place.formatted_address) {
+                        setDetails(prev => ({ ...prev, current_city: place.formatted_address }));
+                    }
+                });
+                currentCityInput.setAttribute('data-capac-initialized', 'true');
             }
         };
 
@@ -289,6 +310,7 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
                     />
                 </Box>
                 {/* Place of birth */}
+                {/* Place of birth */}
                 <InputField
                     id="birth_place"
                     className="place_auto_complete"
@@ -299,6 +321,19 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
                     error={!!errors.pob}
                     helperText={errors.pob}
                     inputRef={pobRef}
+                />
+
+                {/* Current City */}
+                <InputField
+                    id="current_city"
+                    className="place_auto_complete"
+                    icon={<PlaceIcon sx={{ color: "#ff8338" }} />}
+                    placeholder="Current City"
+                    value={details.current_city}
+                    onChange={e => setDetails({ ...details, current_city: e.target.value })}
+                    error={!!errors.current_city}
+                    helperText={errors.current_city}
+                    inputRef={currentCityRef}
                 />
             </Box>
             <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>

@@ -24,6 +24,7 @@ const Register = () => {
         dob: '',
         tob: '',
         pob: '',
+        current_city: '',
         email: '',
         // Location-related hidden fields
         country: '',
@@ -152,7 +153,7 @@ const Register = () => {
         setErrors({});
 
         // Validation
-        const { name, email, dob, tob, pob, chart_style, gender } = details;
+        const { name, email, dob, tob, pob, current_city, chart_style, gender } = details;
         const newErrors = {};
 
         // Get location details from hidden inputs (populated by solar.js)
