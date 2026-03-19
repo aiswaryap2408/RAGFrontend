@@ -82,7 +82,10 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, input
                                     sx={{
                                         display: "inline-block",
                                         animation: (connectionText || '').includes("...") ? "opacityWave 1.5s ease-in-out infinite" : "none",
-                                        animationDelay: `${i * 0.08}s`
+                                        animationDelay: `${i * 0.08}s`,
+                                        fontWeight: 300,
+                                        fontFamily: 'Roboto,sans-serif',
+                                        fontSize: '13px',
                                     }}
                                 >
                                     {char === " " ? "\u00A0" : char}

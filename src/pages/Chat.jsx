@@ -804,6 +804,9 @@ const Chat = () => {
     const [isConnecting, setIsConnecting] = useState(false);
     const [isMovingToTop, setIsMovingToTop] = useState(false);
     const [connectionText, setConnectionText] = useState('Connecting to Guruji...');
+    const [forceShowTyping, setForceShowTyping] = useState(false);
+    const typingLockRef = useRef(null);
+    const [readingPhaseStartTime, setReadingPhaseStartTime] = useState(null);
     const messagesEndRef = useRef(null);
     const containerRef = useRef(null);
     const processedNewSession = useRef(false);
@@ -817,6 +820,28 @@ const Chat = () => {
         const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
         return () => clearInterval(interval);
     }, []);
+
+    // Keep "Astrologer is typing" overlay visible for at least 2s so animation completes
+    useEffect(() => {
+        if (sendingWaitMessage === 'Astrologer is typing') {
+            setForceShowTyping(true);
+            if (typingLockRef.current) clearTimeout(typingLockRef.current);
+            typingLockRef.current = setTimeout(() => setForceShowTyping(false), 2000);
+        }
+        return () => { if (typingLockRef.current) clearTimeout(typingLockRef.current); };
+    }, [sendingWaitMessage]);
+
+    // Track when the reading phase starts so we can pre-show 'Astrologer is typing' 2s in
+    useEffect(() => {
+        const isReading = sendingWaitMessage === 'Sending to Astrologer' ||
+            sendingWaitMessage === 'Sending to astrologer' ||
+            sendingWaitMessage === 'Astrologer is reading your message';
+        if (isReading) {
+            setReadingPhaseStartTime(prev => prev ?? Date.now());
+        } else {
+            setReadingPhaseStartTime(null);
+        }
+    }, [sendingWaitMessage]);
 
     // Synchronize waitMessage overlay with user message animation
     const [userMsgPhase, setUserMsgPhase] = useState(2); // 0: Animating(0-3s), 1: Single Tick(3-4.5s), 2: Double Tick(>4.5s)
@@ -868,7 +893,7 @@ const Chat = () => {
             }
         }
 
-        const isGurujiActive = sendingWaitMessage === "Sending to Astrologer" || sendingWaitMessage === "Astrologer is typing";
+        const isGurujiActive = sendingWaitMessage === "Sending to Astrologer" || sendingWaitMessage === "Astrologer is reading your message" || sendingWaitMessage === "Astrologer is typing";
         const isMayaActive = sendingWaitMessage === "Sending to Maya";
 
         // Stage 3: Sent to Astrologer (Blue Double Tick)
@@ -886,12 +911,14 @@ const Chat = () => {
             return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
         }
 
-        // Stage 2: Sent/Sending to Maya (Grey Double Tick)
-        if (nextMsg || (isMayaActive && isLatestExchange)) {
+        // Stage 2: Maya reading/processing (Grey Double Tick ✓✓)
+        // Show single tick for first 2s so it's clearly visible before upgrading
+        const timeSinceSent = msg.arrivalTime ? (currentTime - msg.arrivalTime) : Infinity;
+        if (nextMsg || (isMayaActive && isLatestExchange && timeSinceSent >= 5000)) {
             return <DoneAllOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
         }
 
-        // Stage 1: Single Tick (Message is sent, default fallback)
+        // Stage 1: Single Tick — sent from device, not yet received by Maya
         return <DoneOutlinedIcon sx={{ fontSize: '1.2rem', ml: 0.3, verticalAlign: 'middle', color: 'inherit', opacity: 0.7 }} />;
     };
     const handleScroll = (e) => {
@@ -2784,14 +2811,27 @@ const Chat = () => {
                     );
                 })}
 
-                {/* Dot Loader + Astrologer typing - both at same fixed position */}
-                {isSendingToBackend && userMsgPhase === 2 && (() => {
-                    const isDotLoaderPhase = !sendingWaitMessage || sendingWaitMessage === "Sending to Maya" || sendingWaitMessage === "Sending to Astrologer" || sendingWaitMessage === "Sending to astrologer";
+                {/* Dot Loader + Astrologer status overlay - 3 distinct phases */}
+                {(isSendingToBackend || forceShowTyping) && userMsgPhase === 2 && (() => {
+                    const isMayaPhase = !sendingWaitMessage || sendingWaitMessage === "Sending to Maya";
+                    const isReadingPhase = sendingWaitMessage === "Sending to Astrologer" || sendingWaitMessage === "Sending to astrologer" || sendingWaitMessage === "Astrologer is reading your message";
+                    const isTypingPhase = sendingWaitMessage === "Astrologer is typing";
+
+                    // Pre-typing: 2s into reading phase, start showing 'Astrologer is typing' early
+                    const timeInReading = readingPhaseStartTime ? (currentTime - readingPhaseStartTime) : 0;
+                    const showPreTyping = isReadingPhase && timeInReading >= 2000;
+
+                    if (!isMayaPhase && !isReadingPhase && !isTypingPhase) return null;
+
+                    // Effective phases for rendering
+                    const showDots = isMayaPhase;
+                    const showReading = isReadingPhase && !showPreTyping;
+                    const showTyping = isTypingPhase || showPreTyping;
+
                     return (
                         <Box sx={{
                             position: 'fixed',
-                            // bottom: 80,
-                            bottom: 18,
+                            bottom: showDots ? 30 : 18,
                             left: 0,
                             right: 0,
                             mx: 'auto',
@@ -2800,24 +2840,20 @@ const Chat = () => {
                             justifyContent: 'center',
                             alignItems: 'center',
                             zIndex: 10000,
-                            // zIndex: 10,
                             pointerEvents: 'none',
                             minWidth: '180px',
-                            ...(!isDotLoaderPhase ? {
-                                // bgcolor: '#fece8d',
+                            ...(showDots ? {
+                                bgcolor: 'transparent',
+                            } : {
                                 bgcolor: '#67687a',
                                 borderRadius: '50px',
                                 px: 3,
-                                // py: 0.3,
                                 py: 0.8,
                                 minHeight: 20,
-                            } : {
-                                bottom: 30,
-                                bgcolor: 'transparent',
                             })
                         }}>
-                            {isDotLoaderPhase ? (
-                                /* 3-dot loader — shown right after user sends */
+                            {showDots ? (
+                                /* Phase 1: 3-dot loader while Maya processes */
                                 <Box sx={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
                                     {[0, 1, 2].map((i) => (
                                         <Box
@@ -2826,13 +2862,11 @@ const Chat = () => {
                                             sx={{
                                                 width: 5,
                                                 height: 5,
-                                                // backgroundColor: '#2F3148',
                                                 backgroundColor: '#646577',
                                                 borderRadius: '50%',
                                                 display: 'inline-block',
                                                 "@keyframes micro-pulse": {
                                                     "0%, 80%, 100%": { transform: 'scale(0.8)', opacity: 0.35 },
-                                                    // "40%": { transform: 'scale(1.2)', backgroundColor: '#5D6189', opacity: 1 }
                                                     "40%": { transform: 'scale(1.2)', backgroundColor: '#a0a3ab', opacity: 1 }
                                                 },
                                                 animation: 'micro-pulse 1s ease-in-out infinite both',
@@ -2841,15 +2875,45 @@ const Chat = () => {
                                         />
                                     ))}
                                 </Box>
-                            ) : (
-                                /* Typewriter animation for "Astrologer is typing" */
+                            ) : showReading ? (
+                                /* Phase 2: "Astrologer is reading your message" (first 2s of reading phase) */
                                 <Box
                                     component="span"
                                     sx={{
                                         fontFamily: "'Roboto', sans-serif",
                                         fontSize: "12px",
                                         fontWeight: 500,
-                                        // color: "#2F3148",
+                                        color: "#fff",
+                                        display: "block",
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        borderRight: "2px solid transparent",
+                                        width: 0,
+                                        maxWidth: "fit-content",
+                                        "@keyframes reading-typing": {
+                                            "0%": { width: 0, opacity: 1 },
+                                            "70%": { width: "100%" },
+                                            "95%": { width: "100%", opacity: 1 },
+                                            "99%": { width: 0, opacity: 0 },
+                                            "100%": { width: 0, opacity: 0 },
+                                        },
+                                        "@keyframes cursor-blink": {
+                                            "0%, 100%": { borderColor: "transparent" },
+                                            "50%": { borderColor: "#fff" },
+                                        },
+                                        animation: "reading-typing 4s linear infinite, cursor-blink 0.8s step-end infinite",
+                                    }}
+                                >
+                                    Astrologer is reading your message
+                                </Box>
+                            ) : (
+                                /* Phase 3: "Astrologer is typing" typewriter animation */
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        fontFamily: "'Roboto', sans-serif",
+                                        fontSize: "12px",
+                                        fontWeight: 500,
                                         color: "#fff",
                                         display: "block",
                                         whiteSpace: "nowrap",
@@ -2870,13 +2934,12 @@ const Chat = () => {
                                         },
                                         "@keyframes cursor-blink": {
                                             "0%, 100%": { borderColor: "transparent" },
-                                            // "50%": { borderColor: "#2F3148" },
                                             "50%": { borderColor: "#fff" },
                                         },
                                         animation: "human-typing 7s linear infinite, cursor-blink 0.8s step-end infinite",
                                     }}
                                 >
-                                    {sendingWaitMessage}
+                                    Astrologer is typing
                                 </Box>
                             )}
                         </Box>
