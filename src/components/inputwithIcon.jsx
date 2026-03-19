@@ -37,7 +37,8 @@ const InputField = ({
         }}
         inputProps={{
             ...inputProps,
-            className: className,
+            // Merge classNames so neither the top-level prop nor inputProps.className are lost
+            className: [className, inputProps?.className].filter(Boolean).join(' ') || undefined,
         }}
         sx={{
             mb: 1.5,

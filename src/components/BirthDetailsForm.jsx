@@ -26,6 +26,11 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
     const tobRef = React.useRef(null);
     const pobRef = React.useRef(null);
     const currentCityRef = React.useRef(null);
+    const detailsRef = React.useRef(details);
+
+    React.useEffect(() => {
+        detailsRef.current = details;
+    }, [details]);
 
     React.useEffect(() => {
         // Auto-clear errors when the user fills in the field
@@ -47,7 +52,8 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
                         // we DO NOT auto-clear it here just because they typed a character. 
                         // It will be cleared explicitly by the 'place_changed' listener in the Places API callback.
                     } else if (key === 'current_city') {
-                        if (val.trim() !== '') {
+                        // Only clear the 'required' error on typing, not the 'select from dropdown' error
+                        if (val.trim() !== '' && errors.current_city === 'Select current place.') {
                             keysToClear.push(key);
                         }
                     } else {
@@ -103,68 +109,80 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
     };
 
     React.useEffect(() => {
-        const initPlaces = () => {
-            const birthPlaceInput = document.getElementById('birth_place');
-            if (birthPlaceInput && window.clickastro && window.clickastro.places) {
-                if (birthPlaceInput.getAttribute('gp_enabled')) return;
+        // solar.js uses initAutocomplete() which finds inputs by className='place_auto_complete'
+        // and attaches onkeyup + clickastro.places.Autocomplete, then calls fillInAddressMain
+        // which fills the hidden DOM inputs (country, longdeg, latdeg, etc.).
+        // We need to sync those hidden input values back into React state.
 
-                const capac = new window.clickastro.places.Autocomplete(birthPlaceInput, { types: ['(cities)'] });
-                capac.inputId = 'gac_' + birthPlaceInput.id;
-                capac.addListener('place_changed', function () {
-                    const place = this.getPlace();
-                    if (place && place.formatted_address) {
-                        setDetails(prev => ({ ...prev, pob: place.formatted_address }));
-                        if (typeof setErrors === 'function') {
-                            setErrors(prev => {
-                                const next = { ...prev };
-                                delete next.pob;
-                                return next;
-                            });
-                        }
-                    }
-                    if (window.fillInAddressMain) {
-                        window.fillInAddressMain(this);
-                    }
-                });
-                birthPlaceInput.setAttribute('gp_enabled', 'true');
+        let syncInterval = null;
+
+        const syncFromDOM = () => {
+            // Ensure autocomplete is initialized if it exists
+            if (typeof window.initAutocomplete === 'function') {
+                const birthPlaceInput = document.getElementById('birth_place');
+                const currentCityInput = document.getElementById('current_city');
+                
+                // Only call init if they haven't been enabled yet
+                if ((birthPlaceInput && !birthPlaceInput.getAttribute('gp_enabled')) || 
+                    (currentCityInput && !currentCityInput.getAttribute('gp_enabled'))) {
+                    console.log('Manually triggering initAutocomplete');
+                    window.initAutocomplete();
+                }
+            }
+
+            const currentDetails = detailsRef.current;
+
+            const pobInput = document.getElementById('birth_place');
+            const pob = pobInput?.value || '';
+            if (pob && pob !== currentDetails.pob) {
+                setDetails(prev => ({ ...prev, pob }));
+                if (typeof setErrors === 'function') {
+                    setErrors(prev => { const n = { ...prev }; delete n.pob; return n; });
+                }
             }
 
             const currentCityInput = document.getElementById('current_city');
-            if (currentCityInput && window.clickastro && window.clickastro.places) {
-                if (currentCityInput.getAttribute('gp_enabled')) return;
+            const currentCity = currentCityInput?.value || '';
+            if (currentCity && currentCity !== currentDetails.current_city) {
+                setDetails(prev => ({ ...prev, current_city: currentCity }));
+                if (typeof setErrors === 'function') {
+                    setErrors(prev => { const n = { ...prev }; delete n.current_city; return n; });
+                }
+            }
 
-                const capac = new window.clickastro.places.Autocomplete(currentCityInput, { types: ['(cities)'] });
-                capac.inputId = 'gac_' + currentCityInput.id;
-                capac.addListener('place_changed', function () {
-                    const place = this.getPlace();
-                    if (place && place.formatted_address) {
-                        setDetails(prev => ({ ...prev, current_city: place.formatted_address }));
-                        if (typeof setErrors === 'function') {
-                            setErrors(prev => {
-                                const next = { ...prev };
-                                delete next.current_city;
-                                return next;
-                            });
-                        }
-                    }
-                    if (window.fillInAddressMain) {
-                        window.fillInAddressMain(this);
-                    }
-                });
-                currentCityInput.setAttribute('gp_enabled', 'true');
+            // Also sync all hidden fields that solar.js might have filled
+            const hiddenFields = [
+                'country', 'state', 'region_dist', 'longdeg', 'longmin', 'longdir',
+                'latdeg', 'latmin', 'latdir', 'timezone', 'timezone_name',
+                'latitude_google', 'longitude_google', 'correction',
+                'current_country', 'current_state', 'current_region_dist', 'current_longdeg',
+                'current_longmin', 'current_longdir', 'current_latdeg', 'current_latmin',
+                'current_latdir', 'current_timezone', 'current_timezone_name',
+                'current_latitude_google', 'current_longitude_google', 'current_correction'
+            ];
+
+            let stateUpdates = null;
+            hiddenFields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.value !== currentDetails[id]) {
+                    if (!stateUpdates) stateUpdates = {};
+                    stateUpdates[id] = el.value;
+                }
+            });
+
+            if (stateUpdates) {
+                setDetails(prev => ({ ...prev, ...stateUpdates }));
             }
         };
 
-        if (window.clickastro && window.clickastro.places) {
-            initPlaces();
-        } else {
-            const prevListener = window.CAPACInitListener;
-            window.CAPACInitListener = () => {
-                if (prevListener) prevListener();
-                initPlaces();
-            };
-        }
-    }, [setDetails, setErrors]);
+        // Poll every 800ms while form is active
+        syncInterval = setInterval(syncFromDOM, 800);
+        syncFromDOM();
+
+        return () => {
+            if (syncInterval) clearInterval(syncInterval);
+        };
+    }, [setDetails, setErrors]); // Removed details.pob/current_city to stop loop
 
     const formatDisplayDate = (dateString) => {
         if (!dateString) return '';
@@ -340,8 +358,6 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
                 {/* Place of birth */}
                 {/* Place of birth */}
                 <InputField
-                    id="birth_place"
-                    className="place_auto_complete"
                     icon={<PlaceIcon />}
                     placeholder="Place of birth"
                     value={details.pob}
@@ -349,12 +365,15 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
                     error={!!errors.pob}
                     helperText={errors.pob}
                     inputRef={pobRef}
+                    inputProps={{
+                        id: 'birth_place',
+                        className: 'place_auto_complete',
+                        autoComplete: 'off',
+                    }}
                 />
 
                 {/* Current City */}
                 <InputField
-                    id="current_city"
-                    className="place_auto_complete"
                     icon={<PlaceIcon sx={{ color: "#ff8338" }} />}
                     placeholder="Current City"
                     value={details.current_city}
@@ -362,6 +381,11 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
                     error={!!errors.current_city}
                     helperText={errors.current_city}
                     inputRef={currentCityRef}
+                    inputProps={{
+                        id: 'current_city',
+                        className: 'place_auto_complete',
+                        autoComplete: 'off',
+                    }}
                 />
             </Box>
             <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
