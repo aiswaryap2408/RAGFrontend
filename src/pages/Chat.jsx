@@ -215,7 +215,7 @@ const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse,
                                     '&:hover': { opacity: 0.8 }
                                 }}
                             >
-                                View Maya JSON
+                                Maya JSON
                             </Typography>
                         )}
                         {(psycologyJson && jsonVisibility?.psycology) && (
@@ -231,7 +231,23 @@ const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse,
                                     '&:hover': { opacity: 0.8 }
                                 }}
                             >
-                                View Psychology
+                                Psychology
+                            </Typography>
+                        )}
+                        {(rawResponse?.guruji_input && jsonVisibility?.guruji) && (
+                            <Typography
+                                onClick={() => onLabelClick?.(rawResponse.guruji_input, 'GURUJI JSON INPUT')}
+                                sx={{
+                                    fontSize: '0.65rem',
+                                    color: '#F36A2F',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    textTransform: 'uppercase',
+                                    textDecoration: 'underline',
+                                    '&:hover': { opacity: 0.8 }
+                                }}
+                            >
+                                Guruji Input
                             </Typography>
                         )}
                     </Box>
@@ -952,6 +968,7 @@ const Chat = () => {
                                     gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
                                     mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
                                     psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
+                                    gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
                                     animating: false
                                 }));
 
@@ -999,6 +1016,7 @@ const Chat = () => {
                                 gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
                                 mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
                                 psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
+                                gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
                                 animating: false
                             }));
 
@@ -1307,7 +1325,7 @@ const Chat = () => {
             const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId, referenceid);
             // const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId);
             setSendingWaitMessage("Astrologer is typing");
-            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id } = res.data;
+            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, guruji_input, bubbles, delays, timestamp, message_id } = res.data;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
@@ -1322,6 +1340,7 @@ const Chat = () => {
                 mayaJson: tryParseJson(maya_json),
                 gurujiJson: tryParseJson(guruji_json),
                 psycologyJson: tryParseJson(psycology_json),
+                gurujiInput: tryParseJson(guruji_input),
                 bubbles: bubbles || [],
                 delays: delays || [],
                 animating: true,
@@ -2289,6 +2308,22 @@ const Chat = () => {
                                                     Guruji JSON
                                                 </Typography>
                                             )}
+                                            {(msg.gurujiInput && jsonVisibility.guruji) && (
+                                                <Typography
+                                                    onClick={() => handleLabelClick(msg.gurujiInput, 'ASTROLOGER INPUT JSON')}
+                                                    sx={{
+                                                        fontSize: '0.65rem',
+                                                        color: '#F36A2F',
+                                                        fontWeight: 800,
+                                                        cursor: 'pointer',
+                                                        textTransform: 'uppercase',
+                                                        textDecoration: 'underline',
+                                                        '&:hover': { opacity: 0.8 }
+                                                    }}
+                                                >
+                                                    Guruji Input
+                                                </Typography>
+                                            )}
                                             {(msg.psycologyJson && jsonVisibility.psycology) && (
                                                 <Typography
                                                     onClick={() => handleLabelClick(msg.psycologyJson, 'USER PSYCHOLOGY')}
@@ -2495,7 +2530,7 @@ const Chat = () => {
                                                     />
 
                                                     {/* JSON Output View (for regular messages) */}
-                                                    {((msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) || (msg.psycologyJson && jsonVisibility.psycology)) && (
+                                                    {((msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) || (msg.psycologyJson && jsonVisibility.psycology) || (msg.gurujiInput && jsonVisibility.guruji)) && (
                                                         <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)', textAlign: 'right', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                                                             {(msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) && (
                                                                 <Typography
@@ -2527,6 +2562,22 @@ const Chat = () => {
                                                                     }}
                                                                 >
                                                                     Psychology
+                                                                </Typography>
+                                                            )}
+                                                            {(msg.gurujiInput && jsonVisibility.guruji) && (
+                                                                <Typography
+                                                                    onClick={() => handleLabelClick(msg.gurujiInput, 'ASTROLOGER INPUT JSON')}
+                                                                    sx={{
+                                                                        fontSize: '0.65rem',
+                                                                        color: '#F36A2F',
+                                                                        fontWeight: 800,
+                                                                        cursor: 'pointer',
+                                                                        textTransform: 'uppercase',
+                                                                        textDecoration: 'underline',
+                                                                        '&:hover': { opacity: 0.8 }
+                                                                    }}
+                                                                >
+                                                                    Guruji Input
                                                                 </Typography>
                                                             )}
                                                         </Box>
