@@ -106,28 +106,9 @@ const UserProfile = () => {
 
         fetchProfile();
 
-        // Initialize Places API logic (Synced with Register.jsx)
-        const initPlaces = () => {
-            const birthPlaceInput = document.getElementById('birth_place');
-            if (birthPlaceInput && window.clickastro && window.clickastro.places) {
-                const capac = new window.clickastro.places.Autocomplete(birthPlaceInput, { types: ['(cities)'] });
-                capac.inputId = 'capac_' + birthPlaceInput.id;
-                capac.addListener('place_changed', function () {
-                    const place = this.getPlace();
-                    if (place && place.formatted_address) {
-                        setDetails(prev => ({ ...prev, pob: place.formatted_address }));
-                    }
-                });
-            }
-        };
-
-        window.CAPACInitListener = initPlaces;
-
-        if (window.clickastro && window.clickastro.places) {
-            initPlaces();
-        }
-
         // Load scripts in sequence to ensure proper initialization
+        // (Note: BirthDetailsForm has a polling mechanism that will pick up initAutocomplete 
+        // once it becomes available on window)
         const jqueryScript = document.createElement('script');
         jqueryScript.src = 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js';
         jqueryScript.onload = () => {
@@ -304,7 +285,7 @@ const UserProfile = () => {
                                 </TextField>
                             </Box>
                         </Box> */}
-                        <Box sx={{ width: '100%' }}>
+                        <Box component="form" name="frmplaceorder" id="frmplaceorder" sx={{ width: '100%' }}>
                             <BirthDetailsForm details={details} setDetails={setDetails} error={error} errors={errors} setErrors={setErrors} focusTrigger={focusTrigger} />
                         </Box>
                         <Box sx={{ mt: 6, display: 'flex', justifyContent: 'right', width: '100%' }}>

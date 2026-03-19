@@ -192,13 +192,15 @@ const Register = () => {
         if (!dob.trim()) newErrors.dob = "Date of birth is required.";
         if (!tob.trim()) newErrors.tob = "Time of birth is required.";
         if (!pob.trim()) {
-            newErrors.pob = "Place of birth is required.";
+            newErrors.pob = "Select place of birth.";
         } else if (!locationFields.longdeg || !locationFields.latdeg || locationFields.longdeg === '0' || locationFields.latdeg === '0') {
-            newErrors.pob = "Please select a valid birth place from the suggestions dropdown.";
+            newErrors.pob = "Please select place of birth from the suggestions dropdown.";
         }
 
-        if (current_city.trim() && (!locationFields.current_longdeg || !locationFields.current_latdeg || locationFields.current_longdeg === '0' || locationFields.current_latdeg === '0')) {
-            newErrors.current_city = "Please select a valid current city from the suggestions dropdown.";
+        if (!current_city.trim()) {
+            newErrors.current_city = "Select current place.";
+        } else if (!locationFields.current_longdeg || !locationFields.current_latdeg || locationFields.current_longdeg === '0' || locationFields.current_latdeg === '0') {
+            newErrors.current_city = "Please select current place from the suggestions dropdown.";
         }
 
         if (Object.keys(newErrors).length > 0) {
