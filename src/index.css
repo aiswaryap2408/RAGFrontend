@@ -126,3 +126,8 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* Clickastro Places Autocomplete Global Fix */
+.ca-pac-container {
+  z-index: 20000 !important;
+}
