@@ -219,8 +219,11 @@ function fillInAddressMain(el) {
     } else if (el.inputId == "gac_location_birthplace") {// user birth place
         resetPlace(8, el.form);
         var place = el.getPlace();
-    } else if (el.inputId == "gac_birth_place_consult") {// user birth place
+    } else if (el.inputId == "gac_birth_place_consult") { // user birth place
         resetPlace(10, el.form);
+        var place = el.getPlace();
+    } else if (el.inputId == "gac_current_city") {
+        resetPlace(11, el.form);
         var place = el.getPlace();
     }
     // Safety check - if place is undefined (no matching ID) or invalid, stop here
@@ -314,8 +317,10 @@ function fillInAddressMain(el) {
         setPlaceFields(7, el.form);
     } else if (el.inputId == "gac_location_birthplace") {// user location place
         setPlaceFields(8, el.form);
-    } else if (el.inputId == "gac_birth_place_consult") {// user location place
+    } else if (el.inputId == "gac_birth_place_consult") { // user location place
         setPlaceFields(10, el.form);
+    } else if (el.inputId == "gac_current_city") {
+        setPlaceFields(11, el.form);
     }
 }
 
@@ -579,6 +584,22 @@ function resetPlace(i, form) {
         f.birth_timezone.value = "";
         f.birth_latitude_google.value = "";
         f.birth_longitude_google.value = "";
+    } else if (i == 11) {
+        f.current_country.value = "";
+        f.current_state.value = "";
+        f.current_txt_place_search.value = "";
+        f.current_longdeg.value = "";
+        f.current_longmin.value = "";
+        f.current_longdir.value = "";
+        f.current_latdeg.value = "";
+        f.current_latmin.value = "";
+        f.current_latdir.value = "";
+        f.current_region_dist.value = "";
+        f.current_correction.value = "";
+        f.current_timezone_name.value = "";
+        f.current_timezone.value = "";
+        f.current_latitude_google.value = "";
+        f.current_longitude_google.value = "";
     }
 }
 
@@ -844,8 +865,31 @@ function setPlaceFields(i, form) {
             f.birth_timezone.value = sTimezone;
             return true;
         }
+    } else if (i == 11) {
+        f.current_country.value = country;
+        f.current_state.value = statename;
+        f.current_txt_place_search.value = placename;
+        f.current_longdeg.value = deglong;
+        f.current_longmin.value = minlong;
+        f.current_longdir.value = longdir;
+        f.current_latdeg.value = deglat;
+        f.current_latmin.value = minlat;
+        f.current_latdir.value = latdir;
+        f.current_region_dist.value = region_dist;
+        f.current_latitude_google.value = latitude;
+        f.current_longitude_google.value = longitude;
+        f.current_correction.value = '';
+        f.current_timezone.value = tzoname;
+        f.current_timezone_name.value = tzoname;
+        if (f.current_country.value == 'India') {
+            f.current_correction.value = '0';
+            f.current_timezone.value = '05.30E';
+        } else {
+            var sTimezone = getTimezone(latitude, longitude);
+            f.current_timezone.value = sTimezone;
+            return true;
+        }
     }
-    //console.log(f);
 }
 var bg = null;
 var gpActiveForm = null;

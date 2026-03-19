@@ -41,7 +41,22 @@ const Register = () => {
         timezone_name: '',
         latitude_google: '',
         longitude_google: '',
-        correction: '0'
+        correction: '0',
+        current_country: '',
+        current_state: '',
+        current_region_dist: '',
+        current_txt_place_search: '',
+        current_longdeg: '',
+        current_longmin: '',
+        current_longdir: '',
+        current_latdeg: '',
+        current_latmin: '',
+        current_latdir: '',
+        current_timezone: '0',
+        current_timezone_name: '',
+        current_latitude_google: '',
+        current_longitude_google: '',
+        current_correction: '0'
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -62,30 +77,8 @@ const Register = () => {
             navigate('/');
         }, 600000);
 
-        // Initialize Places API
-        const initPlaces = () => {
-            // const myPlaceAutoComplete = document.getElementById('myPlaceAutoComplete');
-            // if (myPlaceAutoComplete && window.clickastro && window.clickastro.places) {
-            //     const capac = new window.clickastro.places.Autocomplete(myPlaceAutoComplete, { types: ['(cities)'] });
-            //     capac.inputId = 'capac_' + myPlaceAutoComplete.id;
-            const birthPlaceInput = document.getElementById('birth_place');
-            if (birthPlaceInput && window.clickastro && window.clickastro.places) {
-                const capac = new window.clickastro.places.Autocomplete(birthPlaceInput, { types: ['(cities)'] });
-                capac.inputId = 'capac_' + birthPlaceInput.id;
-                capac.addListener('place_changed', function () {
-                    const place = this.getPlace();
-                    if (place && place.formatted_address) {
-                        setDetails(prev => ({ ...prev, pob: place.formatted_address }));
-                    }
-                });
-            }
-        };
-
-        window.CAPACInitListener = initPlaces;
-
-        if (window.clickastro && window.clickastro.places) {
-            initPlaces();
-        }
+        // Places API is handled by solar.js via the 'place_auto_complete' class.
+        // We just need to make sure the script is loaded.
 
 
         // Load scripts in sequence to ensure proper initialization
@@ -172,7 +165,23 @@ const Register = () => {
             timezone_name: document.getElementById('timezone_name')?.value || '',
             latitude_google: document.getElementById('latitude_google')?.value || '',
             longitude_google: document.getElementById('longitude_google')?.value || '',
-            correction: document.getElementById('correction')?.value || '0'
+            correction: document.getElementById('correction')?.value || '0',
+            // Current City Location Fields
+            current_country: document.getElementById('current_country')?.value || '',
+            current_state: document.getElementById('current_state')?.value || '',
+            current_region_dist: document.getElementById('current_region_dist')?.value || '',
+            current_txt_place_search: document.getElementById('current_txt_place_search')?.value || '',
+            current_longdeg: document.getElementById('current_longdeg')?.value || '',
+            current_longmin: document.getElementById('current_longmin')?.value || '',
+            current_longdir: document.getElementById('current_longdir')?.value || '',
+            current_latdeg: document.getElementById('current_latdeg')?.value || '',
+            current_latmin: document.getElementById('current_latmin')?.value || '',
+            current_latdir: document.getElementById('current_latdir')?.value || '',
+            current_timezone: document.getElementById('current_timezone')?.value || '0',
+            current_timezone_name: document.getElementById('current_timezone_name')?.value || '',
+            current_latitude_google: document.getElementById('current_latitude_google')?.value || '',
+            current_longitude_google: document.getElementById('current_longitude_google')?.value || '',
+            current_correction: document.getElementById('current_correction')?.value || '0'
         };
 
         if (!name.trim()) newErrors.name = "Name is required.";
@@ -186,6 +195,10 @@ const Register = () => {
             newErrors.pob = "Place of birth is required.";
         } else if (!locationFields.longdeg || !locationFields.latdeg || locationFields.longdeg === '0' || locationFields.latdeg === '0') {
             newErrors.pob = "Please select a valid birth place from the suggestions dropdown.";
+        }
+
+        if (current_city.trim() && (!locationFields.current_longdeg || !locationFields.current_latdeg || locationFields.current_longdeg === '0' || locationFields.current_latdeg === '0')) {
+            newErrors.current_city = "Please select a valid current city from the suggestions dropdown.";
         }
 
         if (Object.keys(newErrors).length > 0) {
