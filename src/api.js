@@ -43,11 +43,12 @@ export const getUserStatus = (mobile) => api.get(`/auth/user-status/${mobile}`);
 export const regenerateReport = (mobile) => api.post(`/auth/regenerate-report/${mobile}`);
 
 
-export const sendMessage = (mobile, message, history, sessionId) => api.post('/auth/chat', { mobile, message, history, session_id: sessionId });
+export const sendMessage = (mobile, message, history, sessionId, paymentId = null, referenceid = null) =>
+    api.post('/auth/chat', { mobile, message, history, session_id: sessionId, payment_id: paymentId, referenceid });
 export const getGurujiResponse = (mobile, message, history, sessionId, paymentId = null, referenceid = null) =>
     api.post('/auth/chat/guruji', { mobile, message, history, session_id: sessionId, payment_id: paymentId, referenceid });
-export const endChat = (mobile, history, sessionId) => api.post('/auth/end-chat', { mobile, history, session_id: sessionId });
-export const startSession = (mobile, sessionId) => api.post('/auth/start-session', { mobile, session_id: sessionId });
+export const endChat = (mobile, history, sessionId, referenceid = null) => api.post('/auth/end-chat', { mobile, history, session_id: sessionId, referenceid });
+export const startSession = (mobile, sessionId, referenceid = null) => api.post('/auth/start-session', { mobile, session_id: sessionId, referenceid });
 export const getChatHistory = (mobile) => api.get(`/auth/history/${mobile}`);
 export const submitFeedback = (data) => api.post('/auth/feedback', data);
 export const getDailyPrediction = (mobile) => api.get(`/auth/daily-prediction/${mobile}`);
@@ -55,7 +56,11 @@ export const getDailyPrediction = (mobile) => api.get(`/auth/daily-prediction/${
 // Admin Endpoints
 export const adminLogin = (username, password) => api.post('/admin/login', { username, password });
 export const getAllUsers = () => api.get('/admin/users');
-export const getUserDetails = (mobile) => api.get(`/admin/user-details/${mobile}`);
+export const getUserDetails = (mobile, referenceid = null) => {
+    const params = referenceid ? { referenceid } : {};
+    return api.get(`/admin/user-details/${mobile}`, { params });
+};
+export const updateUserProfile = (data) => api.post('/admin/update-user-profile', data);
 export const getSystemPrompt = () => api.get('/admin/system-prompt');
 export const updateSystemPrompt = (prompt) => api.post('/admin/system-prompt', { prompt });
 export const getLoginLogs = (params) => api.get('/admin/login-logs', { params });
@@ -95,6 +100,7 @@ export const getWalletStatus = () => api.get('/wallet/status');
 export const getBalance = (mobile) => api.get(`/wallet/balance/${mobile}`);
 export const getTransactionHistory = (mobile) => api.get(`/wallet/history/${mobile}`);
 export const rechargeWallet = (data) => api.post('/wallet/recharge', data);
+export const payForChat = (data) => api.post('/wallet/pay-for-chat', data);
 export const generateReport = (mobile, category, question = null, sessionId = null, messageId = null, referenceid = null) => api.post('/wallet/generate-report', { mobile, category, question, session_id: sessionId, message_id: messageId, referenceid }, { responseType: 'blob' });
 export const toggleWalletSystem = (enabled) => api.post(`/wallet/toggle-system?enabled=${enabled}`);
 export const getDashboardStats = (range = '7D') => api.get(`/admin/stats?range=${range}`);
