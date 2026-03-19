@@ -339,7 +339,7 @@ const UserProfile = () => {
                 onClose={() => setSuccessMsg('')}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
-                <Alert onClose={() => setSuccessMsg('')} severity="success" sx={{ width: '100%' }}>
+                <Alert onClose={() => setSuccessMsg('')} severity="success" sx={{ width: '80%', m: 'auto' }}>
                     {successMsg}
                 </Alert>
             </Snackbar>
