@@ -106,11 +106,10 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
         const initPlaces = () => {
             const birthPlaceInput = document.getElementById('birth_place');
             if (birthPlaceInput && window.clickastro && window.clickastro.places) {
-                // To prevent double initialization
-                if (birthPlaceInput.getAttribute('data-capac-initialized')) return;
+                if (birthPlaceInput.getAttribute('gp_enabled')) return;
 
                 const capac = new window.clickastro.places.Autocomplete(birthPlaceInput, { types: ['(cities)'] });
-                capac.inputId = 'capac_' + birthPlaceInput.id;
+                capac.inputId = 'gac_' + birthPlaceInput.id;
                 capac.addListener('place_changed', function () {
                     const place = this.getPlace();
                     if (place && place.formatted_address) {
@@ -123,38 +122,49 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
                             });
                         }
                     }
+                    if (window.fillInAddressMain) {
+                        window.fillInAddressMain(this);
+                    }
                 });
-                birthPlaceInput.setAttribute('data-capac-initialized', 'true');
+                birthPlaceInput.setAttribute('gp_enabled', 'true');
             }
 
             const currentCityInput = document.getElementById('current_city');
             if (currentCityInput && window.clickastro && window.clickastro.places) {
-                if (currentCityInput.getAttribute('data-capac-initialized')) return;
+                if (currentCityInput.getAttribute('gp_enabled')) return;
 
                 const capac = new window.clickastro.places.Autocomplete(currentCityInput, { types: ['(cities)'] });
-                capac.inputId = 'capac_' + currentCityInput.id;
+                capac.inputId = 'gac_' + currentCityInput.id;
                 capac.addListener('place_changed', function () {
                     const place = this.getPlace();
                     if (place && place.formatted_address) {
                         setDetails(prev => ({ ...prev, current_city: place.formatted_address }));
+                        if (typeof setErrors === 'function') {
+                            setErrors(prev => {
+                                const next = { ...prev };
+                                delete next.current_city;
+                                return next;
+                            });
+                        }
+                    }
+                    if (window.fillInAddressMain) {
+                        window.fillInAddressMain(this);
                     }
                 });
-                currentCityInput.setAttribute('data-capac-initialized', 'true');
+                currentCityInput.setAttribute('gp_enabled', 'true');
             }
         };
 
-        // If the script is already loaded, init. Otherwise hook into the listener.
         if (window.clickastro && window.clickastro.places) {
             initPlaces();
         } else {
-            // Store previous listener just in case
             const prevListener = window.CAPACInitListener;
             window.CAPACInitListener = () => {
                 if (prevListener) prevListener();
                 initPlaces();
             };
         }
-    }, [setDetails]);
+    }, [setDetails, setErrors]);
 
     const formatDisplayDate = (dateString) => {
         if (!dateString) return '';
@@ -219,6 +229,24 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
                 <input type="hidden" name="latitude_google" id="latitude_google" value={details.latitude_google} />
                 <input type="hidden" name="longitude_google" id="longitude_google" value={details.longitude_google} />
                 <input type="hidden" name="correction" id="correction" value={details.correction} />
+
+
+                {/* Hidden location fields required by solar.js */}
+                <input type="hidden" name="current_country" id="current_country" value={details.current_country} />
+                <input type="hidden" name="current_state" id="current_state" value={details.current_state} />
+                <input type="hidden" name="current_region_dist" id="current_region_dist" value={details.current_region_dist} />
+                <input type="hidden" name="current_txt_place_search" id="current_txt_place_search" value={details.current_txt_place_search} />
+                <input type="hidden" name="current_longdeg" id="current_longdeg" value={details.current_longdeg} />
+                <input type="hidden" name="current_longmin" id="current_longmin" value={details.current_longmin} />
+                <input type="hidden" name="current_longdir" id="current_longdir" value={details.current_longdir} />
+                <input type="hidden" name="current_latdeg" id="current_latdeg" value={details.current_latdeg} />
+                <input type="hidden" name="current_latmin" id="current_latmin" value={details.current_latmin} />
+                <input type="hidden" name="current_latdir" id="current_latdir" value={details.current_latdir} />
+                <input type="hidden" name="current_timezone" id="current_timezone" value={details.current_timezone} />
+                <input type="hidden" name="current_timezone_name" id="current_timezone_name" value={details.current_timezone_name} />
+                <input type="hidden" name="current_latitude_google" id="current_latitude_google" value={details.current_latitude_google} />
+                <input type="hidden" name="current_longitude_google" id="current_longitude_google" value={details.current_longitude_google} />
+                <input type="hidden" name="current_correction" id="current_correction" value={details.current_correction} />
 
                 {/* Name */}
                 <InputField
