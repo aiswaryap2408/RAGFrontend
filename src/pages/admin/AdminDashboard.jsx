@@ -995,6 +995,7 @@ const AdminDashboard = () => {
                                                             { label: 'Birth Date (DD-MM-YYYY)', key: 'dob', value: userDetails.profile?.dob || '' },
                                                             { label: 'Birth Time (HH:MM)', key: 'tob', value: userDetails.profile?.tob || '' },
                                                             { label: 'Birth Place', key: 'txt_place_search', value: userDetails.profile?.txt_place_search || '' },
+                                                            { label: 'Current City', key: 'current_city', value: userDetails.profile?.current_city || '' },
                                                             { label: 'Gender', key: 'gender', value: userDetails.profile?.gender || '' }
                                                         ].map((item, i) => (
                                                             <div key={i} className="space-y-1">

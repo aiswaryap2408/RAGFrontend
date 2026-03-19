@@ -14,7 +14,7 @@ const UserProfile = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null); // Keep user for reference if needed, but details drives the form
     const [details, setDetails] = useState({
-        name: '', mobile: '', relation: 'Self (This is me)', gender: 'Male', chart_style: 'South Indian', dob: '', tob: '', pob: '', email: '',
+        name: '', mobile: '', relation: 'Self (This is me)', gender: 'Male', chart_style: 'South Indian', dob: '', tob: '', pob: '', current_city: '', email: '',
         country: '', state: '', region_dist: '', txt_place_search: '',
         longdeg: '', longmin: '', longdir: '', latdeg: '', latmin: '', latdir: '',
         timezone: '', timezone_name: '', latitude_google: '', longitude_google: '', correction: 0,
@@ -74,6 +74,7 @@ const UserProfile = () => {
                         dob: formatDate(profile.dob),
                         tob: formatTime(profile.tob),
                         pob: profile.pob || '',
+                        current_city: profile.current_city || '',
                         chart_style: profile.chart_style || 'South Indian',
                         country: profile.country || 'India',
                         state: profile.state || '',
@@ -164,7 +165,7 @@ const UserProfile = () => {
         setErrors({});
 
         // Validation
-        const { name, email, dob, tob, pob, gender } = details;
+        const { name, email, dob, tob, pob, current_city, gender } = details;
         const newErrors = {};
 
         // Get location details from hidden inputs (populated by solar.js)
