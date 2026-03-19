@@ -14,7 +14,8 @@ import {
     getTransactionHistory as getUserTransactions,
     toggleWalletSystem,
     getSubscriptionPlans,
-    toggleUserSubscription
+    toggleUserSubscription,
+    updateUserProfile
 } from '../../api';
 
 const NavButton = ({ active, onClick, icon, label, themeColor }) => {
@@ -67,6 +68,9 @@ const AdminDashboard = () => {
     const [geminiTemperature, setGeminiTemperature] = useState(1.0);
     const [geminiTopP, setGeminiTopP] = useState(0.95);
     const [geminiTopK, setGeminiTopK] = useState(40);
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [editProfileData, setEditProfileData] = useState({});
+    const [updateLoading, setUpdateLoading] = useState(false);
 
     // RAG Tester State
     const [testFile, setTestFile] = useState(null);
@@ -92,7 +96,6 @@ const AdminDashboard = () => {
 
         if (tab) setActiveTab(tab);
         if (mobile) {
-            setSelectedUser(mobile);
             handleUserClick(mobile);
         }
     }, []);
@@ -100,7 +103,8 @@ const AdminDashboard = () => {
     useEffect(() => {
         const filtered = users.filter(user =>
             (user.name && user.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (user.mobile && user.mobile.includes(searchTerm))
+            (user.mobile && user.mobile.includes(searchTerm)) ||
+            (user.reference_id && user.reference_id.toLowerCase().includes(searchTerm.toLowerCase()))
         );
         setFilteredUsers(filtered);
     }, [searchTerm, users]);
@@ -133,15 +137,16 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleUserClick = async (mobile) => {
-        setSelectedUser(mobile);
+    const handleUserClick = async (mobile, referenceid = null) => {
+        setSelectedUser(referenceid || mobile);
         setDetailTab('history');
+        setIsEditingProfile(false);
         setDetailsLoading(true);
         setSelectedSessionId(null);
         setHistoryDateFilter('');
         try {
             const [detailsRes, walletRes, transactionsRes] = await Promise.all([
-                getUserDetails(mobile),
+                getUserDetails(mobile, referenceid),
                 getUserWallet(mobile),
                 getUserTransactions(mobile)
             ]);
@@ -197,6 +202,28 @@ const AdminDashboard = () => {
             console.error("Failed to toggle subscription", err);
         } finally {
             setSubscriptionToggleLoading(false);
+        }
+    };
+
+    const handleEditProfile = () => {
+        setEditProfileData(userDetails.profile);
+        setIsEditingProfile(true);
+    };
+
+    const handleUpdateProfile = async () => {
+        setUpdateLoading(true);
+        try {
+            await updateUserProfile(editProfileData);
+            setUserDetails(prev => ({
+                ...prev,
+                profile: { ...prev.profile, ...editProfileData }
+            }));
+            setIsEditingProfile(false);
+            fetchUsers(); // Refresh sidebar to show any name changes
+        } catch (err) {
+            console.error("Failed to update profile", err);
+        } finally {
+            setUpdateLoading(false);
         }
     };
 
@@ -698,21 +725,27 @@ const AdminDashboard = () => {
                                         <p className="text-[10px] font-bold text-slate-500">Loading Vault</p>
                                     </div>
                                 ) : filteredUsers.map(user => (
-                                    <button
-                                        key={user.mobile}
-                                        onClick={() => handleUserClick(user.mobile)}
-                                        className={`w-full text-left px-4 py-3 rounded-xl transition-all ${selectedUser === user.mobile ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'hover:bg-slate-800 text-slate-400'}`}
-                                    >
-                                        <div className="flex items-center space-x-3">
-                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black text-sm ${selectedUser === user.mobile ? 'bg-white/20' : 'bg-slate-800 text-slate-300'}`}>
-                                                {user.name ? user.name[0].toUpperCase() : '?'}
+                                        <button
+                                            key={user.reference_id || user.mobile}
+                                            onClick={() => handleUserClick(user.mobile, user.reference_id)}
+                                            className={`w-full text-left p-4 rounded-3xl transition-all duration-300 border flex items-center space-x-4 group ${selectedUser === (user.reference_id || user.mobile)
+                                                ? 'bg-indigo-600 border-indigo-500 shadow-xl shadow-indigo-900/40 -translate-y-0.5'
+                                                : 'bg-slate-900/50 border-slate-800/60 hover:bg-slate-800'
+                                                }`}
+                                        >
+                                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm ${selectedUser === (user.reference_id || user.mobile) ? 'bg-white text-indigo-600' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700'}`}>
+                                                {(user.name || 'A')[0].toUpperCase()}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className={`text-sm font-black truncate ${selectedUser === user.mobile ? 'text-white' : 'text-slate-200'}`}>{user.name || 'Anonymous'}</p>
-                                                <p className={`text-[10px] font-bold uppercase tracking-tighter ${selectedUser === user.mobile ? 'text-white/70' : 'text-slate-500'}`}>{user.mobile}</p>
+                                                <p className={`text-sm font-black truncate ${selectedUser === (user.reference_id || user.mobile) ? 'text-white' : 'text-slate-200'}`}>{user.name || 'Anonymous'}</p>
+                                                <div className="flex justify-between items-center">
+                                                    <p className={`text-[10px] font-bold uppercase tracking-tighter ${selectedUser === (user.reference_id || user.mobile) ? 'text-white/70' : 'text-slate-500'}`}>{user.mobile}</p>
+                                                    {user.reference_id && (
+                                                        <p className={`text-[8px] font-mono opacity-50 truncate ml-2 ${selectedUser === (user.reference_id || user.mobile) ? 'text-white/50' : 'text-slate-600'}`}>ID: {user.reference_id.slice(-8)}</p>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </button>
+                                        </button>
                                 ))}
                             </div>
                         </div>
@@ -926,19 +959,56 @@ const AdminDashboard = () => {
                                         {detailTab === 'profile' && (
                                             <div className="flex-1 overflow-y-auto p-12 bg-black flex justify-center custom-scrollbar">
                                                 <div className="max-w-xl w-full">
-                                                    <h3 className="text-2xl font-black text-white mb-8">Personal Details</h3>
+                                                    <div className="flex justify-between items-center mb-8">
+                                                        <h3 className="text-2xl font-black text-white">Personal Details</h3>
+                                                        {!isEditingProfile ? (
+                                                            <button
+                                                                onClick={handleEditProfile}
+                                                                className="px-4 py-2 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded-xl border border-indigo-500/30 transition-all"
+                                                            >
+                                                                Edit Profile
+                                                            </button>
+                                                        ) : (
+                                                            <div className="flex space-x-2">
+                                                                <button
+                                                                    onClick={() => setIsEditingProfile(false)}
+                                                                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-700 transition-all"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                                <button
+                                                                    onClick={handleUpdateProfile}
+                                                                    disabled={updateLoading}
+                                                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-900/40 transition-all"
+                                                                >
+                                                                    {updateLoading ? 'Saving...' : 'Save Changes'}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                     <div className="grid grid-cols-2 gap-6">
                                                         {[
-                                                            { label: 'Name', value: userDetails.profile?.name },
-                                                            { label: 'Mobile', value: userDetails.profile?.mobile },
-                                                            { label: 'Email', value: userDetails.profile?.email || 'N/A' },
-                                                            { label: 'Birth', value: `${userDetails.profile?.dob || ''} ${userDetails.profile?.tob || ''}` },
-                                                            { label: 'Place', value: userDetails.profile?.pob || 'N/A' },
-                                                            { label: 'Gender', value: userDetails.profile?.gender || 'N/A' }
+                                                            { label: 'Name', key: 'name', value: userDetails.profile?.name },
+                                                            { label: 'Reference ID', key: 'referenceid', value: userDetails.profile?.referenceid, readonly: true },
+                                                            { label: 'Mobile', key: 'mobile', value: userDetails.profile?.mobile || userDetails.profile?.loginid, readonly: true },
+                                                            { label: 'Email', key: 'email', value: userDetails.profile?.email || '' },
+                                                            { label: 'Birth Date (DD-MM-YYYY)', key: 'dob', value: userDetails.profile?.dob || '' },
+                                                            { label: 'Birth Time (HH:MM)', key: 'tob', value: userDetails.profile?.tob || '' },
+                                                            { label: 'Birth Place', key: 'txt_place_search', value: userDetails.profile?.txt_place_search || '' },
+                                                            { label: 'Gender', key: 'gender', value: userDetails.profile?.gender || '' }
                                                         ].map((item, i) => (
                                                             <div key={i} className="space-y-1">
                                                                 <label className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">{item.label}</label>
-                                                                <p className="bg-slate-900 px-4 py-2.5 rounded-xl border border-slate-800 text-sm font-bold text-slate-300">{item.value}</p>
+                                                                {isEditingProfile && !item.readonly ? (
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editProfileData[item.key] || ''}
+                                                                        onChange={(e) => setEditProfileData(prev => ({ ...prev, [item.key]: e.target.value }))}
+                                                                        className="w-full bg-slate-800 px-4 py-2.5 rounded-xl border border-slate-700 text-sm font-bold text-white outline-none focus:border-indigo-500"
+                                                                    />
+                                                                ) : (
+                                                                    <p className="bg-slate-900 px-4 py-2.5 rounded-xl border border-slate-800 text-sm font-bold text-slate-300 truncate">{item.value || 'N/A'}</p>
+                                                                )}
                                                             </div>
                                                         ))}
                                                     </div>
