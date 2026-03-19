@@ -113,7 +113,8 @@ export const deleteRechargeConfig = (id) => api.delete(`/admin/recharge-configs/
 export const getPublicRechargeConfigs = () => api.get('/wallet/recharge-configs');
 
 // Payment Module Endpoints
-export const createPaymentOrder = (amount, mobile, referenceid) => api.post('/payment/create-order', { amount, mobile, referenceid });
+// export const createPaymentOrder = (amount, mobile) => api.post('/payment/create-order', { amount, mobile });
+export const createPaymentOrder = (amount, mobile, referenceid = null) => api.post('/payment/create-order', { amount, mobile, referenceid });
 export const verifyPayment = (data) => api.post('/payment/verify', data);
 export const getSystemSettings = () => api.get('/admin/settings');
 export const updateSystemSettings = (key, value) => api.post('/admin/settings', { key, value });
