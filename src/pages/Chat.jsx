@@ -1342,6 +1342,14 @@ const Chat = () => {
     }, []);
 
 
+    const sanitizeHistory = (h) => {
+        if (!Array.isArray(h)) return [];
+        return h.map(m => ({
+            role: m.role || 'user',
+            content: m.content || ''
+        }));
+    };
+
     const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null) => {
         setLoading(true);
         setIsSendingToBackend(true);
@@ -1349,7 +1357,8 @@ const Chat = () => {
 
         try {
             const referenceid = localStorage.getItem('currentProfileId');
-            const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId, referenceid);
+            const sanitizedHistory = sanitizeHistory(history);
+            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
             // const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId);
             setSendingWaitMessage("Astrologer is typing");
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, guruji_input, bubbles, delays, timestamp, message_id } = res.data;
@@ -1384,10 +1393,11 @@ const Chat = () => {
             }
         } catch (err) {
             console.error("Guruji Error:", err);
+            const errMsg = err.response?.data?.detail || err.message || 'Guruji is not available right now. Please try again after some time.';
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 assistant: 'maya',
-                content: 'Guruji is not available right now. Please try again after some time.',
+                content: errMsg,
                 time: getCurrentTime()
             }]);
             setIsSendingToBackend(false);
@@ -1596,7 +1606,8 @@ const Chat = () => {
             });
 
             // Call backend ONCE securely outside the state setter.
-            sendToBackend(mobile, combinedText, historyWithoutNewlyQueued);
+            const sanitizedHistory = sanitizeHistory(historyWithoutNewlyQueued);
+            sendToBackend(mobile, combinedText, sanitizedHistory);
 
         } catch (err) {
             console.error("Queue Processing Error:", err);
@@ -1693,10 +1704,11 @@ const Chat = () => {
             // If it's a 404/401/403, the interceptor will handle redirect to login
             // Only show error message for other types of errors
             if (err.response?.status !== 404 && err.response?.status !== 401 && err.response?.status !== 403) {
+                const errMsg = err.response?.data?.detail || err.message || 'Sorry, I encountered an error. Please try again.';
                 setMessages(prev => [...prev, {
                     role: 'assistant',
                     assistant: 'maya',
-                    content: 'Sorry, I encountered an error. Please try again.',
+                    content: errMsg,
                     time: getCurrentTime()
                 }]);
             }
@@ -1951,12 +1963,11 @@ const Chat = () => {
 
             const lastUserMsg = messages.find(m => m.message_id === pendingMessageId);
             const mobile = localStorage.getItem('mobile');
-            const history = messages.slice(1, messages.findIndex(m => m.message_id === pendingMessageId));
-
+            const sanitizedHistory = sanitizeHistory(history);
             const chatRes = await api.post('/auth/chat', {
                 mobile,
                 message: lastUserMsg.content,
-                history,
+                history: sanitizedHistory,
                 session_id: sessionId,
                 payment_id: paymentId
             });
