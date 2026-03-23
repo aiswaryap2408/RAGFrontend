@@ -100,7 +100,7 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, input
                             sx={{
                                 flex: 1,
                                 bgcolor: isBlocked ? "none" : "#ffffff",
-                                borderRadius: 30,
+                                borderRadius: 50,
                                 px: 2,
                                 display: "flex",
                                 alignItems: "center",
