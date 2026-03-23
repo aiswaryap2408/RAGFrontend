@@ -121,11 +121,17 @@ const BirthDetailsForm = ({ details, setDetails, error, errors = {}, setErrors, 
             if (typeof window.initAutocomplete === 'function') {
                 const birthPlaceInput = document.getElementById('birth_place');
                 const currentCityInput = document.getElementById('current_city');
-                
-                // Only call init if they haven't been enabled yet
-                if ((birthPlaceInput && !birthPlaceInput.getAttribute('gp_enabled')) || 
-                    (currentCityInput && !currentCityInput.getAttribute('gp_enabled'))) {
-                    console.log('Manually triggering initAutocomplete');
+
+                let initializedAny = false;
+                [birthPlaceInput, currentCityInput].forEach(el => {
+                    if (el && !el.hasAttribute('data-ac-initialized')) {
+                        el.setAttribute('data-ac-initialized', 'true');
+                        initializedAny = true;
+                    }
+                });
+
+                if (initializedAny && typeof window.initAutocomplete === 'function') {
+                    console.log('Targeted initAutocomplete trigger');
                     window.initAutocomplete();
                 }
             }
