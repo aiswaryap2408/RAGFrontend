@@ -53,8 +53,11 @@ const SafeHTML = ({ html }) => {
     const parse = (text) => {
         if (typeof text !== 'string') return text;
 
-        // Split by tags: <b>, </b>, <p...>, </p>, <br.../>, <span...>, </span> AND newlines (\n\n or \n)
-        const parts = text.split(/(<(?:b|\/b|p[^>]*|\/p|br[^>]*\/?|span[^>]*|\/span)>|\n\n|\n)/i);
+        // Replace &nbsp; with non-breaking space character
+        const processedText = text.replace(/&nbsp;/g, '\u00A0');
+
+        // Split by tags: <b>, </b>, <strong>, </strong>, <p...>, </p>, <br.../>, <span...>, </span> AND newlines (\n\n or \n)
+        const parts = processedText.split(/(<(?:b|\/b|strong|\/strong|p[^>]*|\/p|br[^>]*\/?|span[^>]*|\/span)>|\n\n|\n)/i);
 
         const result = [];
         let isBold = false;
@@ -67,9 +70,13 @@ const SafeHTML = ({ html }) => {
                 const colorMatch = styleStr.match(/color:\s*([^;]+)/i);
                 const weightMatch = styleStr.match(/font-weight:\s*([^;]+)/i);
                 const marginMatch = styleStr.match(/margin:\s*([^;]+)/i);
+                const marginTopMatch = styleStr.match(/margin-top:\s*([^;]+)/i);
+                const decorationMatch = styleStr.match(/text-decoration:\s*([^;"]+)/i);
                 if (colorMatch) styles.color = colorMatch[1].trim();
                 if (weightMatch) styles.fontWeight = weightMatch[1].trim();
                 if (marginMatch) styles.margin = marginMatch[1].trim();
+                if (marginTopMatch) styles.marginTop = marginTopMatch[1].trim();
+                if (decorationMatch) styles.textDecoration = decorationMatch[1].trim();
             }
             return styles;
         };
@@ -79,9 +86,9 @@ const SafeHTML = ({ html }) => {
 
             const lowerPart = part.toLowerCase();
 
-            if (lowerPart === '<b>') {
+            if (lowerPart === '<b>' || lowerPart === '<strong>') {
                 isBold = true;
-            } else if (lowerPart === '</b>') {
+            } else if (lowerPart === '</b>' || lowerPart === '</strong>') {
                 isBold = false;
             } else if (lowerPart.startsWith('<span')) {
                 activeStyles = { ...activeStyles, ...extractStyles(part) };
@@ -105,13 +112,14 @@ const SafeHTML = ({ html }) => {
                 if (isBold) content = <strong key={`bold-${index}`}>{content}</strong>;
 
                 if (Object.keys(activeStyles).length > 0) {
-                    const isBlockStyle = !!activeStyles.marginTop;
+                    const isBlockStyle = !!activeStyles.marginTop || !!activeStyles.margin;
                     result.push(
                         <span
                             key={`style-wrap-${index}`}
                             style={{
                                 ...activeStyles,
                                 display: isBlockStyle ? 'inline-block' : 'inline',
+                                whiteSpace: 'pre-wrap'
                             }}
                         >
                             {content}
@@ -157,7 +165,7 @@ const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse,
                 mr: 1,
                 textAlign: 'right',
             }}>
-                MAYA
+                MAYA AI
             </Typography>
             <Box sx={{
                 position: "relative",
@@ -392,13 +400,14 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
                             textTransform: 'none',
                             fontSize: '0.9rem',
                             fontWeight: 600,
+                            minWidth: '170px',
                             border: '2px solid #ffffff',
                             '&:hover': { bgcolor: disabled ? '#e0e0e0' : '#f0fdf4', color: '#54a170', border: '2px solid #54a170' },
                             cursor: disabled ? 'not-allowed' : 'pointer',
                             pointerEvents: disabled ? 'none' : 'auto',
                         }}
                     >
-                        {buttonLabel}
+                        {typeof buttonLabel === 'string' ? <SafeHTML html={buttonLabel} /> : buttonLabel}
                         <Typography sx={{ fontSize: '0.9rem', color: '#000', fontWeight: 400, position: 'absolute', bottom: -24 }}>Or ask another question</Typography>
                     </Button>
                 </Box>
@@ -1966,19 +1975,9 @@ const Chat = () => {
     };
 
     const handleChatSuccess = async (paymentId, amount) => {
-        let trigger_guruji_flag = false;
         try {
             setChatPaymentState('COMPLETE');
             setThankYouAction('CHAT_PAYMENT');
-            // setThankYouData({
-            //     amount: amount,
-            //     points: 0,
-            //     title: 'Payment successful',
-            //     trustMsg: 'Guruji is now analyzing your chart...',
-            //     gratitudeMsg: 'Thank you for your patience.',
-            //     showWave: true,
-            //     referenceId: paymentId
-            // });
             setThankYouOpen(false);
 
             // Proceed to process the message after payment
@@ -1988,57 +1987,23 @@ const Chat = () => {
 
             const lastUserMsg = messages.find(m => m.message_id === pendingMessageId);
             const mobile = localStorage.getItem('mobile');
-            const sanitizedHistory = sanitizeHistory(messages.length > 1 ? messages.slice(1) : []);
-            const chatRes = await api.post('/auth/chat', {
-                mobile,
-                message: lastUserMsg.content,
-                history: sanitizedHistory,
-                session_id: sessionId,
-                payment_id: paymentId
-            });
 
-            const { answer, metrics, context, assistant, wallet_balance, amount: cost, maya_json, guruji_json, timestamp, message_id, trigger_guruji } = chatRes.data;
-            trigger_guruji_flag = trigger_guruji;
-
-            if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
-
+            // Mark the user message as paid in UI
             setMessages(prev => {
                 const next = [...prev];
-                // Mark the user message as paid
                 const userIdx = next.findIndex(m => m.message_id === pendingMessageId);
                 if (userIdx !== -1) {
                     next[userIdx].is_paid = true;
                     next[userIdx].payment_id = paymentId;
                 }
-
-                // Add Guruji's response
-                return [...next, {
-                    role: 'assistant',
-                    content: answer,
-                    assistant: assistant || 'guruji',
-                    metrics,
-                    context,
-                    amount: cost,
-                    mayaJson: maya_json,
-                    psycologyJson: chatRes.data.psycology_json,
-                    gurujiJson: guruji_json,
-                    bubbles: chatRes.data.bubbles || [],
-                    delays: chatRes.data.delays || [],
-                    animating: true,
-                    message_id: message_id,
-                    time: timestamp ? formatTime(timestamp) : getCurrentTime(),
-                    timestamp: timestamp || new Date().toISOString(),
-                    trigger_guruji: trigger_guruji
-                }];
+                return next;
             });
-            if (guruji_json) setIsAnimating(true);
 
-            // Trigger Guruji stage if indicated
-            if (trigger_guruji) {
-                setSendingWaitMessage("Sending to Astrologer");
-                setIsSendingToBackend(true);
-                await fetchGurujiResponse(mobile, lastUserMsg.content, messages.length > 1 ? messages.slice(1) : [], sessionId, paymentId);
-            }
+            // Call Guruji directly — Maya's classification is already saved in DB
+            // from the initial /auth/chat call, so no need to re-call /auth/chat
+            const history = messages.length > 1 ? messages.slice(1) : [];
+            const sanitizedHistory = sanitizeHistory(history);
+            await fetchGurujiResponse(mobile, lastUserMsg.content, sanitizedHistory, sessionId, paymentId);
 
             setChatPaymentState('IDLE');
             setPendingMessageId(null);
@@ -2048,10 +2013,6 @@ const Chat = () => {
             setChatPaymentState('REQUIRED');
         } finally {
             setLoading(false);
-            if (!trigger_guruji_flag) {
-                setIsSendingToBackend(false);
-                setSendingWaitMessage("");
-            }
         }
     };
 
@@ -2163,7 +2124,7 @@ const Chat = () => {
                         <PrimaryButton
                             label="End Consultation"
                             onClick={() => setFeedbackDrawerOpen(true)}
-                            disabled={loading || messages.length < 1}
+                            // disabled={loading || messages.length < 1}
                             startIcon={<CancelIcon sx={{ fontSize: 24 }} />}
                             sx={{
                                 width: 'fit-content',
@@ -2179,7 +2140,7 @@ const Chat = () => {
                             <PrimaryButton
                                 label="Subscribe Now"
                                 onClick={() => setFeedbackDrawerOpen(true)}
-                                disabled={loading || messages.length < 1}
+                                // disabled={loading || messages.length < 1}
                                 startIcon={<img src="/svg/subscribe.svg" alt="Subscribe" style={{ width: 20, height: 20 }} />}
                                 sx={{
                                     width: 'fit-content',
@@ -2536,17 +2497,17 @@ const Chat = () => {
                                     )}
                                 </Box>
                                 <MayaTemplateBox
-                                    name={userName.split(' ')[0]}
+                                    // name={userName.split(' ')[0]}
                                     content={msg.chat_payment_amount === 0
-                                        ? `<b>This is a premium prediction worth ₹${msg.actual_chat_payment_amount || 39} - but get it for free now.</b> \n\n <span style="color: #54A170">Subscribe</span> to get unlimited answers access for a day, month or a quarter.`
-                                        : `<b>This is a premium prediction.</b> Get the answer for ₹${msg.chat_payment_amount || 39}.<p style="margin-top: 15px;">Or you may <span style="color: #54A170; margin-left: 15px;"> subscribe now</span> to get unlimited answers access for a day, month or a quarter.</p>`}
+                                        ? `<span style="font-weight: 800;">This is a premium prediction worth ₹${msg.actual_chat_payment_amount || 39} - but get it for free now.</span> \n\n <span style="color: #54A170">Subscribe</span> to get unlimited answers access for a day, month or a quarter.`
+                                        : `<span style="font-weight: 800;">This is a premium prediction.</span>\n Get the answer for <span style="text-decoration: line-through;">₹${msg.actual_chat_payment_amount || 39}</span> ₹${msg.chat_payment_amount || 39}.<p style="margin-top: 15px;">Or you may <span style="color: #54A170; text-decoration: underline;">subscribe now</span> <span style="font-weight: 800;">to get unlimited answers access </span>for a day, month or a quarter.</p>`}
                                     buttonLabel={(() => {
                                         const lastPaymentMsgIdx = messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1);
                                         const isOldPayment = i < lastPaymentMsgIdx;
                                         const hasNewerUserMsg = messages.slice(i + 1).some(m => m.role === 'user');
                                         if (isOldPayment || hasNewerUserMsg) return "No longer active";
                                         return chatPaymentState === 'REQUIRED' || chatPaymentState === 'IDLE'
-                                            ? (msg.chat_payment_amount === 0 ? "Get answer for FREE" : `Get answer for ₹${msg.chat_payment_amount || 39}`)
+                                            ? (msg.chat_payment_amount === 0 ? "Get answer for FREE" : `Get answer for&nbsp;<span style="text-decoration: line-through; ">₹${msg.actual_chat_payment_amount || 39}</span> &nbsp;₹${msg.chat_payment_amount || 39}`)
                                             : "Processing...";
                                     })()}
                                     onButtonClick={() => handleChatPayment(msg.chat_payment_amount !== undefined ? msg.chat_payment_amount : 39, localStorage.getItem('mobile'))}
