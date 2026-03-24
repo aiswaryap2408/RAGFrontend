@@ -58,7 +58,21 @@ const SafeHTML = ({ html }) => {
 
         const result = [];
         let isBold = false;
-        let currentSpanColor = null;
+        let activeStyles = {};
+        const extractStyles = (tag) => {
+            const styles = {};
+            const styleMatch = tag.match(/style=["']([^"']+)["']/i);
+            if (styleMatch) {
+                const styleStr = styleMatch[1];
+                const colorMatch = styleStr.match(/color:\s*([^;]+)/i);
+                const weightMatch = styleStr.match(/font-weight:\s*([^;]+)/i);
+                const marginMatch = styleStr.match(/margin:\s*([^;]+)/i);
+                if (colorMatch) styles.color = colorMatch[1].trim();
+                if (weightMatch) styles.fontWeight = weightMatch[1].trim();
+                if (marginMatch) styles.margin = marginMatch[1].trim();
+            }
+            return styles;
+        };
 
         parts.forEach((part, index) => {
             if (!part) return;
@@ -70,11 +84,9 @@ const SafeHTML = ({ html }) => {
             } else if (lowerPart === '</b>') {
                 isBold = false;
             } else if (lowerPart.startsWith('<span')) {
-                // Regex to find color: style="color: #54A170" or style='color: #54A170'
-                const colorMatch = part.match(/color:\s*([#\w]+)/i);
-                if (colorMatch) currentSpanColor = colorMatch[1];
+                activeStyles = { ...activeStyles, ...extractStyles(part) };
             } else if (lowerPart === '</span>') {
-                currentSpanColor = null;
+                activeStyles = {}; // Simple reset for now
             } else if (lowerPart === '<br>' || lowerPart.startsWith('<br')) {
                 result.push(<br key={index} />);
             } else if (lowerPart === '\n\n') {
@@ -82,17 +94,29 @@ const SafeHTML = ({ html }) => {
             } else if (lowerPart === '\n') {
                 result.push(<br key={index} />);
             } else if (lowerPart.startsWith('<p')) {
-                // p tags handled as simple breaks for now to avoid large gaps
+                activeStyles = { ...activeStyles, ...extractStyles(part) };
                 if (result.length > 0) result.push(<br key={`br-p-${index}-1`} />);
             } else if (lowerPart === '</p>') {
+                activeStyles = {}; // Reset for now
                 result.push(<br key={`br-p-${index}-2`} />);
             } else {
                 // Text content
                 let content = part;
                 if (isBold) content = <strong key={`bold-${index}`}>{content}</strong>;
 
-                if (currentSpanColor) {
-                    result.push(<span key={`span-${index}`} style={{ color: currentSpanColor }}>{content}</span>);
+                if (Object.keys(activeStyles).length > 0) {
+                    const isBlockStyle = !!activeStyles.marginTop;
+                    result.push(
+                        <span
+                            key={`style-wrap-${index}`}
+                            style={{
+                                ...activeStyles,
+                                display: isBlockStyle ? 'inline-block' : 'inline',
+                            }}
+                        >
+                            {content}
+                        </span>
+                    );
                 } else if (isBold) {
                     result.push(content);
                 } else {
@@ -234,12 +258,12 @@ const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse,
                                 Psychology
                             </Typography>
                         )}
-                        {(rawResponse?.guruji_input && jsonVisibility?.guruji) && (
+                        {(rawResponse?.guruji_input?.replacements && jsonVisibility?.guruji) && (
                             <Typography
-                                onClick={() => onLabelClick?.(rawResponse.guruji_input, 'GURUJI JSON INPUT')}
+                                onClick={() => onLabelClick?.(rawResponse.guruji_input.replacements, 'PROMPT REPLACEMENTS')}
                                 sx={{
                                     fontSize: '0.65rem',
-                                    color: '#F36A2F',
+                                    color: '#54A170',
                                     fontWeight: 800,
                                     cursor: 'pointer',
                                     textTransform: 'uppercase',
@@ -247,7 +271,7 @@ const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse,
                                     '&:hover': { opacity: 0.8 }
                                 }}
                             >
-                                Guruji Input
+                                Replacements
                             </Typography>
                         )}
                     </Box>
@@ -321,7 +345,8 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
             p: 2.5,
             bgcolor: "#fece8d",
             width: '100%',
-            maxWidth: 450
+            maxWidth: 450,
+            mb: 2,
         }}>
             <Box sx={{
                 position: "absolute",
@@ -341,8 +366,8 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
                 <img src="/svg/maya.png" style={{ width: 42 }} alt="Maya" />
             </Box>
 
-            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#333', mt: 1, mb: 1, textAlign: 'left', fontWeight: 500 }}>
-                {name && name + ", "}{content}
+            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.6, color: '#333', mt: 1, mb: 1, textAlign: 'left', fontWeight: 500 }}>
+                {name && name + ", "}{typeof content === 'string' ? <SafeHTML html={content} /> : content}
             </Typography>
 
             {loading && (
@@ -357,7 +382,7 @@ const MayaTemplateBox = ({ name, content, buttonLabel, onButtonClick, loading, d
                     <Button
                         onClick={disabled ? undefined : onButtonClick}
                         disabled={disabled}
-                        startIcon={<DoneAllOutlinedIcon />}
+                        // startIcon={<DoneAllOutlinedIcon />}
                         sx={{
                             bgcolor: disabled ? '#e0e0e0' : '#54a170',
                             color: disabled ? '#aaa' : '#ffffff',
@@ -1963,7 +1988,7 @@ const Chat = () => {
 
             const lastUserMsg = messages.find(m => m.message_id === pendingMessageId);
             const mobile = localStorage.getItem('mobile');
-            const sanitizedHistory = sanitizeHistory(history);
+            const sanitizedHistory = sanitizeHistory(messages.length > 1 ? messages.slice(1) : []);
             const chatRes = await api.post('/auth/chat', {
                 mobile,
                 message: lastUserMsg.content,
@@ -2012,7 +2037,7 @@ const Chat = () => {
             if (trigger_guruji) {
                 setSendingWaitMessage("Sending to Astrologer");
                 setIsSendingToBackend(true);
-                await fetchGurujiResponse(mobile, lastUserMsg.content, history, sessionId, paymentId);
+                await fetchGurujiResponse(mobile, lastUserMsg.content, messages.length > 1 ? messages.slice(1) : [], sessionId, paymentId);
             }
 
             setChatPaymentState('IDLE');
@@ -2132,8 +2157,9 @@ const Chat = () => {
                     // width: 'fit-content',
                     height: 40,
                     // borderRadius: 100,
+
                 }}>
-                    <Box sx={{ pointerEvents: 'auto' }}>
+                    <Box sx={{ pointerEvents: 'auto', }}>
                         <PrimaryButton
                             label="End Consultation"
                             onClick={() => setFeedbackDrawerOpen(true)}
@@ -2142,9 +2168,11 @@ const Chat = () => {
                             sx={{
                                 width: 'fit-content',
                                 borderRadius: isSubscribed ? '50px' : '50px 0 0 50px',
-                                bgcolor: '#ff0000',
+                                bgcolor: '#EC2222',
                                 fontWeight: 'normal',
-                                py: .5
+                                py: .5,
+                                borderRight: '2px solid #fff',
+                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1) !important',
                             }}
                         />
                         {!isSubscribed && (
@@ -2156,9 +2184,10 @@ const Chat = () => {
                                 sx={{
                                     width: 'fit-content',
                                     borderRadius: '0 50px 50px 0',
-                                    bgcolor: '#50a270',
+                                    bgcolor: '#54A170',
                                     fontWeight: 'normal',
-                                    py: .5
+                                    py: .5,
+                                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1) !important',
                                 }}
                             />
                         )}
@@ -2364,12 +2393,12 @@ const Chat = () => {
                                                     Guruji JSON
                                                 </Typography>
                                             )}
-                                            {(msg.gurujiInput && jsonVisibility.guruji) && (
+                                            {(msg.gurujiInput?.replacements && jsonVisibility.guruji) && (
                                                 <Typography
-                                                    onClick={() => handleLabelClick(msg.gurujiInput, 'ASTROLOGER INPUT JSON')}
+                                                    onClick={() => handleLabelClick(msg.gurujiInput.replacements, 'PROMPT REPLACEMENTS')}
                                                     sx={{
                                                         fontSize: '0.65rem',
-                                                        color: '#F36A2F',
+                                                        color: '#54A170',
                                                         fontWeight: 800,
                                                         cursor: 'pointer',
                                                         textTransform: 'uppercase',
@@ -2377,7 +2406,7 @@ const Chat = () => {
                                                         '&:hover': { opacity: 0.8 }
                                                     }}
                                                 >
-                                                    Guruji Input
+                                                    Replacements
                                                 </Typography>
                                             )}
                                             {(msg.psycologyJson && jsonVisibility.psycology) && (
@@ -2509,13 +2538,15 @@ const Chat = () => {
                                 <MayaTemplateBox
                                     name={userName.split(' ')[0]}
                                     content={msg.chat_payment_amount === 0
-                                        ? `This is a premium prediction worth ₹${msg.actual_chat_payment_amount || 39} - but get it for free now. \n\n <span style="color: #54A170">Subscribe</span> to get unlimited answers access for a day, month or a quarter.`
-                                        : `personalized answer to your concern is chargeable ₹${msg.chat_payment_amount || 39}.`}
+                                        ? `<b>This is a premium prediction worth ₹${msg.actual_chat_payment_amount || 39} - but get it for free now.</b> \n\n <span style="color: #54A170">Subscribe</span> to get unlimited answers access for a day, month or a quarter.`
+                                        : `<b>This is a premium prediction.</b> Get the answer for ₹${msg.chat_payment_amount || 39}.<p style="margin-top: 15px;">Or you may <span style="color: #54A170; margin-left: 15px;"> subscribe now</span> to get unlimited answers access for a day, month or a quarter.</p>`}
                                     buttonLabel={(() => {
                                         const lastPaymentMsgIdx = messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1);
-                                        if (i < lastPaymentMsgIdx) return "No longer active";
+                                        const isOldPayment = i < lastPaymentMsgIdx;
+                                        const hasNewerUserMsg = messages.slice(i + 1).some(m => m.role === 'user');
+                                        if (isOldPayment || hasNewerUserMsg) return "No longer active";
                                         return chatPaymentState === 'REQUIRED' || chatPaymentState === 'IDLE'
-                                            ? (msg.chat_payment_amount === 0 ? "Get answer for FREE" : `Pay ₹${msg.chat_payment_amount || 39} to get answer`)
+                                            ? (msg.chat_payment_amount === 0 ? "Get answer for FREE" : `Get answer for ₹${msg.chat_payment_amount || 39}`)
                                             : "Processing...";
                                     })()}
                                     onButtonClick={() => handleChatPayment(msg.chat_payment_amount !== undefined ? msg.chat_payment_amount : 39, localStorage.getItem('mobile'))}
@@ -2523,7 +2554,9 @@ const Chat = () => {
                                     loading={chatPaymentState === 'PAYING' && i === messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1)}
                                     disabled={(() => {
                                         const lastPaymentMsgIdx = messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1);
-                                        if (i < lastPaymentMsgIdx) return true;
+                                        const isOldPayment = i < lastPaymentMsgIdx;
+                                        const hasNewerUserMsg = messages.slice(i + 1).some(m => m.role === 'user');
+                                        if (isOldPayment || hasNewerUserMsg) return true;
                                         return chatPaymentState === 'PAYING' || chatPaymentState === 'COMPLETE';
                                     })()}
                                 />
