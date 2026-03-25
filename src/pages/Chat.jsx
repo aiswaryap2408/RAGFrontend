@@ -1376,11 +1376,21 @@ const Chat = () => {
     }, []);
 
 
+    // const sanitizeHistory = (h) => {
+    //     if (!Array.isArray(h)) return [];
+    //     return h.map(m => ({
+    //         role: m.role || 'user',
+    //         content: m.content || ''
+    //     }));
+    // };
+
     const sanitizeHistory = (h) => {
         if (!Array.isArray(h)) return [];
         return h.map(m => ({
             role: m.role || 'user',
-            content: m.content || ''
+            content: m.content || '',
+            timestamp: m.timestamp || new Date().toISOString(),
+            assistant: m.assistant || 'maya',
         }));
     };
 
