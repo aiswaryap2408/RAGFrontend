@@ -628,7 +628,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
         // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
         // border: isPaidResponse ? '1px solid #ffd54f' : 'none',
         position: 'relative',
-        mb: .7,
+        mb: .5,
         // maxWidth: '85%',
         width: 'fit-content',
         minWidth: '100px',
@@ -2554,7 +2554,7 @@ const Chat = () => {
                                     </Typography> */}
                                     <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: .5, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap', flexDirection: 'column' }}>
-                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: .5 }}>
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: .1 }}>
                                                 {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                             </Typography>
 
