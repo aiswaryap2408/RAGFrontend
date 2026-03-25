@@ -1490,7 +1490,7 @@ const Chat = () => {
             const capitalizedUserName = userName ? userName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') : ' ';
             const welcomeMsg = {
                 role: 'assistant',
-                content: `<b>${capitalizedUserName}, welcome.</b>\n\nI'm <b>MAYA</b>, and I'll assist you during your consultation.\n\nWhenever you're ready, you may begin your conversation with <b>Guruji</b>.\n\nYou may ask about your life, your future, or anything that has been on your mind.`,
+                content: `<b>${capitalizedUserName}, welcome.</b>\n\nI'm <b>MAYA</b>, and I'll assist you during your consultation.\n\nWhenever you're ready, you may begin your conversation with <b>Guruji</b> by pressing the button below.\n\nYou may ask about your life, your future, or anything that has been on your mind.`,
                 assistant: 'maya',
                 time: getCurrentTime(),
                 timestamp: new Date().toISOString()
@@ -2125,7 +2125,7 @@ const Chat = () => {
                             label="End Consultation"
                             onClick={() => setFeedbackDrawerOpen(true)}
                             // disabled={loading || messages.length < 1}
-                            startIcon={<CancelIcon sx={{ fontSize: 24 }} />}
+                            startIcon={<img src="/svg/close-icon.svg" alt="close" style={{ width: 16, height: 16, marginLeft: 5 }} />}
                             sx={{
                                 width: 'fit-content',
                                 borderRadius: isSubscribed ? '50px' : '50px 0 0 50px',
@@ -2141,7 +2141,7 @@ const Chat = () => {
                                 label="Subscribe Now"
                                 onClick={() => setFeedbackDrawerOpen(true)}
                                 // disabled={loading || messages.length < 1}
-                                startIcon={<img src="/svg/subscribe.svg" alt="Subscribe" style={{ width: 20, height: 20 }} />}
+                                startIcon={<img src="/svg/subscribe.svg" alt="Subscribe" style={{ width: 16, height: 16, marginLeft: 5 }} />}
                                 sx={{
                                     width: 'fit-content',
                                     borderRadius: '0 50px 50px 0',
@@ -2992,7 +2992,7 @@ const Chat = () => {
                         }}>
                             <MayaIntro
                                 // title="Welcome"
-                                content={`<b>${userName ? userName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') : ' '}, welcome.</b>\n\nI'm <b>MAYA</b>, and I'll assist you during your consultation.\n\nWhenever you're ready, you may begin your conversation with <b>Guruji</b>.\n\nYou may ask about your life, your future, or anything that has been on your mind.`}
+                                content={`<b>${userName ? userName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') : ' '}, welcome.</b>\n\nI'm <b>MAYA</b>, and I'll assist you during your consultation.\n\nWhenever you're ready, you may begin your conversation with <b>Guruji</b> by pressing the button below.\n\nYou may ask about your life, your future, or anything that has been on your mind.`}
                                 jsonVisibility={jsonVisibility}
                                 onLabelClick={handleLabelClick}
                                 sx={{ fontSize: '.9rem', fontWeight: 400 }}
