@@ -124,12 +124,12 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, input
                                     setInputValue(e.target.value);
                                     if (onTyping) onTyping(e.target.value.length > 0);
                                 }}
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleSend();
-                                    }
-                                }}
+                                // onKeyPress={(e) => {
+                                //     if (e.key === 'Enter' && !e.shiftKey) {
+                                //         e.preventDefault();
+                                //         handleSend();
+                                //     }
+                                // }}
                                 disabled={isBlocked || userStatus !== 'ready'}
                                 sx={{
                                     fontSize: 14,
