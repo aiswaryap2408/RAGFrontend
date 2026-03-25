@@ -580,7 +580,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
     // Effect 2: Manage Typing Delay when Buffering
     useEffect(() => {
         if (isBuffering && animate && visibleCount < paras.length) {
-            const delay = (delays && delays[visibleCount]) ? delays[visibleCount] : 2000;
+            const delay = (delays && delays[visibleCount]) ? delays[visibleCount] : 100;
 
             // Set waiting message
             const randomMsg = pleaseWaitMessages[Math.floor(Math.random() * pleaseWaitMessages.length)];
