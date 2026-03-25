@@ -628,7 +628,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
         // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
         // border: isPaidResponse ? '1px solid #ffd54f' : 'none',
         position: 'relative',
-        mb: 1,
+        mb: .7,
         // maxWidth: '85%',
         width: 'fit-content',
         minWidth: '100px',
@@ -2141,6 +2141,7 @@ const Chat = () => {
                                 borderRadius: isSubscribed ? '50px' : '50px 0 0 50px',
                                 bgcolor: '#EC2222',
                                 fontWeight: 'normal',
+                                fontSize: '14px',
                                 py: .5,
                                 borderRight: '2px solid #fff',
                                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1) !important',
@@ -2158,6 +2159,7 @@ const Chat = () => {
                                     bgcolor: '#54A170',
                                     fontWeight: 'normal',
                                     py: .5,
+                                    fontSize: '14px',
                                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1) !important',
                                 }}
                             />
@@ -2551,8 +2553,8 @@ const Chat = () => {
                                         {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                     </Typography> */}
                                     <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: .5, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: .5, justifyContent: 'flex-end', flexWrap: 'wrap', flexDirection: 'column' }}>
-                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: .5 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap', flexDirection: 'column' }}>
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: .5 }}>
                                                 {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                             </Typography>
 
@@ -2886,7 +2888,7 @@ const Chat = () => {
                             } : {
                                 // bgcolor: '#67687a',
                                 bgcolor: '#f1f1f1',
-                                borderRadius: '10px',
+                                borderRadius: '2px 10px 10px 10px',
                                 color: '#000',
                                 px: 3,
                                 py: 0.8,
