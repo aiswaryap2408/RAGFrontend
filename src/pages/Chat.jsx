@@ -2881,11 +2881,13 @@ const Chat = () => {
                             zIndex: 10000,
                             pointerEvents: 'none',
                             minWidth: '180px',
-                            ...(showDots ? {
+                            ...(showDots || showReading ? {
                                 bgcolor: 'transparent',
                             } : {
-                                bgcolor: '#67687a',
-                                borderRadius: '50px',
+                                // bgcolor: '#67687a',
+                                bgcolor: '#f1f1f1',
+                                borderRadius: '10px',
+                                color: '#000',
                                 px: 3,
                                 py: 0.8,
                                 minHeight: 20,
@@ -2928,6 +2930,7 @@ const Chat = () => {
                                         overflow: "hidden",
                                         borderRight: "2px solid transparent",
                                         width: 0,
+                                        mb: 1,
                                         maxWidth: "fit-content",
                                         "@keyframes reading": {
                                             "0%": { width: 0, opacity: 1 },
@@ -2953,7 +2956,7 @@ const Chat = () => {
                                         fontFamily: "'Roboto', sans-serif",
                                         fontSize: "12px",
                                         fontWeight: 500,
-                                        color: "#fff",
+                                        color: "#2F3148",
                                         display: "block",
                                         whiteSpace: "nowrap",
                                         overflow: "hidden",
@@ -2973,7 +2976,7 @@ const Chat = () => {
                                         },
                                         "@keyframes cursor-blink": {
                                             "0%, 100%": { borderColor: "transparent" },
-                                            "50%": { borderColor: "#fff" },
+                                            "50%": { borderColor: "#2F3148" },
                                         },
                                         animation: "human-typing 7s linear infinite, cursor-blink 0.8s step-end infinite",
                                     }}
