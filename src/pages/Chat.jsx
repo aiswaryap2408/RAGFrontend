@@ -628,7 +628,7 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
         // boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
         // border: isPaidResponse ? '1px solid #ffd54f' : 'none',
         position: 'relative',
-        mb: .7,
+        mb: .5,
         // maxWidth: '85%',
         width: 'fit-content',
         minWidth: '100px',
@@ -2552,9 +2552,9 @@ const Chat = () => {
                                     {/* <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: .5 }}>
                                         {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                     </Typography> */}
-                                    <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: .5, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap', flexDirection: 'column' }}>
-                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: .5 }}>
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: .1 }}>
                                                 {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                             </Typography>
 
@@ -2696,7 +2696,7 @@ const Chat = () => {
                                                                 opacity: 0.8,
                                                                 position: 'absolute',
                                                                 bottom: 2,
-                                                                right: 8,
+                                                                right: 0,
                                                                 color: msg.role === 'user' ? (msg.requires_chat_payment ? 'rgba(255,255,255,0.7)' : '#494848') : '#494848',
                                                                 fontWeight: 500,
                                                                 pt: 1,
