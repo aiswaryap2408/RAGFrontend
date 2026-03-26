@@ -1,22 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { getSystemPrompt, updateSystemPrompt } from '../../api';
+import { getSystemPrompt, updateSystemPrompt, getSystemPromptHistory } from '../../api';
 
 const SystemPromptEditor = () => {
     const [prompt, setPrompt] = useState('');
+    const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+    const [activeView, setActiveView] = useState('editor'); // 'editor' or 'history'
 
     useEffect(() => {
-        fetchPrompt();
+        fetchData();
     }, []);
 
-    const fetchPrompt = async () => {
+    const fetchData = async () => {
+        setLoading(true);
         try {
-            const res = await getSystemPrompt();
-            setPrompt(res.data.prompt);
+            const [promptRes, historyRes] = await Promise.all([
+                getSystemPrompt(),
+                getSystemPromptHistory()
+            ]);
+            setPrompt(promptRes.data.prompt);
+            setHistory(historyRes.data.history || []);
         } catch (err) {
-            setMessage({ type: 'error', text: 'Failed to load system prompt' });
+            setMessage({ type: 'error', text: 'Failed to load system prompt data' });
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -28,47 +36,126 @@ const SystemPromptEditor = () => {
         try {
             await updateSystemPrompt(prompt);
             setMessage({ type: 'success', text: 'System prompt updated successfully!' });
+            // Refresh history
+            const historyRes = await getSystemPromptHistory();
+            setHistory(historyRes.data.history || []);
         } catch (err) {
             setMessage({ type: 'error', text: 'Failed to update system prompt' });
+            console.error(err);
         } finally {
             setSaving(false);
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Loading editor...</div>;
+    if (loading) return <div className="p-8 text-center text-slate-500">Loading editor...</div>;
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-bottom border-gray-100">
-                <h3 className="text-xl font-bold text-gray-900">Guruji Prompt Configuration</h3>
-                <p className="text-sm text-gray-500 mt-1">
-                    This prompt defines the core personality and rules for the Astrology Guruji.
-                </p>
+        <div className="bg-slate-900/50 rounded-3xl shadow-sm border border-slate-800/60 overflow-hidden">
+            <div className="p-6 border-b border-slate-800/60 flex justify-between items-center">
+                <div>
+                    <h3 className="text-xl font-black text-white tracking-tight">Guruji Prompt Configuration</h3>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                        Defines personality and rules for Astrology Guruji
+                    </p>
+                </div>
+                <div className="flex bg-black p-1 rounded-xl">
+                    {['editor', 'history'].map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveView(tab)}
+                            className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeView === tab
+                                ? 'bg-indigo-600 text-white shadow-sm'
+                                : 'text-slate-500 hover:text-slate-300'
+                                }`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             <div className="p-6 space-y-4">
                 {message.text && (
-                    <div className={`p-3 rounded-md text-sm ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                    <div className={`p-4 rounded-xl text-sm font-bold ${message.type === 'success' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/50' : 'bg-rose-900/30 text-rose-400 border border-rose-800/50'}`}>
                         {message.text}
                     </div>
                 )}
 
-                <textarea
-                    className="w-full h-80 p-4 font-mono text-sm text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Enter system prompt here..."
-                />
+                {activeView === 'editor' ? (
+                    <>
+                        <textarea
+                            className="w-full h-[500px] p-4 font-mono text-sm text-slate-300 bg-black border border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none custom-scrollbar"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="Enter system prompt here..."
+                        />
 
-                <div className="flex justify-end">
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-                    >
-                        {saving ? 'Saving...' : 'Save Configuration'}
-                    </button>
-                </div>
+                        <div className="flex justify-end pt-4">
+                            <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm tracking-wide rounded-xl transition-all shadow-lg shadow-indigo-900/50 disabled:opacity-50 flex items-center"
+                            >
+                                {saving ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2"></div>
+                                        Saving...
+                                    </>
+                                ) : 'Save Configuration'}
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="h-[550px] overflow-y-auto custom-scrollbar">
+                        <table className="w-full text-left text-sm">
+                            <thead>
+                                <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-800/60 pb-4">
+                                    <th className="py-4 px-4 font-black">Date</th>
+                                    <th className="py-4 px-4 font-black">Updated By</th>
+                                    <th className="py-4 px-4 font-black">Preview</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-800/40">
+                                {history.length > 0 ? history.map((h, i) => (
+                                    <tr key={i} className="text-slate-300 hover:bg-slate-800/30 transition-colors">
+                                        <td className="py-4 px-4 whitespace-nowrap">
+                                            <span className="font-mono text-xs text-indigo-400">
+                                                {new Date(h.updated_at * 1000).toLocaleString()}
+                                            </span>
+                                        </td>
+                                        <td className="py-4 px-4">
+                                            <span className="bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold text-slate-300 uppercase">
+                                                {h.updated_by}
+                                            </span>
+                                        </td>
+                                        <td className="py-4 px-4 max-w-xl">
+                                            <div className="bg-black p-3 rounded-xl border border-slate-800">
+                                                <p className="font-mono text-xs text-slate-500 truncate">
+                                                    {h.content.substring(0, 100)}...
+                                                </p>
+                                                <button
+                                                    className="mt-2 text-[10px] font-black uppercase text-indigo-400 hover:text-indigo-300 tracking-wider"
+                                                    onClick={() => {
+                                                        setPrompt(h.content);
+                                                        setActiveView('editor');
+                                                    }}
+                                                >
+                                                    Restore Version
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan="3" className="py-12 text-center text-slate-600 font-bold uppercase tracking-widest text-xs">
+                                            No history found
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );
