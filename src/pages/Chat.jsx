@@ -2440,7 +2440,7 @@ const Chat = () => {
                                         msg.mayaJson.MSG_LANGUAGE.toLowerCase() !== 'english' && (
                                             <TranslationIndicator
                                                 text={`Translated to your language / language style by MAYA AI`}
-                                                sx={{ mt: reportState === 'IDLE' ? '3px' : '3px', position: 'relative', top: -12 }}
+                                                sx={{ mt: reportState === 'IDLE' ? '3px' : '3px', position: 'relative', top: -9 }}
                                             />
                                         )}
                                 </Box>
@@ -2696,7 +2696,7 @@ const Chat = () => {
                                                                 opacity: 0.8,
                                                                 position: 'absolute',
                                                                 bottom: 2,
-                                                                right: 0,
+                                                                right: 8,
                                                                 color: msg.role === 'user' ? (msg.requires_chat_payment ? 'rgba(255,255,255,0.7)' : '#494848') : '#494848',
                                                                 fontWeight: 500,
                                                                 pt: 1,
