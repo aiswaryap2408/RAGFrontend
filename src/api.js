@@ -63,15 +63,18 @@ export const getUserDetails = (mobile, referenceid = null) => {
 export const updateUserProfile = (data) => api.post('/admin/update-user-profile', data);
 export const getSystemPrompt = () => api.get('/admin/system-prompt');
 export const updateSystemPrompt = (prompt) => api.post('/admin/system-prompt', { prompt });
+export const getSystemPromptHistory = () => api.get('/admin/system-prompt/history');
 export const getLoginLogs = (params) => api.get('/admin/login-logs', { params });
 export const getSubscriptionPlans = () => api.get('/admin/subscription/plans');
 export const toggleUserSubscription = (mobile, planId) => api.post('/admin/subscription/toggle', { mobile, plan_id: planId });
 
 export const getMayaPrompt = () => api.get('/admin/maya-prompt');
 export const updateMayaPrompt = (prompt) => api.post('/admin/maya-prompt', { prompt });
+export const getMayaPromptHistory = () => api.get('/admin/maya-prompt/history');
 
 export const getReportPrompt = () => api.get('/admin/report-prompt');
 export const updateReportPrompt = (prompt) => api.post('/admin/report-prompt', { prompt });
+export const getReportPromptHistory = () => api.get('/admin/report-prompt/history');
 
 export const getPsycologyPrompt = () => api.get('/admin/psycology-prompt');
 export const updatePsycologyPrompt = (prompt) => api.post('/admin/psycology-prompt', { prompt });
