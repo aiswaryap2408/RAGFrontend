@@ -20,6 +20,7 @@ const MonetizationRules = () => {
         timeframe_exclude: [],
         min_questions: 5,
         amount: 0,
+        actual_chat_payment_amount: 0,
         is_active: true,
         priority: 100,
         category: 'All'
@@ -59,6 +60,7 @@ const MonetizationRules = () => {
                 timeframe_exclude: rule.timeframe_exclude || [],
                 min_questions: rule.min_questions || 0,
                 amount: rule.amount || 0,
+                actual_chat_payment_amount: rule.actual_chat_payment_amount || 0,
                 is_active: rule.is_active !== undefined ? rule.is_active : true,
                 priority: rule.priority || 100,
                 category: rule.category || 'All'
@@ -74,6 +76,7 @@ const MonetizationRules = () => {
                 timeframe_exclude: [],
                 min_questions: 5,
                 amount: 0,
+                actual_chat_payment_amount: 0,
                 is_active: true,
                 priority: 100,
                 category: 'All'
@@ -176,7 +179,8 @@ const MonetizationRules = () => {
                                     <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Name / Context</th>
                                     <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Category</th>
                                     <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Conditions</th>
-                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Amount (₹)</th>
+                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Actual Price (₹)</th>
+                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Offer Price (₹)</th>
                                     <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Status</th>
                                     <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Actions</th>
                                 </tr>
@@ -207,7 +211,10 @@ const MonetizationRules = () => {
                                             )}
                                         </td>
                                         <td className="p-4 text-right whitespace-nowrap">
-                                            <span className="text-lg font-black text-white">₹{rule.amount}</span>
+                                            <span className="text-sm font-bold text-slate-400 line-through mr-2">₹{rule.actual_chat_payment_amount || 0}</span>
+                                        </td>
+                                        <td className="p-4 text-right whitespace-nowrap">
+                                            <span className="text-lg font-black text-emerald-400">₹{rule.amount}</span>
                                         </td>
                                         <td className="p-4 text-center">
                                             <span className={`inline-block w-2.5 h-2.5 rounded-full ${rule.is_active ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-600'}`}></span>
@@ -310,7 +317,19 @@ const MonetizationRules = () => {
                                     <p className="text-[10px] text-slate-500 mt-1">Triggers after this many free questions.</p>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-black text-emerald-400 uppercase tracking-widest mb-2">Amount (₹)</label>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Before Offer (Actual ₹)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        required
+                                        value={formData.actual_chat_payment_amount}
+                                        onChange={e => setFormData({ ...formData, actual_chat_payment_amount: parseFloat(e.target.value) || 0 })}
+                                        className="w-full bg-slate-800 border-none rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-emerald-400 uppercase tracking-widest mb-2">Offer Price (₹)</label>
                                     <input
                                         type="number"
                                         min="0"
