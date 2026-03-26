@@ -162,7 +162,7 @@ const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse,
                 position: 'relative',
                 pointerEvents: 'none',
                 mb: 0,
-                mr: 1,
+                // mr: 1,
                 textAlign: 'right',
             }}>
                 MAYA AI
@@ -2466,7 +2466,7 @@ const Chat = () => {
                         return (
                             <Box key={i} sx={{ width: '100%', mb: 0 }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 1 }}>
-                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: 1 }}>You</Typography>
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: 0 }}>You</Typography>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
                                             p: '12px 16px 14px 12px',
@@ -2554,7 +2554,7 @@ const Chat = () => {
                                     </Typography> */}
                                     <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap', flexDirection: 'column' }}>
-                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: .1 }}>
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: 0 }}>
                                                 {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                             </Typography>
 
