@@ -1012,6 +1012,30 @@ const Chat = () => {
         lastScrollTop.current = scrollTop <= 0 ? 0 : scrollTop;
     };
 
+    const attemptGurujiRecovery = (currentHistory, currentLocalSid) => {
+        const lastMsg = currentHistory[currentHistory.length - 1];
+        const secondLastMsg = currentHistory.length > 1 ? currentHistory[currentHistory.length - 2] : null;
+
+        if (lastMsg && lastMsg.role === 'assistant' && lastMsg.assistant === 'maya' && secondLastMsg && secondLastMsg.role === 'user') {
+            const explicitlyTriggered = lastMsg.trigger_guruji === true;
+            const implicitlyTriggered = lastMsg.trigger_guruji === undefined && lastMsg.mayaJson && !lastMsg.mayaJson.is_safety_warning && !lastMsg.requires_chat_payment && !(typeof lastMsg.content === 'string' && (lastMsg.content.toLowerCase().includes('error') || lastMsg.content.toLowerCase().includes('sorry') || lastMsg.content.toLowerCase().includes('offline')));
+            
+            if (explicitlyTriggered || implicitlyTriggered) {
+                if (!isSendingToBackend) {
+                    console.log("DEBUG: Recovering missing Guruji response...");
+                    const mobile = localStorage.getItem('mobile');
+                    const historyForGuruji = currentHistory.length > 2 ? currentHistory.slice(1, -2) : [];
+                    const sanitizedHistory = sanitizeHistory(historyForGuruji);
+                    const paymentId = secondLastMsg.is_paid ? secondLastMsg.payment_id : null;
+                    
+                    setIsSendingToBackend(true);
+                    setSendingWaitMessage("Astrologer is typing");
+                    fetchGurujiResponse(mobile, secondLastMsg.content, sanitizedHistory, currentLocalSid, paymentId);
+                }
+            }
+        }
+    };
+
     // Load Chat History (Smart Resume Logic)
     useEffect(() => {
         const loadHistory = async () => {
@@ -1071,6 +1095,7 @@ const Chat = () => {
                                 const dedupHistory = deduplicateHistory(mappedHistory);
                                 setMessages(dedupHistory);
                                 setChatStarted(dedupHistory.some(m => m.role === 'user'));
+                                attemptGurujiRecovery(dedupHistory, currentLocalSid);
 
                                 // Check for unpaid chat messages to resume state
                                 const unpaidMsg = dedupHistory.find(m => m.requires_chat_payment && !m.is_paid);
@@ -1121,6 +1146,7 @@ const Chat = () => {
                             const dedupHistory = deduplicateHistory(mappedHistory);
                             setMessages(dedupHistory);
                             setChatStarted(dedupHistory.some(m => m.role === 'user'));
+                            attemptGurujiRecovery(dedupHistory, mostRecentSession.session_id);
 
                             const unpaidMsg = dedupHistory.find(m => m.requires_chat_payment && !m.is_paid);
                             if (unpaidMsg) {
@@ -1142,6 +1168,62 @@ const Chat = () => {
         };
         loadHistory();
     }, [location.state]);
+
+    useEffect(() => {
+        const handleVisibilityChange = async () => {
+            if (document.visibilityState === 'visible' && !isSendingToBackend && messageQueue.length === 0 && userStatus === 'ready') {
+                const mobile = localStorage.getItem('mobile');
+                const currentLocalSid = localStorage.getItem('activeSessionId');
+                
+                if (mobile && currentLocalSid) {
+                    try {
+                        const res = await getChatHistory(mobile);
+                        if (res.data.sessions && res.data.sessions.length > 0) {
+                            const localSessionOnServer = res.data.sessions.find(s => s.session_id === currentLocalSid);
+                            if (localSessionOnServer && !localSessionOnServer.is_ended) {
+                                const history = localSessionOnServer.messages;
+                                if (history && history.length > 0) {
+                                    const mappedHistory = history.map(msg => ({
+                                        ...msg,
+                                        time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
+                                        gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
+                                        mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                        psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
+                                        gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
+                                        animating: false
+                                    }));
+                                    
+                                    const dedupHistory = deduplicateHistory(mappedHistory);
+                                    
+                                    setMessages(prev => {
+                                        if (prev.length === 0) return prev;
+                                        
+                                        const lastLocal = prev[prev.length - 1];
+                                        const hasLocalError = lastLocal?.role === 'assistant' && lastLocal?.assistant === 'maya' && (
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Sorry, I encountered an error')) ||
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Guruji is not available right now')) ||
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Network Error'))
+                                        );
+                                        
+                                        if (hasLocalError || dedupHistory.length > prev.length) {
+                                            attemptGurujiRecovery(dedupHistory, currentLocalSid);
+                                            return dedupHistory;
+                                        }
+                                        return prev;
+                                    });
+                                }
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Silent history reload failed:", err);
+                    }
+                }
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, [isSendingToBackend, messageQueue.length, userStatus]);
 
     const scrollToTop = () => {
         if (containerRef.current) {
