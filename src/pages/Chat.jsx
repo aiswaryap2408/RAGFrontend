@@ -753,6 +753,41 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
 };
 
 
+const deduplicateHistory = (historyArr) => {
+    const deduplicated = [];
+    let skippingDuplicateBlock = false;
+    let lastUserContent = null;
+    let lastUserTime = 0;
+
+    for (let i = 0; i < historyArr.length; i++) {
+        const msg = historyArr[i];
+        
+        if (msg.role === 'user') {
+            const msgTime = new Date(msg.timestamp || msg.created_at || Date.now()).getTime();
+            
+            // If the user sends the exact same message within 2 minutes (120000 ms), treat as retry duplicate
+            if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 120000)) {
+                skippingDuplicateBlock = true;
+                continue; // Skip this user message
+            } else {
+                skippingDuplicateBlock = false;
+                lastUserContent = msg.content;
+                lastUserTime = msgTime;
+                deduplicated.push(msg);
+            }
+        } else {
+            // Assistant message
+            if (skippingDuplicateBlock) {
+                // Skip assistant messages that belong to the duplicate user message block
+                continue;
+            } else {
+                deduplicated.push(msg);
+            }
+        }
+    }
+    return deduplicated;
+};
+
 const Chat = () => {
     const [showHeader, setShowHeader] = useState(true);
     const [sendingWaitMessage, setSendingWaitMessage] = useState("");
@@ -1033,11 +1068,12 @@ const Chat = () => {
                                     animating: false
                                 }));
 
-                                setMessages(mappedHistory);
-                                setChatStarted(mappedHistory.some(m => m.role === 'user'));
+                                const dedupHistory = deduplicateHistory(mappedHistory);
+                                setMessages(dedupHistory);
+                                setChatStarted(dedupHistory.some(m => m.role === 'user'));
 
                                 // Check for unpaid chat messages to resume state
-                                const unpaidMsg = mappedHistory.find(m => m.requires_chat_payment && !m.is_paid);
+                                const unpaidMsg = dedupHistory.find(m => m.requires_chat_payment && !m.is_paid);
                                 if (unpaidMsg) {
                                     setChatPaymentState('REQUIRED');
                                     setPendingMessageId(unpaidMsg.message_id);
@@ -1082,10 +1118,11 @@ const Chat = () => {
                             }));
 
                             console.log("DEBUG: mappedHistory set, count:", mappedHistory.length);
-                            setMessages(mappedHistory);
-                            setChatStarted(mappedHistory.some(m => m.role === 'user'));
+                            const dedupHistory = deduplicateHistory(mappedHistory);
+                            setMessages(dedupHistory);
+                            setChatStarted(dedupHistory.some(m => m.role === 'user'));
 
-                            const unpaidMsg = mappedHistory.find(m => m.requires_chat_payment && !m.is_paid);
+                            const unpaidMsg = dedupHistory.find(m => m.requires_chat_payment && !m.is_paid);
                             if (unpaidMsg) {
                                 setChatPaymentState('REQUIRED');
                                 setPendingMessageId(unpaidMsg.message_id);
