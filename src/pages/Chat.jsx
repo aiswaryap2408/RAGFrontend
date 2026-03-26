@@ -162,7 +162,7 @@ const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse,
                 position: 'relative',
                 pointerEvents: 'none',
                 mb: 0,
-                mr: 1,
+                // mr: 1,
                 textAlign: 'right',
             }}>
                 MAYA AI
@@ -753,6 +753,41 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
 };
 
 
+const deduplicateHistory = (historyArr) => {
+    const deduplicated = [];
+    let skippingDuplicateBlock = false;
+    let lastUserContent = null;
+    let lastUserTime = 0;
+
+    for (let i = 0; i < historyArr.length; i++) {
+        const msg = historyArr[i];
+        
+        if (msg.role === 'user') {
+            const msgTime = new Date(msg.timestamp || msg.created_at || Date.now()).getTime();
+            
+            // If the user sends the exact same message within 2 minutes (120000 ms), treat as retry duplicate
+            if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 120000)) {
+                skippingDuplicateBlock = true;
+                continue; // Skip this user message
+            } else {
+                skippingDuplicateBlock = false;
+                lastUserContent = msg.content;
+                lastUserTime = msgTime;
+                deduplicated.push(msg);
+            }
+        } else {
+            // Assistant message
+            if (skippingDuplicateBlock) {
+                // Skip assistant messages that belong to the duplicate user message block
+                continue;
+            } else {
+                deduplicated.push(msg);
+            }
+        }
+    }
+    return deduplicated;
+};
+
 const Chat = () => {
     const [showHeader, setShowHeader] = useState(true);
     const [sendingWaitMessage, setSendingWaitMessage] = useState("");
@@ -1033,11 +1068,12 @@ const Chat = () => {
                                     animating: false
                                 }));
 
-                                setMessages(mappedHistory);
-                                setChatStarted(mappedHistory.some(m => m.role === 'user'));
+                                const dedupHistory = deduplicateHistory(mappedHistory);
+                                setMessages(dedupHistory);
+                                setChatStarted(dedupHistory.some(m => m.role === 'user'));
 
                                 // Check for unpaid chat messages to resume state
-                                const unpaidMsg = mappedHistory.find(m => m.requires_chat_payment && !m.is_paid);
+                                const unpaidMsg = dedupHistory.find(m => m.requires_chat_payment && !m.is_paid);
                                 if (unpaidMsg) {
                                     setChatPaymentState('REQUIRED');
                                     setPendingMessageId(unpaidMsg.message_id);
@@ -1082,10 +1118,11 @@ const Chat = () => {
                             }));
 
                             console.log("DEBUG: mappedHistory set, count:", mappedHistory.length);
-                            setMessages(mappedHistory);
-                            setChatStarted(mappedHistory.some(m => m.role === 'user'));
+                            const dedupHistory = deduplicateHistory(mappedHistory);
+                            setMessages(dedupHistory);
+                            setChatStarted(dedupHistory.some(m => m.role === 'user'));
 
-                            const unpaidMsg = mappedHistory.find(m => m.requires_chat_payment && !m.is_paid);
+                            const unpaidMsg = dedupHistory.find(m => m.requires_chat_payment && !m.is_paid);
                             if (unpaidMsg) {
                                 setChatPaymentState('REQUIRED');
                                 setPendingMessageId(unpaidMsg.message_id);
@@ -2440,7 +2477,7 @@ const Chat = () => {
                                         msg.mayaJson.MSG_LANGUAGE.toLowerCase() !== 'english' && (
                                             <TranslationIndicator
                                                 text={`Translated to your language / language style by MAYA AI`}
-                                                sx={{ mt: reportState === 'IDLE' ? '3px' : '3px', position: 'relative', top: -12 }}
+                                                sx={{ mt: reportState === 'IDLE' ? '3px' : '3px', position: 'relative', top: -9 }}
                                             />
                                         )}
                                 </Box>
@@ -2466,7 +2503,7 @@ const Chat = () => {
                         return (
                             <Box key={i} sx={{ width: '100%', mb: 0 }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 1 }}>
-                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: 1 }}>You</Typography>
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: 0 }}>You</Typography>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
                                             p: '12px 16px 14px 12px',
@@ -2554,7 +2591,7 @@ const Chat = () => {
                                     </Typography> */}
                                     <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap', flexDirection: 'column' }}>
-                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: .1 }}>
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: 0 }}>
                                                 {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                             </Typography>
 
@@ -2696,7 +2733,7 @@ const Chat = () => {
                                                                 opacity: 0.8,
                                                                 position: 'absolute',
                                                                 bottom: 2,
-                                                                right: 0,
+                                                                right: 8,
                                                                 color: msg.role === 'user' ? (msg.requires_chat_payment ? 'rgba(255,255,255,0.7)' : '#494848') : '#494848',
                                                                 fontWeight: 500,
                                                                 pt: 1,
