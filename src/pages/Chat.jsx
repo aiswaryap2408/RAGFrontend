@@ -1013,10 +1013,13 @@ const Chat = () => {
     };
 
     const attemptGurujiRecovery = (currentHistory, currentLocalSid) => {
+        if (!currentHistory || currentHistory.length === 0) return;
+        
         const lastMsg = currentHistory[currentHistory.length - 1];
         const secondLastMsg = currentHistory.length > 1 ? currentHistory[currentHistory.length - 2] : null;
 
-        if (lastMsg && lastMsg.role === 'assistant' && lastMsg.assistant === 'maya' && secondLastMsg && secondLastMsg.role === 'user') {
+        // Condition 1: Missing Guruji after normal Maya processing
+        if (lastMsg.role === 'assistant' && lastMsg.assistant === 'maya' && secondLastMsg && secondLastMsg.role === 'user') {
             const explicitlyTriggered = lastMsg.trigger_guruji === true;
             const implicitlyTriggered = lastMsg.trigger_guruji === undefined && lastMsg.mayaJson && !lastMsg.mayaJson.is_safety_warning && !lastMsg.requires_chat_payment && !(typeof lastMsg.content === 'string' && (lastMsg.content.toLowerCase().includes('error') || lastMsg.content.toLowerCase().includes('sorry') || lastMsg.content.toLowerCase().includes('offline')));
             
@@ -1032,6 +1035,20 @@ const Chat = () => {
                     setSendingWaitMessage("Astrologer is typing");
                     fetchGurujiResponse(mobile, secondLastMsg.content, sanitizedHistory, currentLocalSid, paymentId);
                 }
+            }
+        } 
+        // Condition 2: Missing Guruji after Paid User message
+        else if (lastMsg.role === 'user' && lastMsg.requires_chat_payment && lastMsg.is_paid) {
+            if (!isSendingToBackend) {
+                console.log("DEBUG: Recovering missing Guruji response for Paid message...");
+                const mobile = localStorage.getItem('mobile');
+                const historyForGuruji = currentHistory.length > 1 ? currentHistory.slice(1, -1) : [];
+                const sanitizedHistory = sanitizeHistory(historyForGuruji);
+                const paymentId = lastMsg.payment_id || null;
+                
+                setIsSendingToBackend(true);
+                setSendingWaitMessage("Astrologer is typing");
+                fetchGurujiResponse(mobile, lastMsg.content, sanitizedHistory, currentLocalSid, paymentId);
             }
         }
     };
