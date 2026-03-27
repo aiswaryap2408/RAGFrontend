@@ -1145,7 +1145,7 @@ const Chat = () => {
     }, [location.state]);
 
     // Auto-refresh chat history when app becomes visible (e.g. returning from background)
-    useEffect(() => {
+    /* useEffect(() => {
         const handleVisibilityChange = async () => {
             if (document.visibilityState === 'visible') {
                 if (syncInProgressRef.current) return;
@@ -1179,7 +1179,7 @@ const Chat = () => {
 
         document.addEventListener("visibilitychange", handleVisibilityChange);
         return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-    }, []);
+    }, []); */
 
     const scrollToTop = () => {
         if (containerRef.current) {
@@ -3364,12 +3364,12 @@ const Chat = () => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, borderBottom: '1px solid #333', pb: 1 }}>
                         <Typography sx={{ fontWeight: 800, fontSize: '0.8rem' }}>SESSION DEBUG LOGS</Typography>
                         <Box sx={{ display: 'flex', gap: 2 }}>
-                            {/* <Typography 
-                                onClick={() => localStorage.removeItem('chatSessionLogs')} 
+                            <Typography
+                                onClick={() => localStorage.removeItem('chatSessionLogs')}
                                 sx={{ cursor: 'pointer', color: '#ff0000', fontSize: '0.7rem' }}
                             >
                                 CLEAR
-                            </Typography> */}
+                            </Typography>
                             <Typography
                                 onClick={() => setJsonVisibility(prev => ({ ...prev, logs: false }))}
                                 sx={{ cursor: 'pointer', color: '#fff', fontSize: '0.7rem' }}
