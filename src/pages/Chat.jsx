@@ -1473,6 +1473,8 @@ const Chat = () => {
         setLoading(true);
         setIsSendingToBackend(true);
         setSendingWaitMessage("Sending to Astrologer");
+        addSessionLog("Wait State: Sending to Astrologer");
+        console.log(`[${getCurrentTime()}] Wait State: Sending to Astrologer`);
 
         try {
             const referenceid = localStorage.getItem('currentProfileId');
@@ -1481,6 +1483,8 @@ const Chat = () => {
             console.log(`[${getCurrentTime()}] Guruji receiving message:`, text);
             const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
             setSendingWaitMessage("Astrologer is typing");
+            addSessionLog("Wait State: Astrologer is typing");
+            console.log(`[${getCurrentTime()}] Wait State: Astrologer is typing`);
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, guruji_input, bubbles, delays, timestamp, message_id } = res.data;
             addSessionLog(`Guruji replied with: ${answer.substring(0, 50)}...`);
             console.log(`[${getCurrentTime()}] Guruji replied with:`, answer);
@@ -1707,6 +1711,8 @@ const Chat = () => {
         setIsSendingToBackend(true);
         scrollToBottom();
         setSendingWaitMessage("Sending to Maya");
+        addSessionLog("Wait State: Sending to Maya");
+        console.log(`[${getCurrentTime()}] Wait State: Sending to Maya`);
 
         let trigger_guruji_flag = false;
         try {
