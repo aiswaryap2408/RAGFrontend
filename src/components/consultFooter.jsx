@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import './consultFooter.css';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
-const ConsultFooter = ({ onConsult, onClick, label = "Talk to Guruji", showOnlineStatus = false, hideCurves = false }) => {
+const ConsultFooter = ({ onConsult, onClick, label = "Talk to Guruji", showOnlineStatus = false, hideCurves = false, buttonTop = "-55px" }) => {
     const navigate = useNavigate();
     const [isFading, setIsFading] = React.useState(false);
 
@@ -67,7 +67,7 @@ const ConsultFooter = ({ onConsult, onClick, label = "Talk to Guruji", showOnlin
                 )}
                 {!isFading && (
                     showOnlineStatus ? (
-                        <Box sx={{ position: "absolute", top: '-82px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Box sx={{ position: "absolute", top: '-102px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <FiberManualRecordIcon sx={{ color: '#00ff03', fontSize: 26, animation: 'cf-pulse 2s infinite' }} />
                             <Typography sx={{ fontSize: '13px', fontWeight: 500, color: hideCurves ? '#000' : '#dc5d35' }}>Astrologer is online now</Typography>
                         </Box>
@@ -90,7 +90,7 @@ const ConsultFooter = ({ onConsult, onClick, label = "Talk to Guruji", showOnlin
                     }}
                     sx={{
                         position: "absolute",
-                        top: "-55px",
+                        top: buttonTop,
                         width: "65%",
                         padding: "2px",
                         borderRadius: "999px",
@@ -191,9 +191,6 @@ const ConsultFooter = ({ onConsult, onClick, label = "Talk to Guruji", showOnlin
                         </Typography>
                     </Box>
                 </Box>
-                <Typography sx={{ color: '#dc5d35', fontSize: '.9rem', fontWeight: 400, textAlign: 'center', position: 'relative', top: '-12px' }}>
-                    Get <b>FREE</b> answers, pay only for deeper insights
-                </Typography>
             </Box>
         </>
     );

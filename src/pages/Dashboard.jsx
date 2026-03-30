@@ -344,7 +344,10 @@ const Dashboard = () => {
                     </Box> */}
                 </Box>
 
-                <ConsultFooter label="Start Consultation" showOnlineStatus={true} onClick={() => navigate("/chat")} hideCurves={true} />
+                <Typography sx={{ color: '#dc5d35', fontSize: '.9rem', fontWeight: 400, textAlign: 'center', position: 'fixed', bottom: '20px', width: { xs: '100%', sm: 450 }, zIndex: 110 }}>
+                    Get <b>FREE</b> answers, pay only for deeper insights
+                </Typography>
+                <ConsultFooter label="Start Consultation" showOnlineStatus={true} onClick={() => navigate("/chat")} hideCurves={true} buttonTop="-75px" />
 
                 {/* Internal Popup Overlay */}
                 {isProfilePopupOpen && (
