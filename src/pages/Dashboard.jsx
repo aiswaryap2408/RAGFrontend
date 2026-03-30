@@ -215,7 +215,7 @@ const Dashboard = () => {
                                 transform: "translateX(-50%)",
                                 zIndex: 1100,
                                 mb: 3,
-                                mt: 2
+                                mt: 2.5
                             }} />
                     )} */}
                     {isLoggedIn && (
