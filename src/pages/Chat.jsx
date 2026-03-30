@@ -1813,7 +1813,7 @@ const Chat = () => {
                 return;
             }
 
-            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id, trigger_guruji } = res.data;
+            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp: serverTimestamp, message_id, trigger_guruji } = res.data;
             addSessionLog(`Maya replied with: ${answer.substring(0, 50)}...`);
             console.log(`[${getCurrentTime()}] Maya replied with:`, answer);
             trigger_guruji_flag = trigger_guruji;
@@ -1836,8 +1836,8 @@ const Chat = () => {
                     delays: delays || [],
                     animating: true,
                     message_id: message_id,
-                    time: timestamp ? formatTime(timestamp) : getCurrentTime(),
-                    timestamp: timestamp || new Date().toISOString(),
+                    time: serverTimestamp ? formatTime(serverTimestamp) : getCurrentTime(),
+                    timestamp: serverTimestamp || new Date().toISOString(),
                     arrivalTime: Date.now(),
                     trigger_guruji: trigger_guruji // Store this for tick logic
                 };
