@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import './consultFooter.css';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
-const ConsultFooter = ({ onConsult, onClick, label = "Talk to Guruji", showOnlineStatus = false }) => {
+const ConsultFooter = ({ onConsult, onClick, label = "Talk to Guruji", showOnlineStatus = false, hideCurves = false }) => {
     const navigate = useNavigate();
     const [isFading, setIsFading] = React.useState(false);
 
@@ -42,30 +42,34 @@ const ConsultFooter = ({ onConsult, onClick, label = "Talk to Guruji", showOnlin
                     // left: 0,
                     // right: 0,
                     // mx: 'auto',
-                    bgcolor: '#2f3148',
+                    bgcolor: hideCurves ? 'transparent' : '#2f3148',
                     overflow: 'visible',
                     zIndex: 100,
                 }}
             >
-                {/* Left curve */}
-                <Box
-                    component="img"
-                    src="/svg/bottom_left_open_curve.svg"
-                    alt="Left curve"
-                    sx={{ position: "absolute", top: '-45px', left: 0, width: "100px" }}
-                />
-                {/* Right curve */}
-                <Box
-                    component="img"
-                    src="/svg/bottom_right_open_curve.svg"
-                    alt="Right curve"
-                    sx={{ position: "absolute", top: '-45px', right: 0, width: "100px" }}
-                />
+                {!hideCurves && (
+                    <>
+                        {/* Left curve */}
+                        <Box
+                            component="img"
+                            src="/svg/bottom_left_open_curve.svg"
+                            alt="Left curve"
+                            sx={{ position: "absolute", top: '-45px', left: 0, width: "100px" }}
+                        />
+                        {/* Right curve */}
+                        <Box
+                            component="img"
+                            src="/svg/bottom_right_open_curve.svg"
+                            alt="Right curve"
+                            sx={{ position: "absolute", top: '-45px', right: 0, width: "100px" }}
+                        />
+                    </>
+                )}
                 {!isFading && (
                     showOnlineStatus ? (
                         <Box sx={{ position: "absolute", top: '-82px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <FiberManualRecordIcon sx={{ color: '#00ff03', fontSize: 26, animation: 'cf-pulse 2s infinite' }} />
-                            <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#dc5d35' }}>Astrologer is online now</Typography>
+                            <Typography sx={{ fontSize: '13px', fontWeight: 500, color: hideCurves ? '#000' : '#dc5d35' }}>Astrologer is online now</Typography>
                         </Box>
                     ) : (
                         <Box sx={{ position: "absolute", top: '-100px', width: '100%', display: 'flex', justifyContent: 'center' }}>
@@ -187,6 +191,9 @@ const ConsultFooter = ({ onConsult, onClick, label = "Talk to Guruji", showOnlin
                         </Typography>
                     </Box>
                 </Box>
+                <Typography sx={{ color: '#dc5d35', fontSize: '.9rem', fontWeight: 400, textAlign: 'center', position: 'relative', top: '-12px' }}>
+                    Get <b>FREE</b> answers, pay only for deeper insights
+                </Typography>
             </Box>
         </>
     );

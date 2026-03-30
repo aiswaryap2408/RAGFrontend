@@ -220,20 +220,20 @@ const Dashboard = () => {
                     )} */}
                     {isLoggedIn && (
                         <Box sx={{ mb: 3, display: "flex", justifyContent: "center", mt: 1.5 }}>
-                            <Box sx={{ bgcolor: '#2f3148', borderRadius: 5, p: 1, px: 3, display: "flex", alignItems: "center" }}>
-                                <Typography sx={{ fontWeight: 400, color: '#fff', fontSize: '1rem', display: 'flex', pr: 2 }}>
+                            <Box sx={{ bgcolor: '#e05a33', borderRadius: 5, p: 1, px: 3, display: "flex", alignItems: "center" }}>
+                                <Typography sx={{ fontWeight: 400, color: '#fff', fontSize: '1rem', display: 'flex' }}>
                                     <img src="/svg/wallet-white.svg" alt="" style={{ width: '20px', height: '20px', marginRight: '5px', }} />
                                     You have {balance.toLocaleString()} pts
                                 </Typography>
-                                <Typography sx={{ color: '#fff' }}>|</Typography>
+                                {/* <Typography sx={{ color: '#fff' }}>|</Typography>
                                 <Typography sx={{ fontWeight: 400, color: '#fff', fontSize: '1rem', display: 'flex', pl: 2 }}>
                                     <img src="/svg/wallet-white.svg" alt="" style={{ width: '20px', height: '20px', marginRight: '5px', }} />
                                     You have {balance.toLocaleString()} pts
-                                </Typography>
+                                </Typography> */}
                             </Box>
                         </Box>
                     )}
-                    <Box sx={{ textAlign: "center", display: "flex", justifyContent: "space-around", flexWrap: 'wrap', gap: 2, mb: 5 }}>
+                    <Box sx={{ textAlign: "center", display: "flex", justifyContent: "space-around", flexWrap: 'wrap', gap: 2, mb: 5, mt: 3 }}>
                         <Box onClick={() => handleAction('/profile')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
                             <Box sx={{ bgcolor: "#dc5d35", borderRadius: 1, p: 1, width: '45px', height: '45px', display: "flex", justifyContent: "center", alignItems: "center" }}>
                                 <img src="/svg/user.svg" alt="" style={{ width: '36px', height: '36px' }} />
@@ -260,6 +260,23 @@ const Dashboard = () => {
                         </Box>
                     </Box>
 
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 3, px: 2, flexDirection: 'column' }}>
+                        <img src="/svg/guruji_illustrated.svg" alt="" style={{ width: '50px', height: '50px', marginRight: '16px' }} />
+                        <Box sx={{ display: 'flex', flexDirection: 'column', textAlign: 'center' }}>
+                            <Typography sx={{ color: '#dc5d35', fontSize: '1.4rem', fontWeight: 600 }}>
+                                Namaste {userName?.split(' ')[0] || 'User'}!
+                            </Typography>
+                            <Typography sx={{ color: '#574228', fontSize: '.95rem', fontWeight: 400, mt: 1, textAlign: 'left', fontStyle: 'italic', mx: 3, lineHeight: 1.3, position: 'relative' }}>
+                                <span style={{ color: '#dc5d35', fontWeight: 900, fontSize: '1rem', position: 'absolute', left: '-8px', top: '-5px' }}>"</span> If something feels uncertain, I can look into your horoscope and guide you.
+                            </Typography>
+                            <Typography sx={{ color: '#574228', fontSize: '.95rem', fontWeight: 400, mt: 2, textAlign: 'left', fontStyle: 'italic', mx: 3, lineHeight: 1.3 }}>
+                                Ask your question and receive the right astrological insights.<span style={{ color: '#dc5d35', fontWeight: 900, fontSize: '1rem' }}>"</span>
+                            </Typography>
+                            <Typography sx={{ color: '#574228', fontSize: '.95rem', fontWeight: 400, mt: 2, textAlign: 'left', fontStyle: 'italic', mx: 3, lineHeight: 1.3 }}>
+                                -guruji
+                            </Typography>
+                        </Box>
+                    </Box>
                     {/* <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
                         <Typography fontSize={16} fontWeight={600} mb={.5} color="#dc5d35">
                             Your today {signName ? `(${signName})` : ""}:
@@ -327,7 +344,7 @@ const Dashboard = () => {
                     </Box> */}
                 </Box>
 
-                <ConsultFooter label="Start Consultation" showOnlineStatus={true} onClick={() => navigate("/chat")} />
+                <ConsultFooter label="Start Consultation" showOnlineStatus={true} onClick={() => navigate("/chat")} hideCurves={true} />
 
                 {/* Internal Popup Overlay */}
                 {isProfilePopupOpen && (
@@ -363,7 +380,7 @@ const Dashboard = () => {
                         </Box>
                     </Box>
                 )}
-            </Box>
+            </Box >
         </>
     );
 };
