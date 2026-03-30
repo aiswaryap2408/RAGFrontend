@@ -260,6 +260,7 @@ const Dashboard = () => {
                         </Box>
                     </Box>
 
+
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 3, px: 2, flexDirection: 'column' }}>
                         <img src="/svg/guruji_illustrated.svg" alt="" style={{ width: '50px', height: '50px', marginRight: '16px' }} />
                         <Box sx={{ display: 'flex', flexDirection: 'column', textAlign: 'center' }}>

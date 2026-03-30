@@ -78,6 +78,7 @@ const ConsultFooter = ({ onConsult, onClick, label = "Talk to Guruji", showOnlin
                             </Typography>
                         </Box>
                     )
+
                 )}
                 {/* Animated Start Consultation Button */}
                 <Box
