@@ -1476,20 +1476,20 @@ const Chat = () => {
         }));
     };
 
-    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null) => {
+    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null, userMessageId = null) => {
         setLoading(true);
         setIsSendingToBackend(true);
         requestInProgressRef.current = true;
         setSendingWaitMessage("Sending to Astrologer");
         addSessionLog("Wait State: Sending to Astrologer");
         console.log(`[${getCurrentTime()}] Wait State: Sending to Astrologer`);
-
+// ... (omitting intermediate lines for brevity if tool allows, but I'll include them)
         try {
             const referenceid = localStorage.getItem('currentProfileId');
             const sanitizedHistory = sanitizeHistory(history);
             addSessionLog(`Guruji receiving message: ${text}`);
             console.log(`[${getCurrentTime()}] Guruji receiving message:`, text);
-            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
+            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, userMessageId);
             setSendingWaitMessage("Astrologer is typing");
             addSessionLog("Wait State: Astrologer is typing");
             console.log(`[${getCurrentTime()}] Wait State: Astrologer is typing`);
@@ -1748,7 +1748,8 @@ const Chat = () => {
 
             // Call backend ONCE securely outside the state setter.
             const sanitizedHistory = sanitizeHistory(historyWithoutNewlyQueued);
-            sendToBackend(mobile, combinedText, sanitizedHistory);
+            const lastUserMsg = messages[messages.length - 1];
+            sendToBackend(mobile, combinedText, sanitizedHistory, lastUserMsg?.timestamp, lastUserMsg?.time);
 
         } catch (err) {
             console.error("Queue Processing Error:", err);
@@ -1758,12 +1759,13 @@ const Chat = () => {
         }
     };
 
-    const sendToBackend = async (mobile, combinedText, history) => {
+    const sendToBackend = async (mobile, combinedText, history, timestamp = null, time = null) => {
         let trigger_guruji_flag = false;
         try {
             addSessionLog(`Maya receiving message: ${combinedText}`);
             console.log(`[${getCurrentTime()}] Maya receiving message:`, combinedText);
-            const res = await sendMessage(mobile, combinedText, history, sessionId);
+            const referenceid = localStorage.getItem('currentProfileId');
+            const res = await sendMessage(mobile, combinedText, history, sessionId, null, referenceid, timestamp, time);
 
             // Handle rate limit / offline
             if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
@@ -1845,7 +1847,7 @@ const Chat = () => {
             if (trigger_guruji) {
                 setSendingWaitMessage("Sending to Astrologer");
                 setIsSendingToBackend(true);
-                await fetchGurujiResponse(mobile, combinedText, history, sessionId);
+                await fetchGurujiResponse(mobile, combinedText, history, sessionId, null, res.data.message_id);
             }
 
 
