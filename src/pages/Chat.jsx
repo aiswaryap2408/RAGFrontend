@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import api, { sendMessage, getGurujiResponse, endChat, startSession, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment } from '../api';
+import api, { sendMessage, getGurujiResponse, endChat, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment } from '../api';
 import axios from 'axios';
 
 import {
@@ -1338,11 +1338,7 @@ const Chat = () => {
         setFeedbackSubmitted(false);
         setChatStarted(false);
 
-        // Register the new session on the server immediately so it survives page reload
-        const mobile = localStorage.getItem('mobile');
-        if (mobile) {
-            startSession(mobile, newSid).catch(err => console.error('Failed to register session:', err));
-        }
+
     };
 
     const handleEndChat = async (keepFeedback = false) => {
@@ -1749,7 +1745,7 @@ const Chat = () => {
             // Call backend ONCE securely outside the state setter.
             const sanitizedHistory = sanitizeHistory(historyWithoutNewlyQueued);
             const lastUserMsg = messages[messages.length - 1];
-            sendToBackend(mobile, combinedText, sanitizedHistory, lastUserMsg?.timestamp, lastUserMsg?.time);
+            sendToBackend(mobile, combinedText, sanitizedHistory);
 
         } catch (err) {
             console.error("Queue Processing Error:", err);
@@ -1759,13 +1755,13 @@ const Chat = () => {
         }
     };
 
-    const sendToBackend = async (mobile, combinedText, history, timestamp = null, time = null) => {
+    const sendToBackend = async (mobile, combinedText, history) => {
         let trigger_guruji_flag = false;
         try {
             addSessionLog(`Maya receiving message: ${combinedText}`);
             console.log(`[${getCurrentTime()}] Maya receiving message:`, combinedText);
             const referenceid = localStorage.getItem('currentProfileId');
-            const res = await sendMessage(mobile, combinedText, history, sessionId, null, referenceid, timestamp, time);
+            const res = await sendMessage(mobile, combinedText, history, sessionId, null, referenceid);
 
             // Handle rate limit / offline
             if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
@@ -1813,7 +1809,7 @@ const Chat = () => {
                 return;
             }
 
-            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp: serverTimestamp, message_id, trigger_guruji } = res.data;
+            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id, trigger_guruji } = res.data;
             addSessionLog(`Maya replied with: ${answer.substring(0, 50)}...`);
             console.log(`[${getCurrentTime()}] Maya replied with:`, answer);
             trigger_guruji_flag = trigger_guruji;
@@ -1836,19 +1832,15 @@ const Chat = () => {
                     delays: delays || [],
                     animating: true,
                     message_id: message_id,
-                    time: serverTimestamp ? formatTime(serverTimestamp) : getCurrentTime(),
-                    timestamp: serverTimestamp || new Date().toISOString(),
+                    time: timestamp ? formatTime(timestamp) : getCurrentTime(),
+                    timestamp: timestamp || new Date().toISOString(),
                     arrivalTime: Date.now(),
                     trigger_guruji: trigger_guruji // Store this for tick logic
                 };
 
                 return deduplicateMessages([...prev, newMsg]);
             });
-            if (trigger_guruji) {
-                setSendingWaitMessage("Sending to Astrologer");
-                setIsSendingToBackend(true);
-                await fetchGurujiResponse(mobile, combinedText, history, sessionId, null, res.data.message_id);
-            }
+                await fetchGurujiResponse(mobile, combinedText, history, sessionId);
 
 
         } catch (err) {
