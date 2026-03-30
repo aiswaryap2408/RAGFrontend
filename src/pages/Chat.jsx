@@ -978,6 +978,7 @@ const Chat = () => {
     };
 
     const syncInProgressRef = useRef(false);
+    const requestInProgressRef = useRef(false);
 
     const deduplicateMessages = (historyArr) => {
         if (!Array.isArray(historyArr)) return [];
@@ -1145,10 +1146,16 @@ const Chat = () => {
     }, [location.state]);
 
     // Auto-refresh chat history when app becomes visible (e.g. returning from background)
-    /* useEffect(() => {
+    useEffect(() => {
         const handleVisibilityChange = async () => {
             if (document.visibilityState === 'visible') {
-                if (syncInProgressRef.current) return;
+                // Short delay to allow "resuming" network requests to finish/fail
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                if (syncInProgressRef.current || requestInProgressRef.current) {
+                    console.log("DEBUG [Visibility]: Sync skipped - Task already in progress.");
+                    return;
+                }
 
                 const mobile = localStorage.getItem('mobile');
                 const currentLocalSid = localStorage.getItem('activeSessionId');
@@ -1179,7 +1186,7 @@ const Chat = () => {
 
         document.addEventListener("visibilitychange", handleVisibilityChange);
         return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-    }, []); */
+    }, []);
 
     const scrollToTop = () => {
         if (containerRef.current) {
@@ -1472,6 +1479,7 @@ const Chat = () => {
     const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null) => {
         setLoading(true);
         setIsSendingToBackend(true);
+        requestInProgressRef.current = true;
         setSendingWaitMessage("Sending to Astrologer");
         addSessionLog("Wait State: Sending to Astrologer");
         console.log(`[${getCurrentTime()}] Wait State: Sending to Astrologer`);
@@ -1533,6 +1541,7 @@ const Chat = () => {
             setSendingWaitMessage("");
         } finally {
             setLoading(false);
+            requestInProgressRef.current = false;
             // setIsSendingToBackend(false); // Keep buffering if Guruji is about to respond/animating
             // setSendingWaitMessage("");
         }
@@ -1709,6 +1718,7 @@ const Chat = () => {
 
         setLoading(true);
         setIsSendingToBackend(true);
+        requestInProgressRef.current = true;
         scrollToBottom();
         setSendingWaitMessage("Sending to Maya");
         addSessionLog("Wait State: Sending to Maya");
@@ -1744,6 +1754,7 @@ const Chat = () => {
             console.error("Queue Processing Error:", err);
             setLoading(false);
             setIsSendingToBackend(false);
+            requestInProgressRef.current = false;
         }
     };
 
@@ -1856,6 +1867,7 @@ const Chat = () => {
             if (!trigger_guruji_flag) {
                 setIsSendingToBackend(false);
                 setSendingWaitMessage("");
+                requestInProgressRef.current = false;
             }
             scrollToBottom();
         }
