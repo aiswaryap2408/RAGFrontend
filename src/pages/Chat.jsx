@@ -1149,34 +1149,28 @@ const Chat = () => {
     useEffect(() => {
         const handleVisibilityChange = async () => {
             if (document.visibilityState === 'visible') {
-                // Short delay to allow "resuming" network requests to finish/fail
-                await new Promise(resolve => setTimeout(resolve, 1500));
-
-                if (syncInProgressRef.current || requestInProgressRef.current) {
-                    console.log("DEBUG [Visibility]: Sync skipped - Task already in progress.");
-                    return;
-                }
+                await new Promise(r => setTimeout(r, 1500));
 
                 const mobile = localStorage.getItem('mobile');
                 const currentLocalSid = localStorage.getItem('activeSessionId');
-                // Only refresh if we have an active session and are not currently waiting for a fresh load
-                if (mobile && currentLocalSid && !processedNewSession.current) {
+
+                if (mobile && currentLocalSid) {
                     try {
                         syncInProgressRef.current = true;
-                        addSessionLog("Auto-refreshing history (Visibility change)...");
-                        console.log("DEBUG: App became visible, auto-refreshing history...");
+
                         const res = await getChatHistory(mobile);
-                        if (res.data.sessions && res.data.sessions.length > 0) {
-                            const localSessionOnServer = res.data.sessions.find(s => s.session_id === currentLocalSid);
-                            if (localSessionOnServer && !localSessionOnServer.is_ended) {
-                                const history = localSessionOnServer.messages;
-                                if (history && history.length > 0) {
-                                    applyHistoryUpdate(history);
-                                }
+
+                        if (res.data.sessions?.length > 0) {
+                            const session = res.data.sessions.find(
+                                s => s.session_id === currentLocalSid
+                            );
+
+                            if (session && session.messages?.length > 0) {
+                                applyHistoryUpdate(session.messages);
                             }
                         }
                     } catch (err) {
-                        console.error("Visibility auto-refresh failed:", err);
+                        console.error("Auto-sync failed:", err);
                     } finally {
                         syncInProgressRef.current = false;
                     }
@@ -1479,7 +1473,7 @@ const Chat = () => {
         setSendingWaitMessage("Sending to Astrologer");
         addSessionLog("Wait State: Sending to Astrologer");
         console.log(`[${getCurrentTime()}] Wait State: Sending to Astrologer`);
-// ... (omitting intermediate lines for brevity if tool allows, but I'll include them)
+        // ... (omitting intermediate lines for brevity if tool allows, but I'll include them)
         try {
             const referenceid = localStorage.getItem('currentProfileId');
             const sanitizedHistory = sanitizeHistory(history);
@@ -1526,15 +1520,29 @@ const Chat = () => {
             }
         } catch (err) {
             console.error("Guruji Error:", err);
-            const errMsg = err.response?.data?.detail || err.message || 'Guruji is not available right now. Please try again after some time.';
-            setMessages(prev => [...prev, {
-                role: 'assistant',
-                assistant: 'maya',
-                content: errMsg,
-                time: getCurrentTime()
-            }]);
-            setIsSendingToBackend(false);
-            setSendingWaitMessage("");
+
+            setSendingWaitMessage("Reconnecting...");
+
+            setTimeout(async () => {
+                try {
+                    const mobile = localStorage.getItem('mobile');
+
+                    const res = await getChatHistory(mobile);
+
+                    if (res.data.sessions?.length > 0) {
+                        const latestSession = res.data.sessions[0];
+
+                        if (latestSession.messages?.length > 0) {
+                            applyHistoryUpdate(latestSession.messages);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Recovery failed:", e);
+                } finally {
+                    setSendingWaitMessage("");
+                    setIsSendingToBackend(false);
+                }
+            }, 2000);
         } finally {
             setLoading(false);
             requestInProgressRef.current = false;
@@ -1840,7 +1848,7 @@ const Chat = () => {
 
                 return deduplicateMessages([...prev, newMsg]);
             });
-                await fetchGurujiResponse(mobile, combinedText, history, sessionId);
+            await fetchGurujiResponse(mobile, combinedText, history, sessionId);
 
 
         } catch (err) {
