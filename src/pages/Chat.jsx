@@ -761,10 +761,10 @@ const deduplicateHistory = (historyArr) => {
 
     for (let i = 0; i < historyArr.length; i++) {
         const msg = historyArr[i];
-
+        
         if (msg.role === 'user') {
             const msgTime = new Date(msg.timestamp || msg.created_at || Date.now()).getTime();
-
+            
             // If the user sends the exact same message within 2 minutes (120000 ms), treat as retry duplicate
             if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 120000)) {
                 skippingDuplicateBlock = true;
@@ -1012,7 +1012,6 @@ const Chat = () => {
         lastScrollTop.current = scrollTop <= 0 ? 0 : scrollTop;
     };
 
-    const syncInProgressRef = useRef(false);
     const attemptGurujiRecovery = (currentHistory, currentLocalSid) => {
         const lastMsg = currentHistory[currentHistory.length - 1];
         const secondLastMsg = currentHistory.length > 1 ? currentHistory[currentHistory.length - 2] : null;
@@ -1020,7 +1019,7 @@ const Chat = () => {
         if (lastMsg && lastMsg.role === 'assistant' && lastMsg.assistant === 'maya' && secondLastMsg && secondLastMsg.role === 'user') {
             const explicitlyTriggered = lastMsg.trigger_guruji === true;
             const implicitlyTriggered = lastMsg.trigger_guruji === undefined && lastMsg.mayaJson && !lastMsg.mayaJson.is_safety_warning && !lastMsg.requires_chat_payment && !(typeof lastMsg.content === 'string' && (lastMsg.content.toLowerCase().includes('error') || lastMsg.content.toLowerCase().includes('sorry') || lastMsg.content.toLowerCase().includes('offline')));
-
+            
             if (explicitlyTriggered || implicitlyTriggered) {
                 if (!isSendingToBackend) {
                     console.log("DEBUG: Recovering missing Guruji response...");
@@ -1028,7 +1027,7 @@ const Chat = () => {
                     const historyForGuruji = currentHistory.length > 2 ? currentHistory.slice(1, -2) : [];
                     const sanitizedHistory = sanitizeHistory(historyForGuruji);
                     const paymentId = secondLastMsg.is_paid ? secondLastMsg.payment_id : null;
-
+                    
                     setIsSendingToBackend(true);
                     setSendingWaitMessage("Astrologer is typing");
                     fetchGurujiResponse(mobile, secondLastMsg.content, sanitizedHistory, currentLocalSid, paymentId);
@@ -1172,61 +1171,53 @@ const Chat = () => {
 
     useEffect(() => {
         const handleVisibilityChange = async () => {
-            if (document.visibilityState !== 'visible') return;
-
-            const mobile = localStorage.getItem('mobile');
-            const currentLocalSid = localStorage.getItem('activeSessionId');
-
-            if (!mobile || !currentLocalSid) return;
-
-            // If a request was in-flight when the tab was backgrounded, the browser may have.....
-            // killed it. Unconditionally reset sending state so the UI is never permanently stuck.
-            if (isSendingToBackend) {
-                console.log("DEBUG: Tab returned while request was in-flight – resetting sending state.");
-                setIsSendingToBackend(false);
-                setSendingWaitMessage("");
-                setLoading(false);
-            }
-
-            // Always sync history from server so any messages saved while away are shown.
-            try {
-                const res = await getChatHistory(mobile);
-                if (res.data.sessions && res.data.sessions.length > 0) {
-                    const localSessionOnServer = res.data.sessions.find(s => s.session_id === currentLocalSid);
-                    if (localSessionOnServer && !localSessionOnServer.is_ended) {
-                        const history = localSessionOnServer.messages;
-                        if (history && history.length > 0) {
-                            const mappedHistory = history.map(msg => ({
-                                ...msg,
-                                time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
-                                gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
-                                mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
-                                psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
-                                gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
-                                animating: false
-                            }));
-
-                            const dedupHistory = deduplicateHistory(mappedHistory);
-
-                            setMessages(prev => {
-                                const lastLocal = prev.length > 0 ? prev[prev.length - 1] : null;
-                                const hasLocalError = lastLocal?.role === 'assistant' && lastLocal?.assistant === 'maya' && (
-                                    (typeof lastLocal.content === 'string' && lastLocal.content.includes('Sorry, I encountered an error')) ||
-                                    (typeof lastLocal.content === 'string' && lastLocal.content.includes('Guruji is not available right now')) ||
-                                    (typeof lastLocal.content === 'string' && lastLocal.content.includes('Network Error'))
-                                );
-
-                                if (hasLocalError || dedupHistory.length > prev.length) {
-                                    attemptGurujiRecovery(dedupHistory, currentLocalSid);
-                                    return dedupHistory;
+            if (document.visibilityState === 'visible' && !isSendingToBackend && messageQueue.length === 0 && userStatus === 'ready') {
+                const mobile = localStorage.getItem('mobile');
+                const currentLocalSid = localStorage.getItem('activeSessionId');
+                
+                if (mobile && currentLocalSid) {
+                    try {
+                        const res = await getChatHistory(mobile);
+                        if (res.data.sessions && res.data.sessions.length > 0) {
+                            const localSessionOnServer = res.data.sessions.find(s => s.session_id === currentLocalSid);
+                            if (localSessionOnServer && !localSessionOnServer.is_ended) {
+                                const history = localSessionOnServer.messages;
+                                if (history && history.length > 0) {
+                                    const mappedHistory = history.map(msg => ({
+                                        ...msg,
+                                        time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
+                                        gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
+                                        mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                        psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
+                                        gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
+                                        animating: false
+                                    }));
+                                    
+                                    const dedupHistory = deduplicateHistory(mappedHistory);
+                                    
+                                    setMessages(prev => {
+                                        if (prev.length === 0) return prev;
+                                        
+                                        const lastLocal = prev[prev.length - 1];
+                                        const hasLocalError = lastLocal?.role === 'assistant' && lastLocal?.assistant === 'maya' && (
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Sorry, I encountered an error')) ||
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Guruji is not available right now')) ||
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Network Error'))
+                                        );
+                                        
+                                        if (hasLocalError || dedupHistory.length > prev.length) {
+                                            attemptGurujiRecovery(dedupHistory, currentLocalSid);
+                                            return dedupHistory;
+                                        }
+                                        return prev;
+                                    });
                                 }
-                                return prev;
-                            });
+                            }
                         }
+                    } catch (err) {
+                        console.error("Silent history reload failed:", err);
                     }
                 }
-            } catch (err) {
-                console.error("Tab-focus history reload failed:", err);
             }
         };
 
@@ -1526,15 +1517,12 @@ const Chat = () => {
         setLoading(true);
         setIsSendingToBackend(true);
         setSendingWaitMessage("Sending to Astrologer");
-        addSessionLog("Wait State: Sending to Astrologer");
-        console.log(`[${getCurrentTime()}] Wait State: Sending to Astrologer`);
 
         try {
             const referenceid = localStorage.getItem('currentProfileId');
             const sanitizedHistory = sanitizeHistory(history);
-            addSessionLog(`Guruji receiving message: ${text}`);
-            console.log(`[${getCurrentTime()}] Guruji receiving message:`, text);
             const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
+            // const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId);
             setSendingWaitMessage("Astrologer is typing");
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, guruji_input, bubbles, delays, timestamp, message_id } = res.data;
 
@@ -1794,8 +1782,6 @@ const Chat = () => {
     const sendToBackend = async (mobile, combinedText, history) => {
         let trigger_guruji_flag = false;
         try {
-            addSessionLog(`Maya receiving message: ${combinedText}`);
-            console.log(`[${getCurrentTime()}] Maya receiving message:`, combinedText);
             const res = await sendMessage(mobile, combinedText, history, sessionId);
 
             // Handle rate limit / offline
@@ -1844,8 +1830,6 @@ const Chat = () => {
             }
 
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id, trigger_guruji } = res.data;
-            addSessionLog(`Maya replied with: ${answer.substring(0, 50)}...`);
-            console.log(`[${getCurrentTime()}] Maya replied with:`, answer);
             trigger_guruji_flag = trigger_guruji;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
@@ -1869,6 +1853,7 @@ const Chat = () => {
                 timestamp: timestamp || new Date().toISOString(),
                 arrivalTime: Date.now(),
                 trigger_guruji: trigger_guruji // Store this for tick logic
+
             }]);
             if (trigger_guruji) {
                 setSendingWaitMessage("Sending to Astrologer");
@@ -1880,49 +1865,8 @@ const Chat = () => {
         } catch (err) {
             console.error("Chat Error:", err);
             // If it's a 404/401/403, the interceptor will handle redirect to login
-            if (err.response?.status === 404 || err.response?.status === 401 || err.response?.status === 403) {
-                // Auth interceptor will redirect; nothing to do here
-            } else {
-                // For Network Errors (request killed by browser during tab switch), attempt to
-                // recover from the server before showing an error message to the user.
-                const isNetworkError = !err.response && (err.message === 'Network Error' || err.code === 'ERR_NETWORK' || err.code === 'ECONNABORTED');
-                if (isNetworkError) {
-                    console.log("DEBUG: Network error detected – attempting server-side recovery...");
-                    try {
-                        const mobileForRecovery = localStorage.getItem('mobile');
-                        const sidForRecovery = localStorage.getItem('activeSessionId');
-                        if (mobileForRecovery && sidForRecovery) {
-                            const recoveryRes = await getChatHistory(mobileForRecovery);
-                            const recoverySession = recoveryRes.data.sessions?.find(s => s.session_id === sidForRecovery);
-                            const recoveryHistory = recoverySession?.messages || [];
-                            if (recoveryHistory.length > 0) {
-                                const mappedRecovery = recoveryHistory.map(msg => ({
-                                    ...msg,
-                                    time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
-                                    gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
-                                    mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
-                                    psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
-                                    gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
-                                    animating: false
-                                }));
-                                const dedupRecovery = deduplicateHistory(mappedRecovery);
-                                setMessages(prev => {
-                                    // Only update if server has more messages or the last was an error
-                                    if (dedupRecovery.length > prev.filter(m => !m.isQueued).length) {
-                                        attemptGurujiRecovery(dedupRecovery, sidForRecovery);
-                                        return dedupRecovery;
-                                    }
-                                    return prev;
-                                });
-                                // Recovery succeeded — don't show the error message
-                                return;
-                            }
-                        }
-                    } catch (recoveryErr) {
-                        console.error("Recovery attempt failed:", recoveryErr);
-                    }
-                }
-                // No recovery possible — show the error so the user knows to retry
+            // Only show error message for other types of errors
+            if (err.response?.status !== 404 && err.response?.status !== 401 && err.response?.status !== 403) {
                 const errMsg = err.response?.data?.detail || err.message || 'Sorry, I encountered an error. Please try again.';
                 setMessages(prev => [...prev, {
                     role: 'assistant',
@@ -3444,4 +3388,3 @@ const Chat = () => {
 };
 
 export default Chat;
-
