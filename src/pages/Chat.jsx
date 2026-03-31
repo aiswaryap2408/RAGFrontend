@@ -761,10 +761,10 @@ const deduplicateHistory = (historyArr) => {
 
     for (let i = 0; i < historyArr.length; i++) {
         const msg = historyArr[i];
-        
+
         if (msg.role === 'user') {
             const msgTime = new Date(msg.timestamp || msg.created_at || Date.now()).getTime();
-            
+
             // If the user sends the exact same message within 2 minutes (120000 ms), treat as retry duplicate
             if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 120000)) {
                 skippingDuplicateBlock = true;
@@ -1019,7 +1019,7 @@ const Chat = () => {
         if (lastMsg && lastMsg.role === 'assistant' && lastMsg.assistant === 'maya' && secondLastMsg && secondLastMsg.role === 'user') {
             const explicitlyTriggered = lastMsg.trigger_guruji === true;
             const implicitlyTriggered = lastMsg.trigger_guruji === undefined && lastMsg.mayaJson && !lastMsg.mayaJson.is_safety_warning && !lastMsg.requires_chat_payment && !(typeof lastMsg.content === 'string' && (lastMsg.content.toLowerCase().includes('error') || lastMsg.content.toLowerCase().includes('sorry') || lastMsg.content.toLowerCase().includes('offline')));
-            
+
             if (explicitlyTriggered || implicitlyTriggered) {
                 if (!isSendingToBackend) {
                     console.log("DEBUG: Recovering missing Guruji response...");
@@ -1027,7 +1027,7 @@ const Chat = () => {
                     const historyForGuruji = currentHistory.length > 2 ? currentHistory.slice(1, -2) : [];
                     const sanitizedHistory = sanitizeHistory(historyForGuruji);
                     const paymentId = secondLastMsg.is_paid ? secondLastMsg.payment_id : null;
-                    
+
                     setIsSendingToBackend(true);
                     setSendingWaitMessage("Astrologer is typing");
                     fetchGurujiResponse(mobile, secondLastMsg.content, sanitizedHistory, currentLocalSid, paymentId);
@@ -1178,7 +1178,7 @@ const Chat = () => {
 
             if (!mobile || !currentLocalSid) return;
 
-            // If a request was in-flight when the tab was backgrounded, the browser may have
+            // If a request was in-flight when the tab was backgrounded, the browser may have....
             // killed it. Unconditionally reset sending state so the UI is never permanently stuck.
             if (isSendingToBackend) {
                 console.log("DEBUG: Tab returned while request was in-flight – resetting sending state.");
