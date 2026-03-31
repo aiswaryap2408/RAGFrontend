@@ -1178,7 +1178,7 @@ const Chat = () => {
 
             if (!mobile || !currentLocalSid) return;
 
-            // If a request was in-flight when the tab was backgrounded, the browser may have....
+            // If a request was in-flight when the tab was backgrounded, the browser may have.....
             // killed it. Unconditionally reset sending state so the UI is never permanently stuck.
             if (isSendingToBackend) {
                 console.log("DEBUG: Tab returned while request was in-flight – resetting sending state.");
