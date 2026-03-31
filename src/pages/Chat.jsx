@@ -761,10 +761,10 @@ const deduplicateHistory = (historyArr) => {
 
     for (let i = 0; i < historyArr.length; i++) {
         const msg = historyArr[i];
-        
+
         if (msg.role === 'user') {
             const msgTime = new Date(msg.timestamp || msg.created_at || Date.now()).getTime();
-            
+
             // If the user sends the exact same message within 2 minutes (120000 ms), treat as retry duplicate
             if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 120000)) {
                 skippingDuplicateBlock = true;
@@ -1019,7 +1019,7 @@ const Chat = () => {
         if (lastMsg && lastMsg.role === 'assistant' && lastMsg.assistant === 'maya' && secondLastMsg && secondLastMsg.role === 'user') {
             const explicitlyTriggered = lastMsg.trigger_guruji === true;
             const implicitlyTriggered = lastMsg.trigger_guruji === undefined && lastMsg.mayaJson && !lastMsg.mayaJson.is_safety_warning && !lastMsg.requires_chat_payment && !(typeof lastMsg.content === 'string' && (lastMsg.content.toLowerCase().includes('error') || lastMsg.content.toLowerCase().includes('sorry') || lastMsg.content.toLowerCase().includes('offline')));
-            
+
             if (explicitlyTriggered || implicitlyTriggered) {
                 if (!isSendingToBackend) {
                     console.log("DEBUG: Recovering missing Guruji response...");
@@ -1027,7 +1027,7 @@ const Chat = () => {
                     const historyForGuruji = currentHistory.length > 2 ? currentHistory.slice(1, -2) : [];
                     const sanitizedHistory = sanitizeHistory(historyForGuruji);
                     const paymentId = secondLastMsg.is_paid ? secondLastMsg.payment_id : null;
-                    
+
                     setIsSendingToBackend(true);
                     setSendingWaitMessage("Astrologer is typing");
                     fetchGurujiResponse(mobile, secondLastMsg.content, sanitizedHistory, currentLocalSid, paymentId);
@@ -1123,7 +1123,7 @@ const Chat = () => {
                             return;
                         }
 
-                        // Scenario 3: Load history (Relaxed logic + Parsing)
+                        // Scenario 3: Load history (Relaxed logic + Parsing) ..
                         const history = mostRecentSession.messages;
                         if (history && history.length > 0) {
                             console.log("DEBUG: Scenario 3 - Resuming Session:", mostRecentSession.session_id);
@@ -1174,7 +1174,7 @@ const Chat = () => {
             if (document.visibilityState === 'visible' && !isSendingToBackend && messageQueue.length === 0 && userStatus === 'ready') {
                 const mobile = localStorage.getItem('mobile');
                 const currentLocalSid = localStorage.getItem('activeSessionId');
-                
+
                 if (mobile && currentLocalSid) {
                     try {
                         const res = await getChatHistory(mobile);
@@ -1192,19 +1192,19 @@ const Chat = () => {
                                         gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
                                         animating: false
                                     }));
-                                    
+
                                     const dedupHistory = deduplicateHistory(mappedHistory);
-                                    
+
                                     setMessages(prev => {
                                         if (prev.length === 0) return prev;
-                                        
+
                                         const lastLocal = prev[prev.length - 1];
                                         const hasLocalError = lastLocal?.role === 'assistant' && lastLocal?.assistant === 'maya' && (
                                             (typeof lastLocal.content === 'string' && lastLocal.content.includes('Sorry, I encountered an error')) ||
                                             (typeof lastLocal.content === 'string' && lastLocal.content.includes('Guruji is not available right now')) ||
                                             (typeof lastLocal.content === 'string' && lastLocal.content.includes('Network Error'))
                                         );
-                                        
+
                                         if (hasLocalError || dedupHistory.length > prev.length) {
                                             attemptGurujiRecovery(dedupHistory, currentLocalSid);
                                             return dedupHistory;
