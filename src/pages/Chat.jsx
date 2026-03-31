@@ -1012,6 +1012,7 @@ const Chat = () => {
         lastScrollTop.current = scrollTop <= 0 ? 0 : scrollTop;
     };
 
+    const syncInProgressRef = useRef(false);
     const attemptGurujiRecovery = (currentHistory, currentLocalSid) => {
         const lastMsg = currentHistory[currentHistory.length - 1];
         const secondLastMsg = currentHistory.length > 1 ? currentHistory[currentHistory.length - 2] : null;
@@ -1525,12 +1526,15 @@ const Chat = () => {
         setLoading(true);
         setIsSendingToBackend(true);
         setSendingWaitMessage("Sending to Astrologer");
+        addSessionLog("Wait State: Sending to Astrologer");
+        console.log(`[${getCurrentTime()}] Wait State: Sending to Astrologer`);
 
         try {
             const referenceid = localStorage.getItem('currentProfileId');
             const sanitizedHistory = sanitizeHistory(history);
+            addSessionLog(`Guruji receiving message: ${text}`);
+            console.log(`[${getCurrentTime()}] Guruji receiving message:`, text);
             const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
-            // const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId);
             setSendingWaitMessage("Astrologer is typing");
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, guruji_input, bubbles, delays, timestamp, message_id } = res.data;
 
@@ -1790,6 +1794,8 @@ const Chat = () => {
     const sendToBackend = async (mobile, combinedText, history) => {
         let trigger_guruji_flag = false;
         try {
+            addSessionLog(`Maya receiving message: ${combinedText}`);
+            console.log(`[${getCurrentTime()}] Maya receiving message:`, combinedText);
             const res = await sendMessage(mobile, combinedText, history, sessionId);
 
             // Handle rate limit / offline
@@ -1838,6 +1844,8 @@ const Chat = () => {
             }
 
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id, trigger_guruji } = res.data;
+            addSessionLog(`Maya replied with: ${answer.substring(0, 50)}...`);
+            console.log(`[${getCurrentTime()}] Maya replied with:`, answer);
             trigger_guruji_flag = trigger_guruji;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
@@ -1861,7 +1869,6 @@ const Chat = () => {
                 timestamp: timestamp || new Date().toISOString(),
                 arrivalTime: Date.now(),
                 trigger_guruji: trigger_guruji // Store this for tick logic
-
             }]);
             if (trigger_guruji) {
                 setSendingWaitMessage("Sending to Astrologer");
@@ -3437,3 +3444,4 @@ const Chat = () => {
 };
 
 export default Chat;
+
