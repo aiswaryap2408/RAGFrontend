@@ -162,7 +162,7 @@ const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse,
                 position: 'relative',
                 pointerEvents: 'none',
                 mb: 0,
-                mr: 1,
+                // mr: 1,
                 textAlign: 'right',
             }}>
                 MAYA AI
@@ -753,6 +753,41 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
 };
 
 
+const deduplicateHistory = (historyArr) => {
+    const deduplicated = [];
+    let skippingDuplicateBlock = false;
+    let lastUserContent = null;
+    let lastUserTime = 0;
+
+    for (let i = 0; i < historyArr.length; i++) {
+        const msg = historyArr[i];
+        
+        if (msg.role === 'user') {
+            const msgTime = new Date(msg.timestamp || msg.created_at || Date.now()).getTime();
+            
+            // If the user sends the exact same message within 2 minutes (120000 ms), treat as retry duplicate
+            if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 120000)) {
+                skippingDuplicateBlock = true;
+                continue; // Skip this user message
+            } else {
+                skippingDuplicateBlock = false;
+                lastUserContent = msg.content;
+                lastUserTime = msgTime;
+                deduplicated.push(msg);
+            }
+        } else {
+            // Assistant message
+            if (skippingDuplicateBlock) {
+                // Skip assistant messages that belong to the duplicate user message block
+                continue;
+            } else {
+                deduplicated.push(msg);
+            }
+        }
+    }
+    return deduplicated;
+};
+
 const Chat = () => {
     const [showHeader, setShowHeader] = useState(true);
     const [sendingWaitMessage, setSendingWaitMessage] = useState("");
@@ -829,7 +864,7 @@ const Chat = () => {
     const [readyReportData, setReadyReportData] = useState(null);
     const [activeQuestion, setActiveQuestion] = useState(null);
     const [activeReportIndex, setActiveReportIndex] = useState(null);
-    const [jsonVisibility, setJsonVisibility] = useState({ maya: false, guruji: false, psycology: false, logs: false });
+    const [jsonVisibility, setJsonVisibility] = useState({ maya: false, guruji: false, psycology: false });
     const [jsonModal, setJsonModal] = useState({ open: false, data: null, title: '' });
     const [chatPaymentState, setChatPaymentState] = useState('IDLE'); // IDLE, REQUIRED, PAYING, COMPLETE
     const [pendingMessageId, setPendingMessageId] = useState(null);
@@ -977,81 +1012,27 @@ const Chat = () => {
         lastScrollTop.current = scrollTop <= 0 ? 0 : scrollTop;
     };
 
-    const syncInProgressRef = useRef(false);
+    const attemptGurujiRecovery = (currentHistory, currentLocalSid) => {
+        const lastMsg = currentHistory[currentHistory.length - 1];
+        const secondLastMsg = currentHistory.length > 1 ? currentHistory[currentHistory.length - 2] : null;
 
-    const deduplicateMessages = (historyArr) => {
-        if (!Array.isArray(historyArr)) return [];
-        const seenIds = new Set();
-        const seenUserFingerprints = new Set(); // content + timestamp
-        const deduplicated = [];
-
-        // We process from bottom to top to prioritize messages with IDs (server truth)
-        // actually, processing normally but check IDs first is better.
-        for (const msg of historyArr) {
-            // Priority 1: Check message_id
-            if (msg.message_id) {
-                if (seenIds.has(String(msg.message_id))) continue;
-                seenIds.add(String(msg.message_id));
+        if (lastMsg && lastMsg.role === 'assistant' && lastMsg.assistant === 'maya' && secondLastMsg && secondLastMsg.role === 'user') {
+            const explicitlyTriggered = lastMsg.trigger_guruji === true;
+            const implicitlyTriggered = lastMsg.trigger_guruji === undefined && lastMsg.mayaJson && !lastMsg.mayaJson.is_safety_warning && !lastMsg.requires_chat_payment && !(typeof lastMsg.content === 'string' && (lastMsg.content.toLowerCase().includes('error') || lastMsg.content.toLowerCase().includes('sorry') || lastMsg.content.toLowerCase().includes('offline')));
+            
+            if (explicitlyTriggered || implicitlyTriggered) {
+                if (!isSendingToBackend) {
+                    console.log("DEBUG: Recovering missing Guruji response...");
+                    const mobile = localStorage.getItem('mobile');
+                    const historyForGuruji = currentHistory.length > 2 ? currentHistory.slice(1, -2) : [];
+                    const sanitizedHistory = sanitizeHistory(historyForGuruji);
+                    const paymentId = secondLastMsg.is_paid ? secondLastMsg.payment_id : null;
+                    
+                    setIsSendingToBackend(true);
+                    setSendingWaitMessage("Astrologer is typing");
+                    fetchGurujiResponse(mobile, secondLastMsg.content, sanitizedHistory, currentLocalSid, paymentId);
+                }
             }
-
-            // Priority 2: content-based fingerprinting for User messages without IDs
-            // (prevents double-entry of local messages vs server syncs)
-            if (msg.role === 'user') {
-                const fingerprint = `${msg.role}:${msg.content}:${msg.timestamp || msg.created_at || ''}`;
-                if (seenUserFingerprints.has(fingerprint)) continue;
-                seenUserFingerprints.add(fingerprint);
-            }
-
-            deduplicated.push(msg);
-        }
-        return deduplicated;
-    };
-
-    const addSessionLog = (msg) => {
-        try {
-            const logs = JSON.parse(localStorage.getItem('chatSessionLogs') || '[]');
-            logs.push({ time: getCurrentTime(), message: msg });
-            // Keep last 100 logs
-            localStorage.setItem('chatSessionLogs', JSON.stringify(logs.slice(-100)));
-        } catch (e) {
-            console.error("Failed to save session log:", e);
-        }
-    };
-
-    const applyHistoryUpdate = (serverMessages) => {
-        if (!serverMessages) return;
-
-        const mappedHistory = serverMessages.map(msg => ({
-            ...msg,
-            time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
-            gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
-            mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
-            psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
-            gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
-            paywall_level: msg.paywall_level,
-            animating: false
-        }));
-
-        setMessages(prev => {
-            // Protect local queued user messages (currently waiting in the 3s typer delay)
-            const localQueued = prev.filter(m => m.isQueued);
-
-            // Merge: Server History + Local Queued
-            const merged = [...mappedHistory, ...localQueued];
-
-            // Final deduplication pass
-            return deduplicateMessages(merged);
-        });
-
-        setChatStarted(mappedHistory.some(m => m.role === 'user'));
-
-        const unpaidMsg = mappedHistory.find(m => m.requires_chat_payment && !m.is_paid);
-        if (unpaidMsg) {
-            setChatPaymentState('REQUIRED');
-            setPendingMessageId(unpaidMsg.message_id);
-            setActiveQuestion(unpaidMsg.content);
-        } else {
-            setChatPaymentState('IDLE');
         }
     };
 
@@ -1100,7 +1081,29 @@ const Chat = () => {
                             if (history && history.length > 0) {
                                 console.log("DEBUG: Resuming localStorage session with", history.length, "messages");
                                 setSessionId(currentLocalSid);
-                                applyHistoryUpdate(history);
+
+                                const mappedHistory = history.map(msg => ({
+                                    ...msg,
+                                    time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
+                                    gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
+                                    mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                    psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
+                                    gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
+                                    animating: false
+                                }));
+
+                                const dedupHistory = deduplicateHistory(mappedHistory);
+                                setMessages(dedupHistory);
+                                setChatStarted(dedupHistory.some(m => m.role === 'user'));
+                                attemptGurujiRecovery(dedupHistory, currentLocalSid);
+
+                                // Check for unpaid chat messages to resume state
+                                const unpaidMsg = dedupHistory.find(m => m.requires_chat_payment && !m.is_paid);
+                                if (unpaidMsg) {
+                                    setChatPaymentState('REQUIRED');
+                                    setPendingMessageId(unpaidMsg.message_id);
+                                    setActiveQuestion(unpaidMsg.content);
+                                }
                             } else {
                                 // Active session exists on server but has zero messages — keep the welcome screen
                                 console.log("DEBUG: Active localStorage session has no messages yet, keeping welcome screen.");
@@ -1128,7 +1131,29 @@ const Chat = () => {
                             if (!currentLocalSid || currentLocalSid !== mostRecentSession.session_id) {
                                 localStorage.setItem('activeSessionId', mostRecentSession.session_id);
                             }
-                            applyHistoryUpdate(history);
+
+                            const mappedHistory = history.map(msg => ({
+                                ...msg,
+                                time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
+                                gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
+                                mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
+                                gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
+                                animating: false
+                            }));
+
+                            console.log("DEBUG: mappedHistory set, count:", mappedHistory.length);
+                            const dedupHistory = deduplicateHistory(mappedHistory);
+                            setMessages(dedupHistory);
+                            setChatStarted(dedupHistory.some(m => m.role === 'user'));
+                            attemptGurujiRecovery(dedupHistory, mostRecentSession.session_id);
+
+                            const unpaidMsg = dedupHistory.find(m => m.requires_chat_payment && !m.is_paid);
+                            if (unpaidMsg) {
+                                setChatPaymentState('REQUIRED');
+                                setPendingMessageId(unpaidMsg.message_id);
+                                setActiveQuestion(unpaidMsg.content);
+                            }
                         } else {
                             console.log("DEBUG: No history messages found in most recent session.");
                         }
@@ -1144,42 +1169,61 @@ const Chat = () => {
         loadHistory();
     }, [location.state]);
 
-    // Auto-refresh chat history when app becomes visible (e.g. returning from background)
-    /* useEffect(() => {
+    useEffect(() => {
         const handleVisibilityChange = async () => {
-            if (document.visibilityState === 'visible') {
-                if (syncInProgressRef.current) return;
-
+            if (document.visibilityState === 'visible' && !isSendingToBackend && messageQueue.length === 0 && userStatus === 'ready') {
                 const mobile = localStorage.getItem('mobile');
                 const currentLocalSid = localStorage.getItem('activeSessionId');
-                // Only refresh if we have an active session and are not currently waiting for a fresh load
-                if (mobile && currentLocalSid && !processedNewSession.current) {
+                
+                if (mobile && currentLocalSid) {
                     try {
-                        syncInProgressRef.current = true;
-                        addSessionLog("Auto-refreshing history (Visibility change)...");
-                        console.log("DEBUG: App became visible, auto-refreshing history...");
                         const res = await getChatHistory(mobile);
                         if (res.data.sessions && res.data.sessions.length > 0) {
                             const localSessionOnServer = res.data.sessions.find(s => s.session_id === currentLocalSid);
                             if (localSessionOnServer && !localSessionOnServer.is_ended) {
                                 const history = localSessionOnServer.messages;
                                 if (history && history.length > 0) {
-                                    applyHistoryUpdate(history);
+                                    const mappedHistory = history.map(msg => ({
+                                        ...msg,
+                                        time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
+                                        gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
+                                        mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                        psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
+                                        gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
+                                        animating: false
+                                    }));
+                                    
+                                    const dedupHistory = deduplicateHistory(mappedHistory);
+                                    
+                                    setMessages(prev => {
+                                        if (prev.length === 0) return prev;
+                                        
+                                        const lastLocal = prev[prev.length - 1];
+                                        const hasLocalError = lastLocal?.role === 'assistant' && lastLocal?.assistant === 'maya' && (
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Sorry, I encountered an error')) ||
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Guruji is not available right now')) ||
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Network Error'))
+                                        );
+                                        
+                                        if (hasLocalError || dedupHistory.length > prev.length) {
+                                            attemptGurujiRecovery(dedupHistory, currentLocalSid);
+                                            return dedupHistory;
+                                        }
+                                        return prev;
+                                    });
                                 }
                             }
                         }
                     } catch (err) {
-                        console.error("Visibility auto-refresh failed:", err);
-                    } finally {
-                        syncInProgressRef.current = false;
+                        console.error("Silent history reload failed:", err);
                     }
                 }
             }
         };
 
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-        return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-    }, []); */
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, [isSendingToBackend, messageQueue.length, userStatus]);
 
     const scrollToTop = () => {
         if (containerRef.current) {
@@ -1473,47 +1517,37 @@ const Chat = () => {
         setLoading(true);
         setIsSendingToBackend(true);
         setSendingWaitMessage("Sending to Astrologer");
-        addSessionLog("Wait State: Sending to Astrologer");
-        console.log(`[${getCurrentTime()}] Wait State: Sending to Astrologer`);
 
         try {
             const referenceid = localStorage.getItem('currentProfileId');
             const sanitizedHistory = sanitizeHistory(history);
-            addSessionLog(`Guruji receiving message: ${text}`);
-            console.log(`[${getCurrentTime()}] Guruji receiving message:`, text);
             const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
+            // const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId);
             setSendingWaitMessage("Astrologer is typing");
-            addSessionLog("Wait State: Astrologer is typing");
-            console.log(`[${getCurrentTime()}] Wait State: Astrologer is typing`);
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, guruji_input, bubbles, delays, timestamp, message_id } = res.data;
-            addSessionLog(`Guruji replied with: ${answer.substring(0, 50)}...`);
-            console.log(`[${getCurrentTime()}] Guruji replied with:`, answer);
+
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
-            setMessages(prev => {
-                const newMsg = {
-                    role: 'assistant',
-                    content: answer,
-                    assistant: 'guruji',
-                    metrics,
-                    context,
-                    amount,
-                    rawResponse: res.data,
-                    mayaJson: tryParseJson(maya_json),
-                    gurujiJson: tryParseJson(guruji_json),
-                    psycologyJson: tryParseJson(psycology_json),
-                    gurujiInput: tryParseJson(guruji_input),
-                    bubbles: bubbles || [],
-                    delays: delays || [],
-                    animating: true,
-                    message_id: message_id,
-                    time: timestamp ? formatTime(timestamp) : getCurrentTime(),
-                    timestamp: timestamp || new Date().toISOString(),
-                    arrivalTime: Date.now()
-                };
-
-                return deduplicateMessages([...prev, newMsg]);
-            });
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: answer,
+                assistant: 'guruji',
+                metrics,
+                context,
+                amount,
+                rawResponse: res.data,
+                mayaJson: tryParseJson(maya_json),
+                gurujiJson: tryParseJson(guruji_json),
+                psycologyJson: tryParseJson(psycology_json),
+                gurujiInput: tryParseJson(guruji_input),
+                bubbles: bubbles || [],
+                delays: delays || [],
+                animating: true,
+                message_id: message_id,
+                time: timestamp ? formatTime(timestamp) : getCurrentTime(),
+                timestamp: timestamp || new Date().toISOString(),
+                arrivalTime: Date.now()
+            }]);
             if (guruji_json) {
                 setIsAnimating(true);
             } else {
@@ -1711,8 +1745,6 @@ const Chat = () => {
         setIsSendingToBackend(true);
         scrollToBottom();
         setSendingWaitMessage("Sending to Maya");
-        addSessionLog("Wait State: Sending to Maya");
-        console.log(`[${getCurrentTime()}] Wait State: Sending to Maya`);
 
         let trigger_guruji_flag = false;
         try {
@@ -1750,8 +1782,6 @@ const Chat = () => {
     const sendToBackend = async (mobile, combinedText, history) => {
         let trigger_guruji_flag = false;
         try {
-            addSessionLog(`Maya receiving message: ${combinedText}`);
-            console.log(`[${getCurrentTime()}] Maya receiving message:`, combinedText);
             const res = await sendMessage(mobile, combinedText, history, sessionId);
 
             // Handle rate limit / offline
@@ -1787,8 +1817,7 @@ const Chat = () => {
                             is_paid: false,
                             message_id: res.data.message_id,
                             mayaJson: tryParseJson(res.data.maya_json),
-                            psycologyJson: tryParseJson(res.data.psycology_json),
-                            paywall_level: res.data.paywall_level
+                            psycologyJson: tryParseJson(res.data.psycology_json)
                         };
                     }
                     return next;
@@ -1801,36 +1830,31 @@ const Chat = () => {
             }
 
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id, trigger_guruji } = res.data;
-            addSessionLog(`Maya replied with: ${answer.substring(0, 50)}...`);
-            console.log(`[${getCurrentTime()}] Maya replied with:`, answer);
             trigger_guruji_flag = trigger_guruji;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
-            setMessages(prev => {
-                const newMsg = {
-                    role: 'assistant',
-                    content: answer,
-                    assistant: assistant || 'maya',
-                    metrics,
-                    context,
-                    amount,
-                    rawResponse: res.data,
-                    mayaJson: tryParseJson(maya_json),
-                    gurujiJson: tryParseJson(guruji_json),
-                    psycologyJson: tryParseJson(psycology_json),
-                    bubbles: bubbles || [],
-                    delays: delays || [],
-                    animating: true,
-                    message_id: message_id,
-                    time: timestamp ? formatTime(timestamp) : getCurrentTime(),
-                    timestamp: timestamp || new Date().toISOString(),
-                    arrivalTime: Date.now(),
-                    trigger_guruji: trigger_guruji // Store this for tick logic
-                };
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: answer,
+                assistant: assistant || 'maya',
+                metrics,
+                context,
+                amount,
+                rawResponse: res.data,
+                mayaJson: tryParseJson(maya_json),
+                gurujiJson: tryParseJson(guruji_json),
+                psycologyJson: tryParseJson(psycology_json),
+                bubbles: bubbles || [],
+                delays: delays || [],
+                animating: true,
+                message_id: message_id,
+                time: timestamp ? formatTime(timestamp) : getCurrentTime(),
+                timestamp: timestamp || new Date().toISOString(),
+                arrivalTime: Date.now(),
+                trigger_guruji: trigger_guruji // Store this for tick logic
 
-                return deduplicateMessages([...prev, newMsg]);
-            });
+            }]);
             if (trigger_guruji) {
                 setSendingWaitMessage("Sending to Astrologer");
                 setIsSendingToBackend(true);
@@ -2525,23 +2549,6 @@ const Chat = () => {
                                                     Modelling %
                                                 </Typography>
                                             )}
-                                            {(jsonVisibility.maya || jsonVisibility.guruji) && (
-                                                <Typography
-                                                    onClick={() => setJsonVisibility(prev => ({ ...prev, logs: !prev.logs }))}
-                                                    sx={{
-                                                        fontSize: '0.65rem',
-                                                        color: jsonVisibility.logs ? '#F36A2F' : 'rgba(0,0,0,0.4)',
-                                                        fontWeight: 800,
-                                                        cursor: 'pointer',
-                                                        textTransform: 'uppercase',
-                                                        textDecoration: 'underline',
-                                                        transition: 'color 0.2s',
-                                                        '&:hover': { color: '#F36A2F' }
-                                                    }}
-                                                >
-                                                    Session Logs
-                                                </Typography>
-                                            )}
                                         </Box>
                                     )}
 
@@ -2552,7 +2559,7 @@ const Chat = () => {
                                         msg.mayaJson.MSG_LANGUAGE.toLowerCase() !== 'english' && (
                                             <TranslationIndicator
                                                 text={`Translated to your language / language style by MAYA AI`}
-                                                sx={{ mt: reportState === 'IDLE' ? '3px' : '3px', position: 'relative', top: -12 }}
+                                                sx={{ mt: reportState === 'IDLE' ? '3px' : '3px', position: 'relative', top: -9 }}
                                             />
                                         )}
                                 </Box>
@@ -2578,7 +2585,7 @@ const Chat = () => {
                         return (
                             <Box key={i} sx={{ width: '100%', mb: 0 }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 1 }}>
-                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: 1 }}>You</Typography>
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: 0 }}>You</Typography>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
                                             p: '12px 16px 14px 12px',
@@ -2622,25 +2629,9 @@ const Chat = () => {
                                 </Box>
                                 <MayaTemplateBox
                                     // name={userName.split(' ')[0]}
-                                    content={(() => {
-                                        const amount = msg.chat_payment_amount !== undefined ? msg.chat_payment_amount : 39;
-                                        const actualAmount = msg.actual_chat_payment_amount || 39;
-                                        const level = msg.paywall_level || 'LEVEL_1';
-
-                                        if (amount === 0) {
-                                            let levelBadge = '';
-                                            if (level === 'LEVEL_2') levelBadge = ' <span style="color: #F36A2F; font-weight: 900;">[PRIORITY]</span>';
-                                            if (level === 'LEVEL_3') levelBadge = ' <span style="color: #F36A2F; font-weight: 900;">[EXCLUSIVE]</span>';
-
-                                            return `<span style="font-weight: 800;">This is a premium prediction${levelBadge} worth ₹${actualAmount} - but get it for free now.</span> \n\n <span style="color: #54A170">Subscribe</span> to get unlimited answers access for a day, month or a quarter.`;
-                                        } else {
-                                            let title = 'This is a premium prediction.';
-                                            if (level === 'LEVEL_2') title = 'This is a <span style="color: #F36A2F;">Level 2</span> prediction.';
-                                            if (level === 'LEVEL_3') title = 'This is an <span style="color: #F36A2F;">Level 3</span>.';
-
-                                            return `<span style="font-weight: 800;">${title}</span>\n Get the answer for <span style="text-decoration: line-through;">₹${actualAmount}</span> ₹${amount}.<p style="margin-top: 15px;">Or you may <span style="color: #54A170; text-decoration: underline;">subscribe now</span> <span style="font-weight: 800;">to get unlimited answers access </span>for a day, month or a quarter.</p>`;
-                                        }
-                                    })()}
+                                    content={msg.chat_payment_amount === 0
+                                        ? `<span style="font-weight: 800;">This is a premium prediction worth ₹${msg.actual_chat_payment_amount || 39} - but get it for free now.</span> \n\n <span style="color: #54A170">Subscribe</span> to get unlimited answers access for a day, month or a quarter.`
+                                        : `<span style="font-weight: 800;">This is a premium prediction.</span>\n Get the answer for <span style="text-decoration: line-through;">₹${msg.actual_chat_payment_amount || 39}</span> ₹${msg.chat_payment_amount || 39}.<p style="margin-top: 15px;">Or you may <span style="color: #54A170; text-decoration: underline;">subscribe now</span> <span style="font-weight: 800;">to get unlimited answers access </span>for a day, month or a quarter.</p>`}
                                     buttonLabel={(() => {
                                         const lastPaymentMsgIdx = messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1);
                                         const isOldPayment = i < lastPaymentMsgIdx;
@@ -2682,7 +2673,7 @@ const Chat = () => {
                                     </Typography> */}
                                     <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap', flexDirection: 'column' }}>
-                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: .1 }}>
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: 0 }}>
                                                 {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                             </Typography>
 
@@ -2824,7 +2815,7 @@ const Chat = () => {
                                                                 opacity: 0.8,
                                                                 position: 'absolute',
                                                                 bottom: 2,
-                                                                right: 0,
+                                                                right: 8,
                                                                 color: msg.role === 'user' ? (msg.requires_chat_payment ? 'rgba(255,255,255,0.7)' : '#494848') : '#494848',
                                                                 fontWeight: 500,
                                                                 pt: 1,
@@ -3348,50 +3339,6 @@ const Chat = () => {
                     </Typography>
                 </Box>
             )} */}
-            {/* Session Logs View */}
-            {jsonVisibility.logs && (
-                <Box sx={{
-                    position: 'fixed',
-                    top: '80px',
-                    left: '10px',
-                    right: '10px',
-                    bottom: '100px',
-                    bgcolor: 'rgba(0,0,0,0.85)',
-                    color: '#00ff00',
-                    p: 2,
-                    borderRadius: 2,
-                    zIndex: 10000,
-                    overflowY: 'auto',
-                    fontFamily: 'monospace',
-                    fontSize: '0.75rem',
-                    border: '1px solid #333',
-                    pointerEvents: 'auto'
-                }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, borderBottom: '1px solid #333', pb: 1 }}>
-                        <Typography sx={{ fontWeight: 800, fontSize: '0.8rem' }}>SESSION DEBUG LOGS</Typography>
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <Typography
-                                onClick={() => localStorage.removeItem('chatSessionLogs')}
-                                sx={{ cursor: 'pointer', color: '#ff0000', fontSize: '0.7rem' }}
-                            >
-                                CLEAR
-                            </Typography>
-                            <Typography
-                                onClick={() => setJsonVisibility(prev => ({ ...prev, logs: false }))}
-                                sx={{ cursor: 'pointer', color: '#fff', fontSize: '0.7rem' }}
-                            >
-                                CLOSE
-                            </Typography>
-                        </Box>
-                    </Box>
-                    {(JSON.parse(localStorage.getItem('chatSessionLogs') || '[]')).map((log, i) => (
-                        <Box key={i} sx={{ mb: 0.5, display: 'flex', gap: 1 }}>
-                            <span style={{ color: '#888', minWidth: '60px' }}>[{log.time}]</span>
-                            <span>{log.message}</span>
-                        </Box>
-                    ))}
-                </Box>
-            )}
             {/* Full JSON Modal */}
             <Dialog
                 open={jsonModal.open}
