@@ -176,7 +176,7 @@ const Dashboard = () => {
             >
                 <Header
                     backgroundImage="/svg/top_curve_light.svg"
-                    // showProfile={isLoggedIn}.
+                    // showProfile={isLoggedIn}...
                     name={userName?.split(' ')[0] || ""}
                     profiledob={profileDob}
                     profilebirthstar={profilebirthstar}
