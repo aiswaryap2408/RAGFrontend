@@ -761,10 +761,10 @@ const deduplicateHistory = (historyArr) => {
 
     for (let i = 0; i < historyArr.length; i++) {
         const msg = historyArr[i];
-        
+
         if (msg.role === 'user') {
             const msgTime = new Date(msg.timestamp || msg.created_at || Date.now()).getTime();
-            
+
             // If the user sends the exact same message within 2 minutes (120000 ms), treat as retry duplicate
             if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 120000)) {
                 skippingDuplicateBlock = true;
@@ -841,6 +841,32 @@ const Chat = () => {
 
     // Helper to get current time string
     const getCurrentTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+
+    const [sessionLogs, setSessionLogs] = useState([]);
+    const addSessionLog = (msg) => {
+        const logEntry = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        setSessionLogs(prev => [...prev, logEntry]);
+        console.log(logEntry);
+    };
+
+    const applyHistoryUpdate = (history) => {
+        if (!history || !Array.isArray(history)) return;
+        const mappedHistory = history.map(msg => ({
+            ...msg,
+            time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
+            gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
+            mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+            psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
+            gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
+            animating: false
+        }));
+        setMessages(deduplicateHistory(mappedHistory));
+    };
+
+    const deduplicateMessages = (msgs) => {
+        if (!Array.isArray(msgs)) return msgs;
+        return deduplicateHistory(msgs);
+    };
 
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
@@ -1019,7 +1045,7 @@ const Chat = () => {
         if (lastMsg && lastMsg.role === 'assistant' && lastMsg.assistant === 'maya' && secondLastMsg && secondLastMsg.role === 'user') {
             const explicitlyTriggered = lastMsg.trigger_guruji === true;
             const implicitlyTriggered = lastMsg.trigger_guruji === undefined && lastMsg.mayaJson && !lastMsg.mayaJson.is_safety_warning && !lastMsg.requires_chat_payment && !(typeof lastMsg.content === 'string' && (lastMsg.content.toLowerCase().includes('error') || lastMsg.content.toLowerCase().includes('sorry') || lastMsg.content.toLowerCase().includes('offline')));
-            
+
             if (explicitlyTriggered || implicitlyTriggered) {
                 if (!isSendingToBackend) {
                     console.log("DEBUG: Recovering missing Guruji response...");
@@ -1027,7 +1053,7 @@ const Chat = () => {
                     const historyForGuruji = currentHistory.length > 2 ? currentHistory.slice(1, -2) : [];
                     const sanitizedHistory = sanitizeHistory(historyForGuruji);
                     const paymentId = secondLastMsg.is_paid ? secondLastMsg.payment_id : null;
-                    
+
                     setIsSendingToBackend(true);
                     setSendingWaitMessage("Astrologer is typing");
                     fetchGurujiResponse(mobile, secondLastMsg.content, sanitizedHistory, currentLocalSid, paymentId);
@@ -1123,7 +1149,7 @@ const Chat = () => {
                             return;
                         }
 
-                        // Scenario 3: Load history (Relaxed logic + Parsing)
+                        // Scenario 3: Load history (Relaxed logic + Parsing) ..
                         const history = mostRecentSession.messages;
                         if (history && history.length > 0) {
                             console.log("DEBUG: Scenario 3 - Resuming Session:", mostRecentSession.session_id);
@@ -1174,7 +1200,7 @@ const Chat = () => {
             if (document.visibilityState === 'visible' && !isSendingToBackend && messageQueue.length === 0 && userStatus === 'ready') {
                 const mobile = localStorage.getItem('mobile');
                 const currentLocalSid = localStorage.getItem('activeSessionId');
-                
+
                 if (mobile && currentLocalSid) {
                     try {
                         const res = await getChatHistory(mobile);
@@ -1192,19 +1218,19 @@ const Chat = () => {
                                         gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
                                         animating: false
                                     }));
-                                    
+
                                     const dedupHistory = deduplicateHistory(mappedHistory);
-                                    
+
                                     setMessages(prev => {
                                         if (prev.length === 0) return prev;
-                                        
+
                                         const lastLocal = prev[prev.length - 1];
                                         const hasLocalError = lastLocal?.role === 'assistant' && lastLocal?.assistant === 'maya' && (
                                             (typeof lastLocal.content === 'string' && lastLocal.content.includes('Sorry, I encountered an error')) ||
                                             (typeof lastLocal.content === 'string' && lastLocal.content.includes('Guruji is not available right now')) ||
                                             (typeof lastLocal.content === 'string' && lastLocal.content.includes('Network Error'))
                                         );
-                                        
+
                                         if (hasLocalError || dedupHistory.length > prev.length) {
                                             attemptGurujiRecovery(dedupHistory, currentLocalSid);
                                             return dedupHistory;
@@ -1517,37 +1543,47 @@ const Chat = () => {
         setLoading(true);
         setIsSendingToBackend(true);
         setSendingWaitMessage("Sending to Astrologer");
+        addSessionLog("Wait State: Sending to Astrologer");
+        console.log(`[${ getCurrentTime() }] Wait State: Sending to Astrologer`);
 
         try {
             const referenceid = localStorage.getItem('currentProfileId');
             const sanitizedHistory = sanitizeHistory(history);
+            addSessionLog(`Guruji receiving message: ${ text }`);
+            console.log(`[${ getCurrentTime() }] Guruji receiving message:`, text);
             const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
-            // const res = await getGurujiResponse(mobile, text, history, sessionId, paymentId);
             setSendingWaitMessage("Astrologer is typing");
+            addSessionLog("Wait State: Astrologer is typing");
+            console.log(`[${ getCurrentTime() }] Wait State: Astrologer is typing`);
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, guruji_input, bubbles, delays, timestamp, message_id } = res.data;
-
+            addSessionLog(`Guruji replied with: ${ answer.substring(0, 50) }...`);
+            console.log(`[${ getCurrentTime() }] Guruji replied with:`, answer);
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
-            setMessages(prev => [...prev, {
-                role: 'assistant',
-                content: answer,
-                assistant: 'guruji',
-                metrics,
-                context,
-                amount,
-                rawResponse: res.data,
-                mayaJson: tryParseJson(maya_json),
-                gurujiJson: tryParseJson(guruji_json),
-                psycologyJson: tryParseJson(psycology_json),
-                gurujiInput: tryParseJson(guruji_input),
-                bubbles: bubbles || [],
-                delays: delays || [],
-                animating: true,
-                message_id: message_id,
-                time: timestamp ? formatTime(timestamp) : getCurrentTime(),
-                timestamp: timestamp || new Date().toISOString(),
-                arrivalTime: Date.now()
-            }]);
+            setMessages(prev => {
+                const newMsg = {
+                    role: 'assistant',
+                    content: answer,
+                    assistant: 'guruji',
+                    metrics,
+                    context,
+                    amount,
+                    rawResponse: res.data,
+                    mayaJson: tryParseJson(maya_json),
+                    gurujiJson: tryParseJson(guruji_json),
+                    psycologyJson: tryParseJson(psycology_json),
+                    gurujiInput: tryParseJson(guruji_input),
+                    bubbles: bubbles || [],
+                    delays: delays || [],
+                    animating: true,
+                    message_id: message_id,
+                    time: timestamp ? formatTime(timestamp) : getCurrentTime(),
+                    timestamp: timestamp || new Date().toISOString(),
+                    arrivalTime: Date.now()
+                };
+
+                return deduplicateMessages([...prev, newMsg]);
+            });
             if (guruji_json) {
                 setIsAnimating(true);
             } else {
@@ -1556,6 +1592,45 @@ const Chat = () => {
             }
         } catch (err) {
             console.error("Guruji Error:", err);
+
+            // Mobile app background network kill recovery
+            const isNetworkError = !err.response && (err.message === 'Network Error' || err.code === 'ECONNABORTED');
+
+            if (isNetworkError) {
+                console.log("Network dropped. Entering silent recovery polling...");
+                setSendingWaitMessage("Astrologer is typing"); // Keep the user waiting gracefully
+
+                let recovered = false;
+                // Poll history 4 times, every 4 seconds (total ~16 seconds)
+                for (let i = 0; i < 4; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 4000));
+                    try {
+                        const historyRes = await getChatHistory(mobile);
+                        if (historyRes.data.sessions && historyRes.data.sessions.length > 0) {
+                            const thisSession = historyRes.data.sessions.find(s => s.session_id === sessionId);
+                            if (thisSession && thisSession.messages) {
+                                // Check if the last server message is from guruji
+                                const lastServerMsg = thisSession.messages[thisSession.messages.length - 1];
+                                if (lastServerMsg && (lastServerMsg.assistant === 'guruji' || lastServerMsg.role === 'guruji' || lastServerMsg.guruji_json)) {
+                                    console.log("Recovered Guruji response from background!");
+                                    applyHistoryUpdate(thisSession.messages);
+                                    recovered = true;
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (pollErr) {
+                        console.error("Poll error during silent recovery:", pollErr);
+                    }
+                }
+
+                if (recovered) {
+                    setIsSendingToBackend(false);
+                    setSendingWaitMessage("");
+                    setLoading(false);
+                    return; // Successfully recovered, skip the fallback error
+                }
+            }
             const errMsg = err.response?.data?.detail || err.message || 'Guruji is not available right now. Please try again after some time.';
             setMessages(prev => [...prev, {
                 role: 'assistant',
