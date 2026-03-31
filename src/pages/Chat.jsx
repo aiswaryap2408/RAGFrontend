@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import api, { sendMessage, getGurujiResponse, endChat, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment } from '../api';
+import api, { sendMessage, getGurujiResponse, endChat, startSession, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment } from '../api';
 import axios from 'axios';
 
 import {
@@ -978,7 +978,6 @@ const Chat = () => {
     };
 
     const syncInProgressRef = useRef(false);
-    const requestInProgressRef = useRef(false);
 
     const deduplicateMessages = (historyArr) => {
         if (!Array.isArray(historyArr)) return [];
@@ -1146,31 +1145,31 @@ const Chat = () => {
     }, [location.state]);
 
     // Auto-refresh chat history when app becomes visible (e.g. returning from background)
-    useEffect(() => {
+    /* useEffect(() => {
         const handleVisibilityChange = async () => {
             if (document.visibilityState === 'visible') {
-                await new Promise(r => setTimeout(r, 1500));
+                if (syncInProgressRef.current) return;
 
                 const mobile = localStorage.getItem('mobile');
                 const currentLocalSid = localStorage.getItem('activeSessionId');
-
-                if (mobile && currentLocalSid) {
+                // Only refresh if we have an active session and are not currently waiting for a fresh load
+                if (mobile && currentLocalSid && !processedNewSession.current) {
                     try {
                         syncInProgressRef.current = true;
-
+                        addSessionLog("Auto-refreshing history (Visibility change)...");
+                        console.log("DEBUG: App became visible, auto-refreshing history...");
                         const res = await getChatHistory(mobile);
-
-                        if (res.data.sessions?.length > 0) {
-                            const session = res.data.sessions.find(
-                                s => s.session_id === currentLocalSid
-                            );
-
-                            if (session && session.messages?.length > 0) {
-                                applyHistoryUpdate(session.messages);
+                        if (res.data.sessions && res.data.sessions.length > 0) {
+                            const localSessionOnServer = res.data.sessions.find(s => s.session_id === currentLocalSid);
+                            if (localSessionOnServer && !localSessionOnServer.is_ended) {
+                                const history = localSessionOnServer.messages;
+                                if (history && history.length > 0) {
+                                    applyHistoryUpdate(history);
+                                }
                             }
                         }
                     } catch (err) {
-                        console.error("Auto-sync failed:", err);
+                        console.error("Visibility auto-refresh failed:", err);
                     } finally {
                         syncInProgressRef.current = false;
                     }
@@ -1180,7 +1179,7 @@ const Chat = () => {
 
         document.addEventListener("visibilitychange", handleVisibilityChange);
         return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-    }, []);
+    }, []); */
 
     const scrollToTop = () => {
         if (containerRef.current) {
@@ -1332,7 +1331,11 @@ const Chat = () => {
         setFeedbackSubmitted(false);
         setChatStarted(false);
 
-
+        // Register the new session on the server immediately so it survives page reload
+        const mobile = localStorage.getItem('mobile');
+        if (mobile) {
+            startSession(mobile, newSid).catch(err => console.error('Failed to register session:', err));
+        }
     };
 
     const handleEndChat = async (keepFeedback = false) => {
@@ -1466,20 +1469,19 @@ const Chat = () => {
         }));
     };
 
-    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null, userMessageId = null) => {
+    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null) => {
         setLoading(true);
         setIsSendingToBackend(true);
-        requestInProgressRef.current = true;
         setSendingWaitMessage("Sending to Astrologer");
         addSessionLog("Wait State: Sending to Astrologer");
         console.log(`[${getCurrentTime()}] Wait State: Sending to Astrologer`);
-        // ... (omitting intermediate lines for brevity if tool allows, but I'll include them)
+
         try {
             const referenceid = localStorage.getItem('currentProfileId');
             const sanitizedHistory = sanitizeHistory(history);
             addSessionLog(`Guruji receiving message: ${text}`);
             console.log(`[${getCurrentTime()}] Guruji receiving message:`, text);
-            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, userMessageId);
+            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
             setSendingWaitMessage("Astrologer is typing");
             addSessionLog("Wait State: Astrologer is typing");
             console.log(`[${getCurrentTime()}] Wait State: Astrologer is typing`);
@@ -1520,32 +1522,17 @@ const Chat = () => {
             }
         } catch (err) {
             console.error("Guruji Error:", err);
-
-            setSendingWaitMessage("Reconnecting...");
-
-            setTimeout(async () => {
-                try {
-                    const mobile = localStorage.getItem('mobile');
-
-                    const res = await getChatHistory(mobile);
-
-                    if (res.data.sessions?.length > 0) {
-                        const latestSession = res.data.sessions[0];
-
-                        if (latestSession.messages?.length > 0) {
-                            applyHistoryUpdate(latestSession.messages);
-                        }
-                    }
-                } catch (e) {
-                    console.error("Recovery failed:", e);
-                } finally {
-                    setSendingWaitMessage("");
-                    setIsSendingToBackend(false);
-                }
-            }, 2000);
+            const errMsg = err.response?.data?.detail || err.message || 'Guruji is not available right now. Please try again after some time.';
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                assistant: 'maya',
+                content: errMsg,
+                time: getCurrentTime()
+            }]);
+            setIsSendingToBackend(false);
+            setSendingWaitMessage("");
         } finally {
             setLoading(false);
-            requestInProgressRef.current = false;
             // setIsSendingToBackend(false); // Keep buffering if Guruji is about to respond/animating
             // setSendingWaitMessage("");
         }
@@ -1722,7 +1709,6 @@ const Chat = () => {
 
         setLoading(true);
         setIsSendingToBackend(true);
-        requestInProgressRef.current = true;
         scrollToBottom();
         setSendingWaitMessage("Sending to Maya");
         addSessionLog("Wait State: Sending to Maya");
@@ -1752,14 +1738,12 @@ const Chat = () => {
 
             // Call backend ONCE securely outside the state setter.
             const sanitizedHistory = sanitizeHistory(historyWithoutNewlyQueued);
-            const lastUserMsg = messages[messages.length - 1];
             sendToBackend(mobile, combinedText, sanitizedHistory);
 
         } catch (err) {
             console.error("Queue Processing Error:", err);
             setLoading(false);
             setIsSendingToBackend(false);
-            requestInProgressRef.current = false;
         }
     };
 
@@ -1768,8 +1752,7 @@ const Chat = () => {
         try {
             addSessionLog(`Maya receiving message: ${combinedText}`);
             console.log(`[${getCurrentTime()}] Maya receiving message:`, combinedText);
-            const referenceid = localStorage.getItem('currentProfileId');
-            const res = await sendMessage(mobile, combinedText, history, sessionId, null, referenceid);
+            const res = await sendMessage(mobile, combinedText, history, sessionId);
 
             // Handle rate limit / offline
             if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
@@ -1848,7 +1831,11 @@ const Chat = () => {
 
                 return deduplicateMessages([...prev, newMsg]);
             });
-            await fetchGurujiResponse(mobile, combinedText, history, sessionId);
+            if (trigger_guruji) {
+                setSendingWaitMessage("Sending to Astrologer");
+                setIsSendingToBackend(true);
+                await fetchGurujiResponse(mobile, combinedText, history, sessionId);
+            }
 
 
         } catch (err) {
@@ -1869,7 +1856,6 @@ const Chat = () => {
             if (!trigger_guruji_flag) {
                 setIsSendingToBackend(false);
                 setSendingWaitMessage("");
-                requestInProgressRef.current = false;
             }
             scrollToBottom();
         }
