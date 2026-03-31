@@ -978,6 +978,7 @@ const Chat = () => {
     };
 
     const syncInProgressRef = useRef(false);
+    const requestInProgressRef = useRef(false);
 
     const deduplicateMessages = (historyArr) => {
         if (!Array.isArray(historyArr)) return [];
@@ -1145,10 +1146,16 @@ const Chat = () => {
     }, [location.state]);
 
     // Auto-refresh chat history when app becomes visible (e.g. returning from background)
-    /* useEffect(() => {
+    useEffect(() => {
         const handleVisibilityChange = async () => {
             if (document.visibilityState === 'visible') {
-                if (syncInProgressRef.current) return;
+                // Short delay to allow "resuming" network requests to finish/fail
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                if (syncInProgressRef.current || requestInProgressRef.current) {
+                    console.log("DEBUG [Visibility]: Sync skipped - Task already in progress.");
+                    return;
+                }
 
                 const mobile = localStorage.getItem('mobile');
                 const currentLocalSid = localStorage.getItem('activeSessionId');
@@ -1179,7 +1186,7 @@ const Chat = () => {
 
         document.addEventListener("visibilitychange", handleVisibilityChange);
         return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-    }, []); */
+    }, []);
 
     const scrollToTop = () => {
         if (containerRef.current) {
@@ -1469,19 +1476,20 @@ const Chat = () => {
         }));
     };
 
-    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null) => {
+    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null, userMessageId = null) => {
         setLoading(true);
         setIsSendingToBackend(true);
+        requestInProgressRef.current = true;
         setSendingWaitMessage("Sending to Astrologer");
         addSessionLog("Wait State: Sending to Astrologer");
         console.log(`[${getCurrentTime()}] Wait State: Sending to Astrologer`);
-
+// ... (omitting intermediate lines for brevity if tool allows, but I'll include them)
         try {
             const referenceid = localStorage.getItem('currentProfileId');
             const sanitizedHistory = sanitizeHistory(history);
             addSessionLog(`Guruji receiving message: ${text}`);
             console.log(`[${getCurrentTime()}] Guruji receiving message:`, text);
-            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
+            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, userMessageId);
             setSendingWaitMessage("Astrologer is typing");
             addSessionLog("Wait State: Astrologer is typing");
             console.log(`[${getCurrentTime()}] Wait State: Astrologer is typing`);
@@ -1533,6 +1541,7 @@ const Chat = () => {
             setSendingWaitMessage("");
         } finally {
             setLoading(false);
+            requestInProgressRef.current = false;
             // setIsSendingToBackend(false); // Keep buffering if Guruji is about to respond/animating
             // setSendingWaitMessage("");
         }
@@ -1709,6 +1718,7 @@ const Chat = () => {
 
         setLoading(true);
         setIsSendingToBackend(true);
+        requestInProgressRef.current = true;
         scrollToBottom();
         setSendingWaitMessage("Sending to Maya");
         addSessionLog("Wait State: Sending to Maya");
@@ -1738,21 +1748,24 @@ const Chat = () => {
 
             // Call backend ONCE securely outside the state setter.
             const sanitizedHistory = sanitizeHistory(historyWithoutNewlyQueued);
-            sendToBackend(mobile, combinedText, sanitizedHistory);
+            const lastUserMsg = messages[messages.length - 1];
+            sendToBackend(mobile, combinedText, sanitizedHistory, lastUserMsg?.timestamp, lastUserMsg?.time);
 
         } catch (err) {
             console.error("Queue Processing Error:", err);
             setLoading(false);
             setIsSendingToBackend(false);
+            requestInProgressRef.current = false;
         }
     };
 
-    const sendToBackend = async (mobile, combinedText, history) => {
+    const sendToBackend = async (mobile, combinedText, history, timestamp = null, time = null) => {
         let trigger_guruji_flag = false;
         try {
             addSessionLog(`Maya receiving message: ${combinedText}`);
             console.log(`[${getCurrentTime()}] Maya receiving message:`, combinedText);
-            const res = await sendMessage(mobile, combinedText, history, sessionId);
+            const referenceid = localStorage.getItem('currentProfileId');
+            const res = await sendMessage(mobile, combinedText, history, sessionId, null, referenceid, timestamp, time);
 
             // Handle rate limit / offline
             if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
@@ -1800,7 +1813,7 @@ const Chat = () => {
                 return;
             }
 
-            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id, trigger_guruji } = res.data;
+            const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp: serverTimestamp, message_id, trigger_guruji } = res.data;
             addSessionLog(`Maya replied with: ${answer.substring(0, 50)}...`);
             console.log(`[${getCurrentTime()}] Maya replied with:`, answer);
             trigger_guruji_flag = trigger_guruji;
@@ -1823,8 +1836,8 @@ const Chat = () => {
                     delays: delays || [],
                     animating: true,
                     message_id: message_id,
-                    time: timestamp ? formatTime(timestamp) : getCurrentTime(),
-                    timestamp: timestamp || new Date().toISOString(),
+                    time: serverTimestamp ? formatTime(serverTimestamp) : getCurrentTime(),
+                    timestamp: serverTimestamp || new Date().toISOString(),
                     arrivalTime: Date.now(),
                     trigger_guruji: trigger_guruji // Store this for tick logic
                 };
@@ -1834,7 +1847,7 @@ const Chat = () => {
             if (trigger_guruji) {
                 setSendingWaitMessage("Sending to Astrologer");
                 setIsSendingToBackend(true);
-                await fetchGurujiResponse(mobile, combinedText, history, sessionId);
+                await fetchGurujiResponse(mobile, combinedText, history, sessionId, null, res.data.message_id);
             }
 
 
@@ -1856,6 +1869,7 @@ const Chat = () => {
             if (!trigger_guruji_flag) {
                 setIsSendingToBackend(false);
                 setSendingWaitMessage("");
+                requestInProgressRef.current = false;
             }
             scrollToBottom();
         }
