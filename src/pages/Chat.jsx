@@ -1602,8 +1602,8 @@ const Chat = () => {
                 setSendingWaitMessage("Astrologer is typing"); // Keep the user waiting gracefully
 
                 let recovered = false;
-                // Poll history 4 times, every 4 seconds (total ~16 seconds)
-                for (let i = 0; i < 4; i++) {
+                // Poll history 10 times, every 4 seconds (total ~40 seconds)
+                for (let i = 0; i < 10; i++) {
                     await new Promise(resolve => setTimeout(resolve, 4000));
                     try {
                         const historyRes = await getChatHistory(mobile);
@@ -1630,6 +1630,16 @@ const Chat = () => {
                     setSendingWaitMessage("");
                     setLoading(false);
                     return; // Successfully recovered, skip the fallback error
+                } else if (isDuplicate) {
+                    // Valid request is still crunching in the backend
+                    const errMsg = "Guruji is contemplating your stars deeply. This may take another moment, your answer will appear shortly. You can also refresh the page.";
+                    setMessages(prev => [...prev, {
+                        role: 'assistant', assistant: 'maya', content: errMsg, time: getCurrentTime()
+                    }]);
+                    setIsSendingToBackend(false);
+                    setSendingWaitMessage("");
+                    setLoading(false);
+                    return;
                 }
             }
             const errMsg = err.response?.data?.detail || err.message || 'Guruji is not available right now. Please try again after some time.';
@@ -1942,7 +1952,7 @@ const Chat = () => {
         } catch (err) {
             console.error("Chat Error:", err);
             if (err.response?.status === 409) {
-                console.log("Duplicate Maya request detected, ignoring.");
+                console.log("Duplicate Maya request detected, trusting backend process.");
                 return;
             }
             // If it's a 404/401/403, the interceptor will handle redirect to login
