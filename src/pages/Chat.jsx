@@ -1542,7 +1542,7 @@ const Chat = () => {
         }));
     };
 
-    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null) => {
+    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null, idempotencyKey = null) => {
         setLoading(true);
         setIsSendingToBackend(true);
         setSendingWaitMessage("Sending to Astrologer");
@@ -1559,6 +1559,9 @@ const Chat = () => {
             const duration = Date.now() - startTime;
             addSessionLog(`Guruji API responded in ${duration}ms`);
 
+            addSessionLog(`Guruji receiving message: ${ text }`);
+            console.log(`[${ getCurrentTime() }] Guruji receiving message:`, text);
+            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, idempotencyKey);
             setSendingWaitMessage("Astrologer is typing");
             addSessionLog("Wait State: Astrologer is typing");
             console.log(`[${getCurrentTime()}] Wait State: Astrologer is typing`);
@@ -1601,8 +1604,9 @@ const Chat = () => {
             console.error("Guruji Error:", err);
             addSessionLog(`Guruji Error: ${err.message || 'Unknown error'}`);
 
-            // Mobile app background network kill recovery
+            // Mobile app background network kill recovery or Duplicate request
             const isNetworkError = !err.response && (err.message === 'Network Error' || err.code === 'ECONNABORTED');
+            const isDuplicate = err.response?.status === 409;
 
             if (isNetworkError) {
                 addSessionLog("Network dropped. Entering silent recovery polling...");
@@ -1613,6 +1617,13 @@ const Chat = () => {
                 // Poll history 4 times, every 4 seconds (total ~16 seconds)
                 for (let i = 0; i < 4; i++) {
                     addSessionLog(`Recovery attempt ${i + 1}/4...`);
+            if (isNetworkError || isDuplicate) {
+                console.log("Network dropped or duplicate. Entering silent recovery polling...");
+                setSendingWaitMessage("Astrologer is typing"); // Keep the user waiting gracefully
+
+                let recovered = false;
+                // Poll history 10 times, every 4 seconds (total ~40 seconds)
+                for (let i = 0; i < 10; i++) {
                     await new Promise(resolve => setTimeout(resolve, 4000));
                     try {
                         const historyRes = await getChatHistory(mobile);
@@ -1642,6 +1653,16 @@ const Chat = () => {
                     return; // Successfully recovered, skip the fallback error
                 } else {
                     addSessionLog("Recovery failed after 4 attempts.");
+                } else if (isDuplicate) {
+                    // Valid request is still crunching in the backend
+                    const errMsg = "Guruji is contemplating your stars deeply. This may take another moment, your answer will appear shortly. You can also refresh the page.";
+                    setMessages(prev => [...prev, {
+                        role: 'assistant', assistant: 'maya', content: errMsg, time: getCurrentTime()
+                    }]);
+                    setIsSendingToBackend(false);
+                    setSendingWaitMessage("");
+                    setLoading(false);
+                    return;
                 }
             }
             const errMsg = err.response?.data?.detail || err.message || 'Guruji is not available right now. Please try again after some time.';
@@ -1858,7 +1879,8 @@ const Chat = () => {
 
             // Call backend ONCE securely outside the state setter.
             const sanitizedHistory = sanitizeHistory(historyWithoutNewlyQueued);
-            sendToBackend(mobile, combinedText, sanitizedHistory);
+            const idempotencyKey = `REQ_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            sendToBackend(mobile, combinedText, sanitizedHistory, idempotencyKey);
 
         } catch (err) {
             console.error("Queue Processing Error:", err);
@@ -1867,7 +1889,7 @@ const Chat = () => {
         }
     };
 
-    const sendToBackend = async (mobile, combinedText, history) => {
+    const sendToBackend = async (mobile, combinedText, history, idempotencyKey = null) => {
         let trigger_guruji_flag = false;
         try {
             addSessionLog(`Sending message to Maya: ${combinedText}`);
@@ -1876,6 +1898,7 @@ const Chat = () => {
             const res = await sendMessage(mobile, combinedText, history, sessionId);
             const duration = Date.now() - startTime;
             addSessionLog(`Maya API responded in ${duration}ms`);
+            const res = await sendMessage(mobile, combinedText, history, sessionId, null, null, idempotencyKey);
 
             // Handle rate limit / offline
             if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
@@ -1956,12 +1979,16 @@ const Chat = () => {
             if (trigger_guruji) {
                 setSendingWaitMessage("Sending to Astrologer");
                 setIsSendingToBackend(true);
-                await fetchGurujiResponse(mobile, combinedText, history, sessionId);
+                await fetchGurujiResponse(mobile, combinedText, history, sessionId, null, idempotencyKey ? `${idempotencyKey}_guruji` : null);
             }
 
 
         } catch (err) {
             console.error("Chat Error:", err);
+            if (err.response?.status === 409) {
+                console.log("Duplicate Maya request detected, trusting backend process.");
+                return;
+            }
             // If it's a 404/401/403, the interceptor will handle redirect to login
             // Only show error message for other types of errors
             if (err.response?.status !== 404 && err.response?.status !== 401 && err.response?.status !== 403) {
