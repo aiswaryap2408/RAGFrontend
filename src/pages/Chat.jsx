@@ -1555,13 +1555,10 @@ const Chat = () => {
             addSessionLog(`Guruji receiving message: ${text}`);
             console.log(`[${getCurrentTime()}] Guruji receiving message:`, text);
             const startTime = Date.now();
-            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
+            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, idempotencyKey);
             const duration = Date.now() - startTime;
             addSessionLog(`Guruji API responded in ${duration}ms`);
 
-            addSessionLog(`Guruji receiving message: ${ text }`);
-            console.log(`[${ getCurrentTime() }] Guruji receiving message:`, text);
-            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, idempotencyKey);
             setSendingWaitMessage("Astrologer is typing");
             addSessionLog("Wait State: Astrologer is typing");
             console.log(`[${getCurrentTime()}] Wait State: Astrologer is typing`);
@@ -1604,33 +1601,23 @@ const Chat = () => {
             console.error("Guruji Error:", err);
             addSessionLog(`Guruji Error: ${err.message || 'Unknown error'}`);
 
-            // Mobile app background network kill recovery or Duplicate request
             const isNetworkError = !err.response && (err.message === 'Network Error' || err.code === 'ECONNABORTED');
             const isDuplicate = err.response?.status === 409;
 
-            if (isNetworkError) {
-                addSessionLog("Network dropped. Entering silent recovery polling...");
-                console.log("Network dropped. Entering silent recovery polling...");
-                setSendingWaitMessage("Astrologer is typing"); // Keep the user waiting gracefully
-
-                let recovered = false;
-                // Poll history 4 times, every 4 seconds (total ~16 seconds)
-                for (let i = 0; i < 4; i++) {
-                    addSessionLog(`Recovery attempt ${i + 1}/4...`);
             if (isNetworkError || isDuplicate) {
-                console.log("Network dropped or duplicate. Entering silent recovery polling...");
-                setSendingWaitMessage("Astrologer is typing"); // Keep the user waiting gracefully
+                addSessionLog(isNetworkError ? "Network dropped. Entering silent recovery polling..." : "Duplicate request. Checking for existing response...");
+                console.log(isNetworkError ? "Network dropped. Entering silent recovery polling..." : "Duplicate request. Checking for existing response...");
+                setSendingWaitMessage("Astrologer is typing");
 
                 let recovered = false;
-                // Poll history 10 times, every 4 seconds (total ~40 seconds)
                 for (let i = 0; i < 10; i++) {
+                    addSessionLog(`Recovery attempt ${i + 1}/10...`);
                     await new Promise(resolve => setTimeout(resolve, 4000));
                     try {
                         const historyRes = await getChatHistory(mobile);
                         if (historyRes.data.sessions && historyRes.data.sessions.length > 0) {
                             const thisSession = historyRes.data.sessions.find(s => s.session_id === sessionId);
                             if (thisSession && thisSession.messages) {
-                                // Check if the last server message is from guruji
                                 const lastServerMsg = thisSession.messages[thisSession.messages.length - 1];
                                 if (lastServerMsg && (lastServerMsg.assistant === 'guruji' || lastServerMsg.role === 'guruji' || lastServerMsg.guruji_json)) {
                                     addSessionLog("Recovered Guruji response from background!");
@@ -1650,11 +1637,12 @@ const Chat = () => {
                     setIsSendingToBackend(false);
                     setSendingWaitMessage("");
                     setLoading(false);
-                    return; // Successfully recovered, skip the fallback error
+                    return;
                 } else {
-                    addSessionLog("Recovery failed after 4 attempts.");
-                } else if (isDuplicate) {
-                    // Valid request is still crunching in the backend
+                    addSessionLog("Recovery failed after maximum attempts.");
+                }
+
+                if (isDuplicate && !recovered) {
                     const errMsg = "Guruji is contemplating your stars deeply. This may take another moment, your answer will appear shortly. You can also refresh the page.";
                     setMessages(prev => [...prev, {
                         role: 'assistant', assistant: 'maya', content: errMsg, time: getCurrentTime()
@@ -1665,6 +1653,7 @@ const Chat = () => {
                     return;
                 }
             }
+
             const errMsg = err.response?.data?.detail || err.message || 'Guruji is not available right now. Please try again after some time.';
             setMessages(prev => [...prev, {
                 role: 'assistant',
@@ -1676,8 +1665,6 @@ const Chat = () => {
             setSendingWaitMessage("");
         } finally {
             setLoading(false);
-            // setIsSendingToBackend(false); // Keep buffering if Guruji is about to respond/animating
-            // setSendingWaitMessage("");
         }
     };
 
@@ -1895,10 +1882,9 @@ const Chat = () => {
             addSessionLog(`Sending message to Maya: ${combinedText}`);
             console.log(`[${getCurrentTime()}] Sending message to Maya:`, combinedText);
             const startTime = Date.now();
-            const res = await sendMessage(mobile, combinedText, history, sessionId);
+            const res = await sendMessage(mobile, combinedText, history, sessionId, null, null, idempotencyKey);
             const duration = Date.now() - startTime;
             addSessionLog(`Maya API responded in ${duration}ms`);
-            const res = await sendMessage(mobile, combinedText, history, sessionId, null, null, idempotencyKey);
 
             // Handle rate limit / offline
             if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
