@@ -1539,7 +1539,7 @@ const Chat = () => {
         }));
     };
 
-    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null) => {
+    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null, idempotencyKey = null) => {
         setLoading(true);
         setIsSendingToBackend(true);
         setSendingWaitMessage("Sending to Astrologer");
@@ -1551,7 +1551,7 @@ const Chat = () => {
             const sanitizedHistory = sanitizeHistory(history);
             addSessionLog(`Guruji receiving message: ${ text }`);
             console.log(`[${ getCurrentTime() }] Guruji receiving message:`, text);
-            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
+            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, idempotencyKey);
             setSendingWaitMessage("Astrologer is typing");
             addSessionLog("Wait State: Astrologer is typing");
             console.log(`[${ getCurrentTime() }] Wait State: Astrologer is typing`);
@@ -1593,11 +1593,12 @@ const Chat = () => {
         } catch (err) {
             console.error("Guruji Error:", err);
 
-            // Mobile app background network kill recovery
+            // Mobile app background network kill recovery or Duplicate request
             const isNetworkError = !err.response && (err.message === 'Network Error' || err.code === 'ECONNABORTED');
+            const isDuplicate = err.response?.status === 409;
 
-            if (isNetworkError) {
-                console.log("Network dropped. Entering silent recovery polling...");
+            if (isNetworkError || isDuplicate) {
+                console.log("Network dropped or duplicate. Entering silent recovery polling...");
                 setSendingWaitMessage("Astrologer is typing"); // Keep the user waiting gracefully
 
                 let recovered = false;
@@ -1845,7 +1846,8 @@ const Chat = () => {
 
             // Call backend ONCE securely outside the state setter.
             const sanitizedHistory = sanitizeHistory(historyWithoutNewlyQueued);
-            sendToBackend(mobile, combinedText, sanitizedHistory);
+            const idempotencyKey = `REQ_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            sendToBackend(mobile, combinedText, sanitizedHistory, idempotencyKey);
 
         } catch (err) {
             console.error("Queue Processing Error:", err);
@@ -1854,10 +1856,10 @@ const Chat = () => {
         }
     };
 
-    const sendToBackend = async (mobile, combinedText, history) => {
+    const sendToBackend = async (mobile, combinedText, history, idempotencyKey = null) => {
         let trigger_guruji_flag = false;
         try {
-            const res = await sendMessage(mobile, combinedText, history, sessionId);
+            const res = await sendMessage(mobile, combinedText, history, sessionId, null, null, idempotencyKey);
 
             // Handle rate limit / offline
             if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
@@ -1933,12 +1935,16 @@ const Chat = () => {
             if (trigger_guruji) {
                 setSendingWaitMessage("Sending to Astrologer");
                 setIsSendingToBackend(true);
-                await fetchGurujiResponse(mobile, combinedText, history, sessionId);
+                await fetchGurujiResponse(mobile, combinedText, history, sessionId, null, idempotencyKey ? `${idempotencyKey}_guruji` : null);
             }
 
 
         } catch (err) {
             console.error("Chat Error:", err);
+            if (err.response?.status === 409) {
+                console.log("Duplicate Maya request detected, ignoring.");
+                return;
+            }
             // If it's a 404/401/403, the interceptor will handle redirect to login
             // Only show error message for other types of errors
             if (err.response?.status !== 404 && err.response?.status !== 401 && err.response?.status !== 403) {
