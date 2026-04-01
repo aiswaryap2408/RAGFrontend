@@ -1558,7 +1558,6 @@ const Chat = () => {
             const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, idempotencyKey);
             const duration = Date.now() - startTime;
             addSessionLog(`Guruji API responded in ${duration}ms`);
-
             setSendingWaitMessage("Astrologer is typing");
             addSessionLog("Wait State: Astrologer is typing");
             console.log(`[${getCurrentTime()}] Wait State: Astrologer is typing`);
