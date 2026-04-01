@@ -32,8 +32,6 @@ const Header = ({ showProfile = false, name = "", profiledob = "", profilebirths
                     bgcolor: "#2f3148",
                     height: '80px',
                     px: 3,
-                    // pt: 1.5,
-                    // pb: .5,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -59,7 +57,6 @@ const Header = ({ showProfile = false, name = "", profiledob = "", profilebirths
                                     <Typography sx={{ fontSize: 24, fontWeight: 500, color: "#fff", fontFamily: "'Roboto', sans-serif", textTransform: 'capitalize' }}>
                                         {name}
                                     </Typography>
-                                    {/* <KeyboardArrowDownRoundedIcon sx={{ color: '#fff', fontSize: 24 }} /> */}
                                 </Box>
                                 {(profiledob || profilebirthstar) && (
                                     <Typography sx={{ fontSize: 14, mt: -.5, fontWeight: 100, color: "rgba(255,255,255,0.7)", fontFamily: "'Century Gothic', sans-serif" }}>
@@ -104,6 +101,7 @@ const Header = ({ showProfile = false, name = "", profiledob = "", profilebirths
                     />
                 </Box>
             </Box>
+
         </Box>
     );
 };

@@ -21,7 +21,7 @@ const Login = () => {
         }
     }, [navigate]);
 
-    const handleMobileSubmit = async (e) => {
+    const handleMobileSubmit = async(e) => {
         if (e) e.preventDefault();
         setError('');
 
@@ -59,11 +59,19 @@ const Login = () => {
                     alignItems: 'center',
                     textAlign: 'center',
                     px: 3,
+<<<<<<< HEAD
                     pb: 5,
                     mt: 18,
                 }}
             >
                 <Box sx={{ mb: 2.5 }}>
+=======
+                    pb: 5, // Extra padding at bottom to balance the header
+                    mt: -5  // Pull up slightly to account for the large header space
+                }}
+            >
+                <Box sx={{mb: 2.5}}>
+>>>>>>> 0708b7b844e4497943e3ea2a382e101ff80a16e1
                     <GurujiImage />
 
                     <Typography fontSize={16} mt={1} color="text.primary" sx={{ fontFamily: "'Century Gothic', sans-serif" }}>
@@ -81,7 +89,11 @@ const Login = () => {
                     Login / Sign-in with your phone number:
                 </Typography>
 
+<<<<<<< HEAD
 
+=======
+                
+>>>>>>> 0708b7b844e4497943e3ea2a382e101ff80a16e1
 
                 {/* Phone Input Box */}
                 <Box
@@ -113,14 +125,22 @@ const Login = () => {
                         inputProps={{ maxLength: 10, type: 'tel' }}
                         onKeyPress={(e) => e.key === 'Enter' && handleMobileSubmit()}
                     />
+<<<<<<< HEAD
 
+=======
+                    
+>>>>>>> 0708b7b844e4497943e3ea2a382e101ff80a16e1
                 </Box>
                 {error && (
                     <Typography color="error" variant="body2" >
                         {error}
                     </Typography>
                 )}
+<<<<<<< HEAD
 
+=======
+                
+>>>>>>> 0708b7b844e4497943e3ea2a382e101ff80a16e1
 
                 <PrimaryButton
                     label={loading ? "Sending..." : "Get OTP"}

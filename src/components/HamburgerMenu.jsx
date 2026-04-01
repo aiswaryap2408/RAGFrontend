@@ -19,11 +19,13 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import CloseIcon from "@mui/icons-material/Close";
 import WalletIcon from '@mui/icons-material/Wallet';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import GavelIcon from '@mui/icons-material/Gavel';
+// import GavelIcon from '@mui/icons-material/Gavel';
 import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 import CookieIcon from '@mui/icons-material/Cookie';
 import KeyIcon from '@mui/icons-material/Lock';
 import InfoIcon from '@mui/icons-material/Info';
+import AddCommentIcon from "@mui/icons-material/AddComment";
+import HistoryIcon from "@mui/icons-material/History";
 
 const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handleNavigation: externalHandleNav, menubarsx = {} }) => {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -221,43 +223,67 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
                 </Box>
               </Box>
               <List sx={{ pt: 2 }}>
-                {isLoggedIn && location.pathname !== "/register" && (
-                  <ListItem disablePadding onClick={() => handleNavigation("logout")}>
-                    <ListItemButton sx={{ pt: 1.3 }}>
-                      <ListItemIcon sx={{ minWidth: 40 }}>
-                        <LogoutIcon sx={{ minWidth: 40, color: "#fff" }} />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary="Logout"
-                        primaryTypographyProps={{ fontWeight: 400 }}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                )}
-
                 <ListItem disablePadding onClick={() => handleNavigation("/dashboard")}>
                   <ListItemButton sx={{ pt: 1.3 }}>
                     <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
                       <HomeIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Dashboard"
+                      primary="Home / Dashboard"
                       primaryTypographyProps={{ fontWeight: 400 }}
                     />
                   </ListItemButton>
                 </ListItem>
 
-                {/* <ListItem disablePadding onClick={() => handleNavigation("/chat")}>
+                <ListItem disablePadding onClick={() => handleNavigation("/chat-new")}>
                   <ListItemButton sx={{ pt: 1.3 }}>
                     <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
-                      <HomeIcon />
+                      <AddCommentIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Chat"
+                      primary="New Consultation"
                       primaryTypographyProps={{ fontWeight: 400 }}
                     />
                   </ListItemButton>
-                </ListItem> */}
+                </ListItem>
+
+                <ListItem disablePadding onClick={() => handleNavigation("/profile")}>
+                  <ListItemButton sx={{ pt: 1.3 }}>
+                    <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
+                      <PersonIcon />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Profile"
+                      primaryTypographyProps={{ fontWeight: 400 }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+
+                <ListItem disablePadding onClick={() => handleNavigation("/history")}>
+                  <ListItemButton sx={{ pt: 1.3 }}>
+                    <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
+                      <HistoryIcon />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="History"
+                      primaryTypographyProps={{ fontWeight: 400 }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+
+                <ListItem disablePadding onClick={() => handleNavigation("/wallet")}>
+                  <ListItemButton sx={{ pt: 1.3 }}>
+                    <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
+                      <WalletIcon />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="My Wallet"
+                      primaryTypographyProps={{ fontWeight: 400 }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+
+                <Box sx={{ my: 1, height: '1px', bgcolor: 'rgba(255,255,255,0.1)', mx: 2 }} />
 
                 <ListItem disablePadding onClick={() => handleNavigation("/terms")}>
                   <ListItemButton sx={{ pt: 1.3 }}>
@@ -273,7 +299,7 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
                 <ListItem disablePadding onClick={() => handleNavigation("/privacy")}>
                   <ListItemButton sx={{ pt: 1.3 }}>
                     <ListItemIcon sx={{ minWidth: 40, color: "#fff" }}>
-                      <KeyIcon />
+                      <PrivacyTipIcon />
                     </ListItemIcon>
                     <ListItemText
                       primary="Privacy Policy"
@@ -292,6 +318,20 @@ const HamburgerMenu = ({ open: externalOpen, toggleDrawer: externalToggle, handl
                     />
                   </ListItemButton>
                 </ListItem>
+
+                {isLoggedIn && location.pathname !== "/register" && (
+                  <ListItem disablePadding onClick={() => handleNavigation("logout")}>
+                    <ListItemButton sx={{ pt: 1.3 }}>
+                      <ListItemIcon sx={{ minWidth: 40 }}>
+                        <LogoutIcon sx={{ minWidth: 40, color: "#fff" }} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Logout"
+                        primaryTypographyProps={{ fontWeight: 400 }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                )}
               </List>
             </Box>
             <Box sx={{ position: "relative" }}>
