@@ -843,8 +843,11 @@ const Chat = () => {
     const getCurrentTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
 
     const [sessionLogs, setSessionLogs] = useState([]);
+    const [logsOpen, setLogsOpen] = useState(false);
     const addSessionLog = (msg) => {
-        const logEntry = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        const now = new Date();
+        const timeStr = `${now.toLocaleTimeString()}.${now.getMilliseconds().toString().padStart(3, '0')}`;
+        const logEntry = `[${timeStr}] ${msg}`;
         setSessionLogs(prev => [...prev, logEntry]);
         console.log(logEntry);
     };
@@ -1544,20 +1547,27 @@ const Chat = () => {
         setIsSendingToBackend(true);
         setSendingWaitMessage("Sending to Astrologer");
         addSessionLog("Wait State: Sending to Astrologer");
-        console.log(`[${ getCurrentTime() }] Wait State: Sending to Astrologer`);
+        console.log(`[${getCurrentTime()}] Wait State: Sending to Astrologer`);
 
         try {
             const referenceid = localStorage.getItem('currentProfileId');
             const sanitizedHistory = sanitizeHistory(history);
+            addSessionLog(`Guruji receiving message: ${text}`);
+            console.log(`[${getCurrentTime()}] Guruji receiving message:`, text);
+            const startTime = Date.now();
+            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
+            const duration = Date.now() - startTime;
+            addSessionLog(`Guruji API responded in ${duration}ms`);
+
             addSessionLog(`Guruji receiving message: ${ text }`);
             console.log(`[${ getCurrentTime() }] Guruji receiving message:`, text);
             const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, idempotencyKey);
             setSendingWaitMessage("Astrologer is typing");
             addSessionLog("Wait State: Astrologer is typing");
-            console.log(`[${ getCurrentTime() }] Wait State: Astrologer is typing`);
+            console.log(`[${getCurrentTime()}] Wait State: Astrologer is typing`);
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, guruji_input, bubbles, delays, timestamp, message_id } = res.data;
-            addSessionLog(`Guruji replied with: ${ answer.substring(0, 50) }...`);
-            console.log(`[${ getCurrentTime() }] Guruji replied with:`, answer);
+            addSessionLog(`Guruji replied with: ${answer.substring(0, 50)}...`);
+            console.log(`[${getCurrentTime()}] Guruji replied with:`, answer);
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
             setMessages(prev => {
@@ -1592,11 +1602,21 @@ const Chat = () => {
             }
         } catch (err) {
             console.error("Guruji Error:", err);
+            addSessionLog(`Guruji Error: ${err.message || 'Unknown error'}`);
 
             // Mobile app background network kill recovery or Duplicate request
             const isNetworkError = !err.response && (err.message === 'Network Error' || err.code === 'ECONNABORTED');
             const isDuplicate = err.response?.status === 409;
 
+            if (isNetworkError) {
+                addSessionLog("Network dropped. Entering silent recovery polling...");
+                console.log("Network dropped. Entering silent recovery polling...");
+                setSendingWaitMessage("Astrologer is typing"); // Keep the user waiting gracefully
+
+                let recovered = false;
+                // Poll history 4 times, every 4 seconds (total ~16 seconds)
+                for (let i = 0; i < 4; i++) {
+                    addSessionLog(`Recovery attempt ${i + 1}/4...`);
             if (isNetworkError || isDuplicate) {
                 console.log("Network dropped or duplicate. Entering silent recovery polling...");
                 setSendingWaitMessage("Astrologer is typing"); // Keep the user waiting gracefully
@@ -1613,6 +1633,7 @@ const Chat = () => {
                                 // Check if the last server message is from guruji
                                 const lastServerMsg = thisSession.messages[thisSession.messages.length - 1];
                                 if (lastServerMsg && (lastServerMsg.assistant === 'guruji' || lastServerMsg.role === 'guruji' || lastServerMsg.guruji_json)) {
+                                    addSessionLog("Recovered Guruji response from background!");
                                     console.log("Recovered Guruji response from background!");
                                     applyHistoryUpdate(thisSession.messages);
                                     recovered = true;
@@ -1630,6 +1651,8 @@ const Chat = () => {
                     setSendingWaitMessage("");
                     setLoading(false);
                     return; // Successfully recovered, skip the fallback error
+                } else {
+                    addSessionLog("Recovery failed after 4 attempts.");
                 } else if (isDuplicate) {
                     // Valid request is still crunching in the backend
                     const errMsg = "Guruji is contemplating your stars deeply. This may take another moment, your answer will appear shortly. You can also refresh the page.";
@@ -1869,10 +1892,17 @@ const Chat = () => {
     const sendToBackend = async (mobile, combinedText, history, idempotencyKey = null) => {
         let trigger_guruji_flag = false;
         try {
+            addSessionLog(`Sending message to Maya: ${combinedText}`);
+            console.log(`[${getCurrentTime()}] Sending message to Maya:`, combinedText);
+            const startTime = Date.now();
+            const res = await sendMessage(mobile, combinedText, history, sessionId);
+            const duration = Date.now() - startTime;
+            addSessionLog(`Maya API responded in ${duration}ms`);
             const res = await sendMessage(mobile, combinedText, history, sessionId, null, null, idempotencyKey);
 
             // Handle rate limit / offline
             if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
+                addSessionLog("Maya: Astrologer is offline");
                 setSendingWaitMessage("Astrologer is offline");
                 setMessages(prev => [...prev, {
                     role: 'assistant',
@@ -1887,6 +1917,7 @@ const Chat = () => {
             }
 
             if (res.data.requires_payment) {
+                addSessionLog("Maya: Requires payment");
                 setLoading(false);
                 setIsSendingToBackend(false);
                 setSendingWaitMessage("");
@@ -1918,6 +1949,9 @@ const Chat = () => {
 
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id, trigger_guruji } = res.data;
             trigger_guruji_flag = trigger_guruji;
+
+            addSessionLog(`Maya replied with: ${answer.substring(0, 50)}...`);
+            console.log(`[${getCurrentTime()}] Maya replied with:`, answer);
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
@@ -2624,6 +2658,22 @@ const Chat = () => {
                                                     RAG
                                                 </Typography>
                                             )}
+                                            {(jsonVisibility.guruji || jsonVisibility.maya) && (
+                                                <Typography
+                                                    onClick={() => setLogsOpen(true)}
+                                                    sx={{
+                                                        fontSize: '0.65rem',
+                                                        color: '#666',
+                                                        fontWeight: 800,
+                                                        cursor: 'pointer',
+                                                        textTransform: 'uppercase',
+                                                        textDecoration: 'underline',
+                                                        '&:hover': { color: '#F36A2F' }
+                                                    }}
+                                                >
+                                                    Logs
+                                                </Typography>
+                                            )}
                                             {(msg.metrics && jsonVisibility.guruji) && (
                                                 <Typography
                                                     onClick={() => handleLabelClick(msg.metrics, 'MODELLING METRICS')}
@@ -2893,6 +2943,22 @@ const Chat = () => {
                                                                         }}
                                                                     >
                                                                         Modelling %
+                                                                    </Typography>
+                                                                )}
+                                                                {(jsonVisibility.guruji || jsonVisibility.maya) && (
+                                                                    <Typography
+                                                                        onClick={() => setLogsOpen(true)}
+                                                                        sx={{
+                                                                            fontSize: '0.65rem',
+                                                                            color: 'rgba(255,255,255,0.8)',
+                                                                            fontWeight: 800,
+                                                                            cursor: 'pointer',
+                                                                            textTransform: 'uppercase',
+                                                                            textDecoration: 'underline',
+                                                                            '&:hover': { color: 'white' }
+                                                                        }}
+                                                                    >
+                                                                        Logs
                                                                     </Typography>
                                                                 )}
                                                             </Box>
@@ -3430,6 +3496,81 @@ const Chat = () => {
                     </Typography>
                 </Box>
             )} */}
+            {/* Modal for Logs */}
+            <Dialog
+                open={logsOpen}
+                onClose={() => setLogsOpen(false)}
+                fullWidth
+                maxWidth="sm"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        bgcolor: '#1a1a1a',
+                        color: '#eee',
+                        height: '70vh'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ borderBottom: '1px solid #333', py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 700 }}>SESSION LOGS</Typography>
+                    <Box>
+                        <Button
+                            size="small"
+                            onClick={() => {
+                                navigator.clipboard.writeText(sessionLogs.join('\n'));
+                                alert("Logs copied to clipboard!");
+                            }}
+                            sx={{ color: '#F36A2F', fontSize: '0.7rem', mr: 1 }}
+                        >
+                            Copy
+                        </Button>
+                        <Button
+                            size="small"
+                            onClick={() => setSessionLogs([])}
+                            sx={{ color: '#ff4444', fontSize: '0.7rem', mr: 1 }}
+                        >
+                            Clear
+                        </Button>
+                        <IconButton
+                            size="small"
+                            onClick={() => setLogsOpen(false)}
+                            sx={{ color: '#fff' }}
+                        >
+                            <CloseIcon sx={{ fontSize: '1.2rem' }} />
+                        </IconButton>
+                    </Box>
+                </DialogTitle>
+                <DialogContent sx={{ p: 0, bgcolor: '#000' }}>
+                    <Box
+                        sx={{
+                            p: 2,
+                            fontFamily: 'monospace',
+                            fontSize: '0.75rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 0.5,
+                            maxHeight: '100%',
+                            overflowY: 'auto',
+                            '&::-webkit-scrollbar': { width: '6px' },
+                            '&::-webkit-scrollbar-thumb': { bgcolor: '#333', borderRadius: '3px' }
+                        }}
+                    >
+                        {sessionLogs.length === 0 ? (
+                            <Typography sx={{ color: '#444', textAlign: 'center', mt: 4 }}>No logs in this session.</Typography>
+                        ) : (
+                            sessionLogs.map((log, idx) => (
+                                <Box key={idx} sx={{ borderBottom: '1px solid #111', pb: 0.5 }}>
+                                    <span style={{ color: '#F36A2F', fontWeight: 600 }}>{log.split(']')[0]}]</span>
+                                    <span style={{ color: '#ccc' }}>{log.split(']')[1]}</span>
+                                </Box>
+                            ))
+                        )}
+                        {/* Auto-scroll anchor */}
+                        <div ref={el => { if (el) el.scrollIntoView({ behavior: 'smooth' }); }} />
+                    </Box>
+                </DialogContent>
+            </Dialog>
+
             {/* Full JSON Modal */}
             <Dialog
                 open={jsonModal.open}
