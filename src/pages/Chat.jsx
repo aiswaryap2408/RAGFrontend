@@ -1555,13 +1555,9 @@ const Chat = () => {
             addSessionLog(`Guruji receiving message: ${text}`);
             console.log(`[${getCurrentTime()}] Guruji receiving message:`, text);
             const startTime = Date.now();
-            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
+            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, idempotencyKey);
             const duration = Date.now() - startTime;
             addSessionLog(`Guruji API responded in ${duration}ms`);
-
-            addSessionLog(`Guruji receiving message: ${ text }`);
-            console.log(`[${ getCurrentTime() }] Guruji receiving message:`, text);
-            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, idempotencyKey);
             setSendingWaitMessage("Astrologer is typing");
             addSessionLog("Wait State: Astrologer is typing");
             console.log(`[${getCurrentTime()}] Wait State: Astrologer is typing`);
@@ -1895,10 +1891,9 @@ const Chat = () => {
             addSessionLog(`Sending message to Maya: ${combinedText}`);
             console.log(`[${getCurrentTime()}] Sending message to Maya:`, combinedText);
             const startTime = Date.now();
-            const res = await sendMessage(mobile, combinedText, history, sessionId);
+            const res = await sendMessage(mobile, combinedText, history, sessionId, null, null, idempotencyKey);
             const duration = Date.now() - startTime;
             addSessionLog(`Maya API responded in ${duration}ms`);
-            const res = await sendMessage(mobile, combinedText, history, sessionId, null, null, idempotencyKey);
 
             // Handle rate limit / offline
             if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
