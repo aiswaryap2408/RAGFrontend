@@ -26,14 +26,11 @@ import Header from "../components/header";
 import ChatInputFooter from "../components/ChatInputFooter";
 import FeedbackDrawer from '../components/FeedbackDrawer';
 import HamburgerMenu from '../components/HamburgerMenu';
-<<<<<<< HEAD
 import Dakshina from '../pages/Dakshina';
 import DoneAllOutlinedIcon from '@mui/icons-material/DoneAllOutlined';
 import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import ThankYou from '../components/Thankyou';
 import ConsultFooter from '../components/consultFooter';
-=======
->>>>>>> 0708b7b844e4497943e3ea2a382e101ff80a16e1
 
 const tryParseJson = (data) => {
     if (!data) return null;
@@ -2259,97 +2256,12 @@ const Chat = () => {
         }
     };
 
-<<<<<<< HEAD
     const handleChatPayment = async (amount, mobile) => {
         // Temporary Bypass: Alert Success and proceed
         setChatPaymentState('PAYING'); // disable button immediately
         // alert("Payment successful!");
         handleChatSuccess("MOCK_PAYMENT_ID", amount);
         return;
-=======
-    const [drawerOpen, setDrawerOpen] = React.useState(false);
-
-//   const location = useLocation();
-//   const navigate = useNavigate();
-
-  const showMenu = [
-    "/chat",
-    "/profile",
-    "/history",
-    "/dakshina",
-    "/wallet",
-    "/wallet/recharge",
-  ].includes(location.pathname);
-
-  const toggleDrawer = (open) => (event) => {
-    if (
-      event.type === "keydown" &&
-      (event.key === "Tab" || event.key === "Shift")
-    ) {
-      return;
-    }
-    setDrawerOpen(open);
-  };
-
-  const handleNavigation = (path) => {
-        if (path === 'logout') {
-            localStorage.clear();
-            navigate('/');
-        } else if (path === '/chat-new') {
-            navigate('/chat', { state: { newSession: true } });
-        } else {
-            navigate(path);
-        }
-        setDrawerOpen(false);
-    };
-
-    return (
-        <Box sx={{
-            // minHeight: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            bgcolor: '#FFF6EB',
-            height: "100vh",
-            position: 'relative',
-            // width: '100%'
-        }}>
-            <Header backgroundImage="/svg/top_curve_dark.svg" />
-            {showMenu && (
-        <Box
-          onClick={toggleDrawer(true)}
-          sx={{
-            position: "absolute",
-            top: 50,
-            left: 15,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            height: 20,
-            cursor: "pointer",
-            zIndex: 3,
-          }}
-        >
-          {[1, 2, 3].map((i) => (
-            <Box
-              key={i}
-              sx={{
-                width: 30,
-                height: "0.2rem",
-                bgcolor: "text.primary",
-              }}
-            />
-          ))}
-        </Box>
-      )}
-
-      <HamburgerMenu
-        open={drawerOpen}
-        toggleDrawer={setDrawerOpen}
-        handleNavigation={handleNavigation}
-        sx={{ position: 'relative' }}
-        />
-
->>>>>>> 0708b7b844e4497943e3ea2a382e101ff80a16e1
 
         // Original logic preserved below (currently unreachable)
         setChatPaymentState('PAYING');
