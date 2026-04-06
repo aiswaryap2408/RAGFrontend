@@ -2846,13 +2846,13 @@ const Chat = () => {
                                                         whiteSpace: "pre-line",
                                                         fontSize: "0.9rem",
                                                     }}
-                                                        onClick={(msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? handleEditQueuedMessage : undefined}
+                                                        onClick={(msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? (e) => { e.preventDefault(); e.stopPropagation(); handleEditQueuedMessage(); } : undefined}
                                                     >
                                                         <SafeHTML
                                                             html={msg.content}
                                                         />
 
-                                                        {/* JSON Output View (for regular messages) */}
+                                                        {/* JSON.. Output View (for regular messages) */}
                                                         {((msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) || (msg.psycologyJson && jsonVisibility.psycology) || (msg.gurujiInput && jsonVisibility.guruji)) && (
                                                             <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)', textAlign: 'right', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                                                                 {(msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) && (
@@ -3004,7 +3004,9 @@ const Chat = () => {
                                         >
                                             <Box
                                                 key={msg.arrivalTime}
-                                                onClick={handleEditQueuedMessage}
+                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEditQueuedMessage(); }}
+                                                onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleEditQueuedMessage(); }}
+                                                onPointerDown={(e) => { e.preventDefault(); }}
                                                 sx={{
                                                     m: 0,
                                                     display: "flex",
@@ -3022,6 +3024,7 @@ const Chat = () => {
                                                         width: 40,
                                                         height: 40,
                                                         overflow: "hidden",
+                                                        pointerEvents: "none"
                                                     }}
                                                 >
                                                     <Box
