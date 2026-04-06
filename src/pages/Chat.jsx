@@ -911,6 +911,7 @@ const Chat = () => {
     const isAutoScrolling = useRef(false);
     const scrollTimeout = useRef(null);
     const latestGurujiRef = useRef(null); // ref to the top of the latest guruji response
+    const chatInputRef = useRef(null);
 
     // Dynamic timer to force re-renders for status ticks
     const [currentTime, setCurrentTime] = useState(Date.now());
@@ -1821,6 +1822,13 @@ const Chat = () => {
 
         // Optionally, focus the input field by treating it as if the user is typing again
         setIsUserTyping(true);
+
+        // Ensure the input field receives focus, especially on mobile to keep the keyboard open
+        setTimeout(() => {
+            if (chatInputRef.current) {
+                chatInputRef.current.focus();
+            }
+        }, 10);
     };
 
     const processQueue = async (queuedMessages) => {
@@ -3309,6 +3317,7 @@ const Chat = () => {
                     isBuffering={isSendingToBackend}
                     isConnecting={isConnecting}
                     connectionText={connectionText}
+                    footerInputRef={chatInputRef}
                 />
             ) : null}
             {/* Same overlays as before (Inactivity, Summary, Drawer) */}

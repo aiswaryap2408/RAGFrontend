@@ -11,9 +11,10 @@ const bounce = keyframes`
   50% { transform: translateY(-10px); }
 `;
 
-const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, inputValue, setInputValue, isBuffering, isConnecting, connectionText }) => {
+const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, inputValue, setInputValue, isBuffering, isConnecting, connectionText, footerInputRef }) => {
 
-    const inputRef = useRef(null);
+    const internalRef = useRef(null);
+    const inputRef = footerInputRef || internalRef;
 
     // Gate: block send when backend is processing, chat ended, astrologer is typing, or connecting
     const isBlocked = loading || !!summary || isBuffering || isConnecting;
