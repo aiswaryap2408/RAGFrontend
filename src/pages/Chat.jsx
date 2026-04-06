@@ -2846,13 +2846,13 @@ const Chat = () => {
                                                         whiteSpace: "pre-line",
                                                         fontSize: "0.9rem",
                                                     }}
-                                                        onClick={(msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? (e) => { e.preventDefault(); e.stopPropagation(); handleEditQueuedMessage(); } : undefined}
+                                                        onClick={(msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? handleEditQueuedMessage : undefined}
                                                     >
                                                         <SafeHTML
                                                             html={msg.content}
                                                         />
 
-                                                        {/* JSON.. Output View (for regular messages) */}
+                                                        {/* JSON Output View (for regular messages) */}
                                                         {((msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) || (msg.psycologyJson && jsonVisibility.psycology) || (msg.gurujiInput && jsonVisibility.guruji)) && (
                                                             <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)', textAlign: 'right', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                                                                 {(msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) && (
@@ -2989,42 +2989,47 @@ const Chat = () => {
                                         {/* timer animation for user msg */}
                                         <Box
                                             sx={{
-                                                width: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 45 : 0,
+                                                width: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 64 : 0,
                                                 opacity: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 1 : 0,
                                                 overflow: 'hidden',
                                                 transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                                                 display: 'flex',
-                                                justifyContent: 'center',
-                                                alignItems: 'center',
+                                                justifyContent: 'flex-end',
+                                                alignItems: 'flex-end',
                                                 position: 'relative',
-                                                top: '15px',
+                                                top: '0px',
                                                 pointerEvents: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 'auto' : 'none',
                                                 zIndex: 10,
+                                                left: '-10px',
                                             }}
                                         >
                                             <Box
                                                 key={msg.arrivalTime}
-                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEditQueuedMessage(); }}
-                                                onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleEditQueuedMessage(); }}
-                                                onPointerDown={(e) => { e.preventDefault(); }}
+                                                onClick={handleEditQueuedMessage}
                                                 sx={{
                                                     m: 0,
                                                     display: "flex",
-                                                    justifyContent: "flex-end",
+                                                    justifyContent: "center",
                                                     alignItems: "center",
                                                     backgroundColor: "transparent",
                                                     cursor: "pointer",
-                                                    p: .5,
-                                                    minWidth: 40,
+                                                    p: 1.5,
+                                                    minWidth: 64,
+                                                    height: 64,
+                                                    borderRadius: '50%',
                                                 }}
                                             >
                                                 <Box
                                                     sx={{
                                                         position: "relative",
-                                                        width: 40,
-                                                        height: 40,
+                                                        width: 60,
+                                                        height: 60,
                                                         overflow: "hidden",
-                                                        pointerEvents: "none"
+                                                        pointerEvents: "none",
+                                                        display: "flex",
+                                                        justifyContent: "flex-end",
+                                                        alignItems: "flex-end",
+
                                                     }}
                                                 >
                                                     <Box
@@ -3072,8 +3077,8 @@ const Chat = () => {
                                                     <Box
                                                         sx={{
                                                             position: "absolute",
-                                                            top: "35%",
-                                                            left: "42%",
+                                                            top: "74%",
+                                                            left: "60%",
                                                             width: 13,
                                                             height: 13,
                                                             transform: "translate(-50%, -50%)",
@@ -3082,7 +3087,7 @@ const Chat = () => {
                                                                 content: '""',
                                                                 position: "absolute",
                                                                 top: "50%",
-                                                                left: 0,
+                                                                left: '10%',
                                                                 width: "100%",
                                                                 height: "2px",
                                                                 backgroundColor: "#1C1F46",
