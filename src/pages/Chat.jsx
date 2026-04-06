@@ -2846,7 +2846,7 @@ const Chat = () => {
                                                         whiteSpace: "pre-line",
                                                         fontSize: "0.9rem",
                                                     }}
-                                                        onClick={(msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? handleEditQueuedMessage : undefined}
+                                                        onClick={(msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? (e) => { e.preventDefault(); e.stopPropagation(); handleEditQueuedMessage(); } : undefined}
                                                     >
                                                         <SafeHTML
                                                             html={msg.content}
@@ -3004,7 +3004,9 @@ const Chat = () => {
                                         >
                                             <Box
                                                 key={msg.arrivalTime}
-                                                onClick={handleEditQueuedMessage}
+                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEditQueuedMessage(); }}
+                                                onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleEditQueuedMessage(); }}
+                                                onPointerDown={(e) => { e.preventDefault(); }}
                                                 sx={{
                                                     m: 0,
                                                     display: "flex",
@@ -3022,6 +3024,7 @@ const Chat = () => {
                                                         width: 40,
                                                         height: 40,
                                                         overflow: "hidden",
+                                                        pointerEvents: "none"
                                                     }}
                                                 >
                                                     <Box
