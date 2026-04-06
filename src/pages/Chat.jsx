@@ -2988,6 +2988,8 @@ const Chat = () => {
                                         </Box>
                                         {/* timer animation for user msg */}
                                         <Box
+                                            key={msg.arrivalTime}
+                                            onClick={handleEditQueuedMessage}
                                             sx={{
                                                 width: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 64 : 0,
                                                 opacity: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 1 : 0,
@@ -3004,8 +3006,8 @@ const Chat = () => {
                                             }}
                                         >
                                             <Box
-                                                key={msg.arrivalTime}
-                                                onClick={handleEditQueuedMessage}
+                                                // key={msg.arrivalTime}
+                                                // onClick={handleEditQueuedMessage}
                                                 sx={{
                                                     m: 0,
                                                     display: "flex",
@@ -3017,6 +3019,7 @@ const Chat = () => {
                                                     minWidth: 64,
                                                     height: 64,
                                                     borderRadius: '50%',
+                                                    pb: 1,
                                                 }}
                                             >
                                                 <Box
