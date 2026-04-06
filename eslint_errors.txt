@@ -1,0 +1,400 @@
+D:\AI-chatbot\RAGFrontend\src\components\ChatInputFooter.jsx:1 'useState' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\components\ChatInputFooter.jsx:1 'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\components\ChatInputFooter.jsx:9 'bounce' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\components\FeedbackDrawer.jsx:20 Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  18 |     useEffect(() => {
+  19 |         if (!open) {
+> 20 |             setRating(0);
+     |             ^^^^^^^^^ Avoid calling setState() directly within an effect
+  21 |             setFeedback("");
+  22 |             setSubmitted(false);
+  23 |         }
+D:\AI-chatbot\RAGFrontend\src\components\HamburgerMenu.jsx:60 'token' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\components\SpinnerDatePicker.jsx:35 Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  33 |     // 🔥 CORRECT CENTER SCROLL LOGIC
+  34 |     useEffect(() => {
+> 35 |         setLocalIndex(selectedIndex >= 0 ? selectedIndex : 0);
+     |         ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  36 |         if (!ref.current || selectedIndex < 0) return;
+  37 |
+  38 |         const scrollTo = selectedIndex * ITEM_HEIGHT;
+D:\AI-chatbot\RAGFrontend\src\components\SpinnerDatePicker.jsx:150 Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  148 |         if (open) {
+  149 |             const d = parseDate();
+> 150 |             setDay(d.getDate());
+      |             ^^^^^^ Avoid calling setState() directly within an effect
+  151 |             setMonth(months[d.getMonth()]);
+  152 |             setYear(d.getFullYear());
+  153 |         }
+D:\AI-chatbot\RAGFrontend\src\components\SpinnerDatePicker.jsx:160 Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  158 |     useEffect(() => {
+  159 |         if (!days.includes(day)) {
+> 160 |             setDay(days[days.length - 1]);
+      |             ^^^^^^ Avoid calling setState() directly within an effect
+  161 |         }
+  162 |     }, [month, year]);
+  163 |
+D:\AI-chatbot\RAGFrontend\src\components\SpinnerTimePicker.jsx:24 Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  22 |     // 🔥 CORRECT CENTER SCROLL LOGIC
+  23 |     useEffect(() => {
+> 24 |         setLocalIndex(selectedIndex >= 0 ? selectedIndex : 0);
+     |         ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  25 |         if (!ref.current || selectedIndex < 0) return;
+  26 |
+  27 |         const scrollTo = selectedIndex * ITEM_HEIGHT;
+D:\AI-chatbot\RAGFrontend\src\components\SpinnerTimePicker.jsx:158 Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  156 |         if (open) {
+  157 |             const parsed = parseTime();
+> 158 |             setHour(parsed.hour);
+      |             ^^^^^^^ Avoid calling setState() directly within an effect
+  159 |             setMinute(parsed.minute);
+  160 |             setAmpm(parsed.ampm);
+  161 |         }
+D:\AI-chatbot\RAGFrontend\src\components\Thankyou.jsx:1 'useState' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\components\consultFooter.jsx:9 'navigate' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\components\gurujiImg.jsx:6 Parsing error: Unexpected token <<
+D:\AI-chatbot\RAGFrontend\src\pages\Chat.jsx:29 Parsing error: Unexpected token <<
+D:\AI-chatbot\RAGFrontend\src\pages\ChatHistory.jsx:84 'e' is defined but never used.
+D:\AI-chatbot\RAGFrontend\src\pages\ChatHistory.jsx:176 'sIndex' is defined but never used.
+D:\AI-chatbot\RAGFrontend\src\pages\ChatHistory.jsx:209 'color' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\Dakshina.jsx:52 'handleAmountSelect' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\Dashboard.jsx:17 'prediction' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\Dashboard.jsx:18 'signName' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\Dashboard.jsx:20 'loadingPrediction' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\Dashboard.jsx:36 'handleOpenProfilePopup' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\DetailedReports.jsx:27 'balance' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\Login.jsx:62 Parsing error: Unexpected token <
+D:\AI-chatbot\RAGFrontend\src\pages\Onboarding.jsx:1 'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\PlaceTest.jsx:12 'sPlaceName' is defined but never used.
+D:\AI-chatbot\RAGFrontend\src\pages\Register.jsx:71 Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  69 |             navigate('/');
+  70 |         } else {
+> 71 |             setMobile(storedMobile);
+     |             ^^^^^^^^^ Avoid calling setState() directly within an effect
+  72 |         }
+  73 |
+  74 |         // Session timeout: 10 minutes = 600,000 ms
+D:\AI-chatbot\RAGFrontend\src\pages\Register.jsx:149 'chart_style' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\RegisterSuccess.jsx:16 Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  14 |         const storedName = localStorage.getItem('userName');
+  15 |         if (storedName) {
+> 16 |             setName(storedName);
+     |             ^^^^^^^ Avoid calling setState() directly within an effect
+  17 |         }
+  18 |     }, []);
+  19 |
+D:\AI-chatbot\RAGFrontend\src\pages\UserProfile.jsx:3 'axios' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\UserProfile.jsx:15 'user' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\UserProfile.jsx:149 'current_city' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\Verify.jsx:41 'res' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:416 'e' is defined but never used.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:416 Empty block statement.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:428 'usage' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:443 'e' is defined but never used.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:446 'e' is defined but never used.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:449 'e' is defined but never used.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:881 'parsed' is not defined.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:882 'parsed' is not defined.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:885 'parsed' is not defined.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:885 'parsed' is not defined.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:886 'parsed' is not defined.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:886 'parsed' is not defined.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:888 'e' is defined but never used.
+D:\AI-chatbot\RAGFrontend\src\pages\admin\AdminDashboard.jsx:888 Empty block statement.
+D:\AI-chatbot\RAGFrontend\src\pages\wallet\Recharge.jsx:2 'rechargeWallet' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\wallet\Recharge.jsx:12 'points' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\pages\wallet\Recharge.jsx:12 'setPoints' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1 'placeSearch' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1 'autocomplete' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1 'autocomplete2' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:14 'fullplacename' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:18 'offset' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:19 'offsetsign' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:20 'componentForm' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:23 'sGlobalHoroscope' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:25 'initAutocomplete' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:36 'clickastro' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:51 'initAutocompleteConsult' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:60 'clickastro' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:75 'placeMainAutocomplete' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:84 'clickastro' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:103 'initPlaceAutoComplete' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:108 'ca' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:144 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:149 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:194 'place' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:197 'place' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:200 'place' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:203 'place' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:206 'place' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:209 'place' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:212 'place' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:215 'place' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:218 'place' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:239 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:248 'geoaddress' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:264 '$' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:276 'jQuery' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:279 'i' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:280 'addressType' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:310 'geolocate' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:316 'google' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:324 'loadPlaceAPI' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:325 'GoogleAPISession' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:333 'inScript' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:334 'inScript' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:335 'inScript' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:336 'inScript' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:337 'inScript' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:340 'bst' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:346 'bstClear' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:354 'bstClearConsult' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:356 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:370 'f' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:371 Empty block statement.
+D:\AI-chatbot\RAGFrontend\src\solar.js:408 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:420 'f' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:421 'f' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:422 'f' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:423 'f' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:424 'f' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:577 'f' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:579 'f' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:581 'f' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:583 'f' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:585 'f' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:587 'f' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:589 'name' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:591 'email' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:602 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:629 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:653 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:677 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:696 'sTimezone' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:703 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:723 'sTimezone' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:730 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:750 'sTimezone' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:757 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:777 'sTimezone' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:785 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:806 'sTimezone' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:813 'statename' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:831 'sTimezone' is already defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:852 'checkDstAndSubmit' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:854 'sFormElements' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:857 'sGlobalDisplayName' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:860 'sGlobalDisplayName' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:860 'sGlobalDisplayName' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:867 'sGlobalDisplayName' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:867 'sGlobalDisplayName' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:886 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:887 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:888 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:889 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:890 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:890 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:890 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:890 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:891 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:891 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:892 'tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:893 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:893 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:893 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:893 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:893 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:894 'tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:896 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:917 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:918 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:919 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:920 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:921 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:921 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:921 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:921 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:922 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:922 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:923 'loc_tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:924 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:924 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:924 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:924 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:924 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:925 'loc_tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:926 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:942 '$' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:954 'jQuery' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:955 'f_tzoname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:956 'f_tzoname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:959 'checkDstAndSubmitSingle' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:962 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:963 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:964 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:965 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:966 'tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:967 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:967 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:967 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:967 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:967 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:967 'tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:968 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:972 Read-only global 'name' should not be modified.
+D:\AI-chatbot\RAGFrontend\src\solar.js:973 'msg' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:984 'msg' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:987 'validateSubmit' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:999 'urldecode' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1003 'error' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1007 'selectHoroscope' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1015 'checkDstAndSubmitP' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1027 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1028 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1029 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1030 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1031 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1031 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1031 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1031 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1032 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1032 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1033 'tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1034 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1034 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1034 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1034 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1034 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1035 'tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1037 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1058 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1059 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1060 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1061 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1062 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1062 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1062 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1062 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1063 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1063 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1064 'f_tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1065 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1065 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1065 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1065 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1065 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1066 'f_tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1068 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1088 'checkDstAndSubmitM' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1099 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1100 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1101 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1102 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1103 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1103 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1103 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1103 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1104 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1104 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1105 'tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1106 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1106 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1106 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1106 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1106 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1107 'tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1109 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1130 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1131 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1132 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1133 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1134 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1134 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1134 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1134 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1135 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1135 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1136 'f_tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1137 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1137 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1137 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1137 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1137 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1138 'f_tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1140 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1162 'checkDstAndSubmitCallback' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1163 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1164 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1165 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1166 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1167 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1167 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1167 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1167 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1168 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1168 'h' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1169 'tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1169 'tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1170 'url' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1170 'dobday' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1170 'dobmonth' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1170 'dobyear' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1170 'tob' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1171 'tzname' is not defined.
+D:\AI-chatbot\RAGFrontend\src\solar.js:1172 'url' is not defined.
