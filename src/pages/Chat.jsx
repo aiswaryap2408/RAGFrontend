@@ -2852,7 +2852,7 @@ const Chat = () => {
                                                             html={msg.content}
                                                         />
 
-                                                        {/* JSON Output View (for regular messages) */}
+                                                        {/* JSON.. Output View (for regular messages) */}
                                                         {((msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) || (msg.psycologyJson && jsonVisibility.psycology) || (msg.gurujiInput && jsonVisibility.guruji)) && (
                                                             <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(0,0,0,0.1)', textAlign: 'right', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                                                                 {(msg.mayaJson && !msg.gurujiJson && jsonVisibility.maya) && (
