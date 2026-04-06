@@ -21,7 +21,7 @@ const Login = () => {
         }
     }, [navigate]);
 
-    const handleMobileSubmit = async(e) => {
+    const handleMobileSubmit = async (e) => {
         if (e) e.preventDefault();
         setError('');
 
@@ -83,7 +83,6 @@ const Login = () => {
 
 
 
-
                 {/* Phone Input Box */}
                 <Box
                     sx={{
@@ -115,14 +114,12 @@ const Login = () => {
                         onKeyPress={(e) => e.key === 'Enter' && handleMobileSubmit()}
                     />
 
-
                 </Box>
                 {error && (
                     <Typography color="error" variant="body2" >
                         {error}
                     </Typography>
                 )}
-
 
 
                 <PrimaryButton

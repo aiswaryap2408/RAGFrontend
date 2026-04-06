@@ -1059,7 +1059,8 @@ const Chat = () => {
 
                     setIsSendingToBackend(true);
                     setSendingWaitMessage("Astrologer is typing");
-                    fetchGurujiResponse(mobile, secondLastMsg.content, sanitizedHistory, currentLocalSid, paymentId);
+                    const idempotencyKey = lastMsg.message_id ? `${lastMsg.message_id}_guruji` : null;
+                    fetchGurujiResponse(mobile, secondLastMsg.content, sanitizedHistory, currentLocalSid, paymentId, idempotencyKey);
                 }
             }
         }
@@ -1558,7 +1559,6 @@ const Chat = () => {
             const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, idempotencyKey);
             const duration = Date.now() - startTime;
             addSessionLog(`Guruji API responded in ${duration}ms`);
-
             setSendingWaitMessage("Astrologer is typing");
             addSessionLog("Wait State: Astrologer is typing");
             console.log(`[${getCurrentTime()}] Wait State: Astrologer is typing`);
@@ -1965,7 +1965,9 @@ const Chat = () => {
             if (trigger_guruji) {
                 setSendingWaitMessage("Sending to Astrologer");
                 setIsSendingToBackend(true);
-                await fetchGurujiResponse(mobile, combinedText, history, sessionId, null, idempotencyKey ? `${idempotencyKey}_guruji` : null);
+                // Use the Maya message_id for deterministic idempotency
+                const gurujiIdempotency = message_id ? `${message_id}_guruji` : (idempotencyKey ? `${idempotencyKey}_guruji` : null);
+                await fetchGurujiResponse(mobile, combinedText, history, sessionId, null, gurujiIdempotency);
             }
 
 
