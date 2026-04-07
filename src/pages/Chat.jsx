@@ -1067,6 +1067,33 @@ const Chat = () => {
         }
     };
 
+    const getPreambleMessages = (firstMsgTime, firstMsgTimestamp) => {
+        const rawName = localStorage.getItem('userName') || userName || '';
+        const capitalizedUserName = rawName ? rawName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') : ' ';
+        return [
+            {
+                role: 'assistant',
+                content: `<b>${capitalizedUserName}, welcome.</b>\n\nI'm <b>MAYA</b>, and I'll assist you during your consultation.\n\nWhenever you're ready, you may begin your conversation with <b>Guruji</b> by pressing the button below.\n\nYou may ask about your life, your future, or anything that has been on your mind.`,
+                assistant: 'maya',
+                time: firstMsgTime || '',
+                timestamp: firstMsgTimestamp || new Date().toISOString()
+            },
+            {
+                role: 'system',
+                content: 'Connected to Guruji',
+                time: firstMsgTime || '',
+                timestamp: firstMsgTimestamp || new Date().toISOString()
+            },
+            {
+                role: 'assistant',
+                content: `<b>You're now connected with Guruji. He is online.</b>\n\nWhenever you're ready, you may ask your question.`,
+                assistant: 'maya',
+                time: firstMsgTime || '',
+                timestamp: firstMsgTimestamp || new Date().toISOString()
+            }
+        ];
+    };
+
     // Load Chat History (Smart Resume Logic)
     useEffect(() => {
         const loadHistory = async () => {
@@ -1123,7 +1150,8 @@ const Chat = () => {
                                     animating: false
                                 }));
 
-                                const dedupHistory = deduplicateHistory(mappedHistory);
+                                const preamble = getPreambleMessages(mappedHistory[0]?.time, mappedHistory[0]?.timestamp);
+                                const dedupHistory = deduplicateHistory([...preamble, ...mappedHistory]);
                                 setMessages(dedupHistory);
                                 setChatStarted(dedupHistory.some(m => m.role === 'user'));
                                 attemptGurujiRecovery(dedupHistory, currentLocalSid);
@@ -1174,7 +1202,8 @@ const Chat = () => {
                             }));
 
                             console.log("DEBUG: mappedHistory set, count:", mappedHistory.length);
-                            const dedupHistory = deduplicateHistory(mappedHistory);
+                            const preamble = getPreambleMessages(mappedHistory[0]?.time, mappedHistory[0]?.timestamp);
+                            const dedupHistory = deduplicateHistory([...preamble, ...mappedHistory]);
                             setMessages(dedupHistory);
                             setChatStarted(dedupHistory.some(m => m.role === 'user'));
                             attemptGurujiRecovery(dedupHistory, mostRecentSession.session_id);
@@ -1224,7 +1253,8 @@ const Chat = () => {
                                         animating: false
                                     }));
 
-                                    const dedupHistory = deduplicateHistory(mappedHistory);
+                                    const preamble = getPreambleMessages(mappedHistory[0]?.time, mappedHistory[0]?.timestamp);
+                                    const dedupHistory = deduplicateHistory([...preamble, ...mappedHistory]);
 
                                     setMessages(prev => {
                                         if (prev.length === 0) return prev;
@@ -2517,6 +2547,9 @@ const Chat = () => {
 
                     if (msg.assistant === 'maya' && !msg.isSimple) {
                         if (!msg.content || (typeof msg.content === 'string' && msg.content.trim() === '')) {
+                            return null;
+                        }
+                        if (typeof msg.content === 'string' && msg.content.includes("connect you to our astrologer") && msg.content.includes("Guruji")) {
                             return null;
                         }
                         return (
