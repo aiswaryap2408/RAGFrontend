@@ -911,7 +911,6 @@ const Chat = () => {
     const isAutoScrolling = useRef(false);
     const scrollTimeout = useRef(null);
     const latestGurujiRef = useRef(null); // ref to the top of the latest guruji response
-    const chatInputRef = useRef(null);
 
     // Dynamic timer to force re-renders for status ticks
     const [currentTime, setCurrentTime] = useState(Date.now());
@@ -1067,33 +1066,6 @@ const Chat = () => {
         }
     };
 
-    const getPreambleMessages = (firstMsgTime, firstMsgTimestamp) => {
-        const rawName = localStorage.getItem('userName') || userName || '';
-        const capitalizedUserName = rawName ? rawName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') : ' ';
-        return [
-            {
-                role: 'assistant',
-                content: `<b>${capitalizedUserName}, welcome.</b>\n\nI'm <b>MAYA</b>, and I'll assist you during your consultation.\n\nWhenever you're ready, you may begin your conversation with <b>Guruji</b> by pressing the button below.\n\nYou may ask about your life, your future, or anything that has been on your mind.`,
-                assistant: 'maya',
-                time: firstMsgTime || '',
-                timestamp: firstMsgTimestamp || new Date().toISOString()
-            },
-            {
-                role: 'system',
-                content: 'Connected to Guruji',
-                time: firstMsgTime || '',
-                timestamp: firstMsgTimestamp || new Date().toISOString()
-            },
-            {
-                role: 'assistant',
-                content: `<b>You're now connected with Guruji. He is online.</b>\n\nWhenever you're ready, you may ask your question.`,
-                assistant: 'maya',
-                time: firstMsgTime || '',
-                timestamp: firstMsgTimestamp || new Date().toISOString()
-            }
-        ];
-    };
-
     // Load Chat History (Smart Resume Logic)
     useEffect(() => {
         const loadHistory = async () => {
@@ -1150,8 +1122,7 @@ const Chat = () => {
                                     animating: false
                                 }));
 
-                                const preamble = getPreambleMessages(mappedHistory[0]?.time, mappedHistory[0]?.timestamp);
-                                const dedupHistory = deduplicateHistory([...preamble, ...mappedHistory]);
+                                const dedupHistory = deduplicateHistory(mappedHistory);
                                 setMessages(dedupHistory);
                                 setChatStarted(dedupHistory.some(m => m.role === 'user'));
                                 attemptGurujiRecovery(dedupHistory, currentLocalSid);
@@ -1202,8 +1173,7 @@ const Chat = () => {
                             }));
 
                             console.log("DEBUG: mappedHistory set, count:", mappedHistory.length);
-                            const preamble = getPreambleMessages(mappedHistory[0]?.time, mappedHistory[0]?.timestamp);
-                            const dedupHistory = deduplicateHistory([...preamble, ...mappedHistory]);
+                            const dedupHistory = deduplicateHistory(mappedHistory);
                             setMessages(dedupHistory);
                             setChatStarted(dedupHistory.some(m => m.role === 'user'));
                             attemptGurujiRecovery(dedupHistory, mostRecentSession.session_id);
@@ -1253,8 +1223,7 @@ const Chat = () => {
                                         animating: false
                                     }));
 
-                                    const preamble = getPreambleMessages(mappedHistory[0]?.time, mappedHistory[0]?.timestamp);
-                                    const dedupHistory = deduplicateHistory([...preamble, ...mappedHistory]);
+                                    const dedupHistory = deduplicateHistory(mappedHistory);
 
                                     setMessages(prev => {
                                         if (prev.length === 0) return prev;
@@ -1852,13 +1821,6 @@ const Chat = () => {
 
         // Optionally, focus the input field by treating it as if the user is typing again
         setIsUserTyping(true);
-
-        // Ensure the input field receives focus, especially on mobile to keep the keyboard open
-        setTimeout(() => {
-            if (chatInputRef.current) {
-                chatInputRef.current.focus();
-            }
-        }, 10);
     };
 
     const processQueue = async (queuedMessages) => {
@@ -2549,9 +2511,6 @@ const Chat = () => {
                         if (!msg.content || (typeof msg.content === 'string' && msg.content.trim() === '')) {
                             return null;
                         }
-                        if (typeof msg.content === 'string' && msg.content.includes("connect you to our astrologer") && msg.content.includes("Guruji")) {
-                            return null;
-                        }
                         return (
                             <MayaIntro
                                 key={i}
@@ -3021,51 +2980,40 @@ const Chat = () => {
                                         </Box>
                                         {/* timer animation for user msg */}
                                         <Box
-                                            key={msg.arrivalTime}
-                                            onClick={handleEditQueuedMessage}
                                             sx={{
-                                                width: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 64 : 0,
+                                                width: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 45 : 0,
                                                 opacity: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 1 : 0,
                                                 overflow: 'hidden',
                                                 transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                                                 display: 'flex',
-                                                justifyContent: 'flex-end',
-                                                alignItems: 'flex-end',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
                                                 position: 'relative',
-                                                top: '0px',
+                                                top: '15px',
                                                 pointerEvents: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 'auto' : 'none',
                                                 zIndex: 10,
-                                                left: '-10px',
                                             }}
                                         >
                                             <Box
-                                                // key={msg.arrivalTime}
-                                                // onClick={handleEditQueuedMessage}
+                                                key={msg.arrivalTime}
+                                                onClick={handleEditQueuedMessage}
                                                 sx={{
                                                     m: 0,
                                                     display: "flex",
-                                                    justifyContent: "center",
+                                                    justifyContent: "flex-end",
                                                     alignItems: "center",
                                                     backgroundColor: "transparent",
                                                     cursor: "pointer",
-                                                    p: 1.5,
-                                                    minWidth: 64,
-                                                    height: 64,
-                                                    borderRadius: '50%',
-                                                    pb: 1,
+                                                    p: .5,
+                                                    minWidth: 40,
                                                 }}
                                             >
                                                 <Box
                                                     sx={{
                                                         position: "relative",
-                                                        width: 60,
-                                                        height: 60,
+                                                        width: 40,
+                                                        height: 40,
                                                         overflow: "hidden",
-                                                        pointerEvents: "none",
-                                                        display: "flex",
-                                                        justifyContent: "flex-end",
-                                                        alignItems: "flex-end",
-
                                                     }}
                                                 >
                                                     <Box
@@ -3113,8 +3061,8 @@ const Chat = () => {
                                                     <Box
                                                         sx={{
                                                             position: "absolute",
-                                                            top: "74%",
-                                                            left: "60%",
+                                                            top: "35%",
+                                                            left: "42%",
                                                             width: 13,
                                                             height: 13,
                                                             transform: "translate(-50%, -50%)",
@@ -3123,7 +3071,7 @@ const Chat = () => {
                                                                 content: '""',
                                                                 position: "absolute",
                                                                 top: "50%",
-                                                                left: '10%',
+                                                                left: 0,
                                                                 width: "100%",
                                                                 height: "2px",
                                                                 backgroundColor: "#1C1F46",
@@ -3361,7 +3309,6 @@ const Chat = () => {
                     isBuffering={isSendingToBackend}
                     isConnecting={isConnecting}
                     connectionText={connectionText}
-                    footerInputRef={chatInputRef}
                 />
             ) : null}
             {/* Same overlays as before (Inactivity, Summary, Drawer) */}
