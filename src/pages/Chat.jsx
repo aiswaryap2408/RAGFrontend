@@ -773,9 +773,9 @@ const deduplicateHistory = (historyArr) => {
         if (msg.role === 'user') {
             const msgTime = new Date(msg.timestamp || msg.created_at || Date.now()).getTime();
             // 2. Handle User message retries (identical content within 2 mins)
-            // if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 120000)) {
+            if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 120000)) {
 
-            if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 300000)) {
+                // if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 300000)) {...
                 skippingDuplicateBlock = true;
                 continue; // Skip this user message
             } else {
@@ -1585,7 +1585,7 @@ const Chat = () => {
     //     return h.map(m => ({
     //         role: m.role || 'user',
     //         content: m.content || ''
-    //     }));
+    //     }));  ///
     // };
 
     const sanitizeHistory = (h) => {
@@ -1656,7 +1656,8 @@ const Chat = () => {
             console.error("Guruji Error:", err);
             addSessionLog(`Guruji Error: ${err.message || 'Unknown error'}`);
 
-            const isNetworkError = !err.response && (err.message === 'Network Error' || err.code === 'ECONNABORTED');
+            const isTimeout = err.code === 'ECONNABORTED' || (err.message && err.message.toLowerCase().includes('timeout'));
+            const isNetworkError = !err.response && (err.message === 'Network Error' || isTimeout);
             const isDuplicate = err.response?.status === 409;
 
             if (isNetworkError || isDuplicate) {
@@ -1665,10 +1666,9 @@ const Chat = () => {
                 setSendingWaitMessage("Astrologer is typing");
 
                 let recovered = false;
-                // for (let i = 0; i < 10; i++) {
-                //     addSessionLog(`Recovery attempt ${i + 1}/10...`);
-                for (let i = 0; i < 15; i++) {
-                    addSessionLog(`Recovery attempt ${i + 1}/15...`);
+                for (let i = 0; i < 10; i++) {
+                    addSessionLog(`Recovery attempt ${i + 1}/10...`);
+
                     await new Promise(resolve => setTimeout(resolve, 4000));
                     try {
                         const currentProfileId = localStorage.getItem('currentProfileId');
@@ -1712,7 +1712,7 @@ const Chat = () => {
                 }
             }
 
-            const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout');
+            // Using isTimeout defined above...
             const errMsg = isTimeout
                 ? "Guruji is taking a bit longer than usual to contemplate your query. Your answer will appear here shortly, or you can try refreshing the page."
                 : (err.response?.data?.detail || err.message || 'Guruji is not available right now. Please try again after some time.');
@@ -2036,6 +2036,8 @@ const Chat = () => {
 
         } catch (err) {
             console.error("Chat Error:", err);
+            const isTimeout = err.code === 'ECONNABORTED' || (err.message && err.message.toLowerCase().includes('timeout'));
+            const isNetworkError = !err.response && (err.message === 'Network Error' || isTimeout);
             if (err.response?.status === 409) {
                 console.log("Duplicate Maya request detected, trusting backend process.");
                 return;
