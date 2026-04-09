@@ -1712,7 +1712,7 @@ const Chat = () => {
                 }
             }
 
-            // Using isTimeout defined above.
+            // Using isTimeout defined above..
             const errMsg = isTimeout
                 ? "Guruji is taking a bit longer than usual to contemplate your query. Your answer will appear here shortly, or you can try refreshing the page."
                 : (err.response?.data?.detail || err.message || 'Guruji is not available right now. Please try again after some time.');
