@@ -5,7 +5,6 @@ console.log("API BASE URL:", API_BASE_URL);
 const api = axios.create({
     baseURL: API_BASE_URL,
     timeout: 120000,
-    // timeout: 300000, // 300 seconds timeout (astrology reports and RAG can be slow)
     headers: {
         'Content-Type': 'application/json',
     },
