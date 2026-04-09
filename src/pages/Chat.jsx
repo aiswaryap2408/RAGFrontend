@@ -2036,6 +2036,8 @@ const Chat = () => {
 
         } catch (err) {
             console.error("Chat Error:", err);
+            const isTimeout = err.code === 'ECONNABORTED' || (err.message && err.message.toLowerCase().includes('timeout'));
+            const isNetworkError = !err.response && (err.message === 'Network Error' || isTimeout);
             if (err.response?.status === 409) {
                 console.log("Duplicate Maya request detected, trusting backend process.");
                 return;
