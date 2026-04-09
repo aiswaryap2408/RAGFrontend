@@ -4,8 +4,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // FastAPI Backend
 console.log("API BASE URL:", API_BASE_URL);
 const api = axios.create({
     baseURL: API_BASE_URL,
-    //  timeout: 120000,
-    timeout: 300000, // 300 seconds timeout (astrology reports and RAG can be slow)
+    timeout: 120000,
+    // timeout: 300000, // 300 seconds timeout (astrology reports and RAG can be slow)
     headers: {
         'Content-Type': 'application/json',
     },
