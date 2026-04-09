@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import api, { sendMessage, getGurujiResponse, endChat, startSession, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment } from '../api';
+import api, { sendMessage, getGurujiResponse, endChat, startSession, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment, payForChat } from '../api';
 import axios from 'axios';
 
 import {
@@ -754,18 +754,25 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
 
 
 const deduplicateHistory = (historyArr) => {
+    if (!Array.isArray(historyArr)) return historyArr;
     const deduplicated = [];
-    let skippingDuplicateBlock = false;
+    const seenIds = new Set();
     let lastUserContent = null;
     let lastUserTime = 0;
+    let skippingDuplicateBlock = false;
 
     for (let i = 0; i < historyArr.length; i++) {
         const msg = historyArr[i];
 
+        // 1. Deduplicate by explicit message_id
+        if (msg.message_id && seenIds.has(msg.message_id)) {
+            continue;
+        }
+        if (msg.message_id) seenIds.add(msg.message_id);
+
         if (msg.role === 'user') {
             const msgTime = new Date(msg.timestamp || msg.created_at || Date.now()).getTime();
-
-            // If the user sends the exact same message within 2 minutes (120000 ms), treat as retry duplicate
+            // 2. Handle User message retries (identical content within 2 mins)
             if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 120000)) {
                 skippingDuplicateBlock = true;
                 continue; // Skip this user message
@@ -776,13 +783,25 @@ const deduplicateHistory = (historyArr) => {
                 deduplicated.push(msg);
             }
         } else {
-            // Assistant message
+            // 3. Handle Assistant message duplicates
             if (skippingDuplicateBlock) {
                 // Skip assistant messages that belong to the duplicate user message block
                 continue;
-            } else {
-                deduplicated.push(msg);
             }
+
+            // [NEW ENHANCED] Check for identical content within the current conversation slice to avoid duplicates from history overlaps
+            const contentExists = deduplicated.some(m =>
+                m.role === msg.role &&
+                m.assistant === msg.assistant &&
+                m.content === msg.content &&
+                (msg.message_id ? m.message_id === msg.message_id : true)
+            );
+
+            if (contentExists) {
+                continue;
+            }
+
+            deduplicated.push(msg);
         }
     }
     return deduplicated;
@@ -861,6 +880,7 @@ const Chat = () => {
             mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
             psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
             gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
+            paywall_level: msg.paywall_level,
             animating: false
         }));
         setMessages(deduplicateHistory(mappedHistory));
@@ -897,6 +917,7 @@ const Chat = () => {
     const [jsonModal, setJsonModal] = useState({ open: false, data: null, title: '' });
     const [chatPaymentState, setChatPaymentState] = useState('IDLE'); // IDLE, REQUIRED, PAYING, COMPLETE
     const [pendingMessageId, setPendingMessageId] = useState(null);
+    const [insufficientFundsInfo, setInsufficientFundsInfo] = useState(null); // { required, balance }
     const [gurujiStarted, setGurujiStarted] = useState(new Set()); // tracks which guruji msgs have shown at least 1 bubble
     const [chatStarted, setChatStarted] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
@@ -908,16 +929,20 @@ const Chat = () => {
     const messagesEndRef = useRef(null);
     const containerRef = useRef(null);
     const processedNewSession = useRef(false);
+    const processedPaymentRetry = useRef(false);
     const isAutoScrolling = useRef(false);
     const scrollTimeout = useRef(null);
     const latestGurujiRef = useRef(null); // ref to the top of the latest guruji response
 
     // Dynamic timer to force re-renders for status ticks
+    // Only runs while a message is actively being sent (tick transitions need it).
+    // When idle, no interval = no unnecessary re-renders.
     const [currentTime, setCurrentTime] = useState(Date.now());
     useEffect(() => {
+        if (!isSendingToBackend) return;
         const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
         return () => clearInterval(interval);
-    }, []);
+    }, [isSendingToBackend]);
 
     // Keep "Astrologer is typing" overlay visible for at least 2s so animation completes
     useEffect(() => {
@@ -1046,8 +1071,16 @@ const Chat = () => {
         const secondLastMsg = currentHistory.length > 1 ? currentHistory[currentHistory.length - 2] : null;
 
         if (lastMsg && lastMsg.role === 'assistant' && lastMsg.assistant === 'maya' && secondLastMsg && secondLastMsg.role === 'user') {
+            // Skip recovery if the user message requires payment but hasn't been paid
+            if (secondLastMsg.requires_chat_payment && !secondLastMsg.is_paid) {
+                console.log("DEBUG: Recovery skipped — user message requires payment but is not paid yet.");
+                return;
+            }
+
             const explicitlyTriggered = lastMsg.trigger_guruji === true;
-            const implicitlyTriggered = lastMsg.trigger_guruji === undefined && lastMsg.mayaJson && !lastMsg.mayaJson.is_safety_warning && !lastMsg.requires_chat_payment && !(typeof lastMsg.content === 'string' && (lastMsg.content.toLowerCase().includes('error') || lastMsg.content.toLowerCase().includes('sorry') || lastMsg.content.toLowerCase().includes('offline')));
+            const contentLower = typeof lastMsg.content === 'string' ? lastMsg.content.toLowerCase() : '';
+            const hasErrorKeyword = contentLower.includes('error') || contentLower.includes('sorry') || contentLower.includes('offline') || contentLower.includes('payment') || contentLower.includes('verified');
+            const implicitlyTriggered = lastMsg.trigger_guruji === undefined && lastMsg.mayaJson && !lastMsg.mayaJson.is_safety_warning && !lastMsg.requires_chat_payment && !hasErrorKeyword;
 
             if (explicitlyTriggered || implicitlyTriggered) {
                 if (!isSendingToBackend) {
@@ -1055,11 +1088,19 @@ const Chat = () => {
                     const mobile = localStorage.getItem('mobile');
                     const historyForGuruji = currentHistory.length > 2 ? currentHistory.slice(1, -2) : [];
                     const sanitizedHistory = sanitizeHistory(historyForGuruji);
-                    const paymentId = secondLastMsg.is_paid ? secondLastMsg.payment_id : null;
+                    // const paymentId = secondLastMsg.is_paid ? secondLastMsg.payment_id : null;
+                    const paymentId = (secondLastMsg.is_paid && secondLastMsg.payment_id) ? secondLastMsg.payment_id : null;
+                    const idempotencyKey = secondLastMsg.message_id ? `${secondLastMsg.message_id}_guruji` : null;
+
+                    // Support the same persistent guard used during payment auto-retry
+                    const retryKey = secondLastMsg.message_id ? `retry_initiated_${secondLastMsg.message_id}` : null;
+                    if (retryKey && sessionStorage.getItem(retryKey)) {
+                        console.log("DEBUG: Recovering skipped as resumption is already in progress.");
+                        return;
+                    }
 
                     setIsSendingToBackend(true);
                     setSendingWaitMessage("Astrologer is typing");
-                    const idempotencyKey = lastMsg.message_id ? `${lastMsg.message_id}_guruji` : null;
                     fetchGurujiResponse(mobile, secondLastMsg.content, sanitizedHistory, currentLocalSid, paymentId, idempotencyKey);
                 }
             }
@@ -1092,7 +1133,8 @@ const Chat = () => {
                 }
 
                 try {
-                    const res = await getChatHistory(mobile);
+                    const currentProfileId = localStorage.getItem('currentProfileId');
+                    const res = await getChatHistory(mobile, currentProfileId);
                     console.log("DEBUG: getChatHistory response:", res.data);
                     const currentLocalSid = localStorage.getItem('activeSessionId');
                     console.log("DEBUG: currentLocalSid:", currentLocalSid);
@@ -1206,8 +1248,9 @@ const Chat = () => {
                 const currentLocalSid = localStorage.getItem('activeSessionId');
 
                 if (mobile && currentLocalSid) {
+                    const currentProfileId = localStorage.getItem('currentProfileId');
                     try {
-                        const res = await getChatHistory(mobile);
+                        const res = await getChatHistory(mobile, currentProfileId);
                         if (res.data.sessions && res.data.sessions.length > 0) {
                             const localSessionOnServer = res.data.sessions.find(s => s.session_id === currentLocalSid);
                             if (localSessionOnServer && !localSessionOnServer.is_ended) {
@@ -1404,11 +1447,13 @@ const Chat = () => {
         setFeedback({ rating: 0, comment: '' });
         setFeedbackSubmitted(false);
         setChatStarted(false);
+        setInsufficientFundsInfo(null);
 
         // Register the new session on the server immediately so it survives page reload
         const mobile = localStorage.getItem('mobile');
         if (mobile) {
-            startSession(mobile, newSid).catch(err => console.error('Failed to register session:', err));
+            const currentProfileId = localStorage.getItem('currentProfileId');
+            startSession(mobile, newSid, currentProfileId).catch(err => console.error('Failed to register session:', err));
         }
     };
 
@@ -1418,7 +1463,8 @@ const Chat = () => {
         setLoading(true);
         try {
             const mobile = localStorage.getItem('mobile');
-            const res = await endChat(mobile, messages, sessionId);
+            const currentProfileId = localStorage.getItem('currentProfileId');
+            const res = await endChat(mobile, messages, sessionId, currentProfileId);
             setSummary(res.data.summary);
             // Clear local session ID so it doesn't try to resume an ended session
             localStorage.removeItem('activeSessionId');
@@ -1614,7 +1660,8 @@ const Chat = () => {
                     addSessionLog(`Recovery attempt ${i + 1}/10...`);
                     await new Promise(resolve => setTimeout(resolve, 4000));
                     try {
-                        const historyRes = await getChatHistory(mobile);
+                        const currentProfileId = localStorage.getItem('currentProfileId');
+                        const historyRes = await getChatHistory(mobile, currentProfileId);
                         if (historyRes.data.sessions && historyRes.data.sessions.length > 0) {
                             const thisSession = historyRes.data.sessions.find(s => s.session_id === sessionId);
                             if (thisSession && thisSession.messages) {
@@ -1882,7 +1929,8 @@ const Chat = () => {
             addSessionLog(`Sending message to Maya: ${combinedText}`);
             console.log(`[${getCurrentTime()}] Sending message to Maya:`, combinedText);
             const startTime = Date.now();
-            const res = await sendMessage(mobile, combinedText, history, sessionId, null, null, idempotencyKey);
+            const currentProfileId = localStorage.getItem('currentProfileId');
+            const res = await sendMessage(mobile, combinedText, history, sessionId, null, currentProfileId, idempotencyKey);
             const duration = Date.now() - startTime;
             addSessionLog(`Maya API responded in ${duration}ms`);
 
@@ -1921,7 +1969,8 @@ const Chat = () => {
                             is_paid: false,
                             message_id: res.data.message_id,
                             mayaJson: tryParseJson(res.data.maya_json),
-                            psycologyJson: tryParseJson(res.data.psycology_json)
+                            psycologyJson: tryParseJson(res.data.psycology_json),
+                            paywall_level: res.data.paywall_level
                         };
                     }
                     return next;
@@ -2219,6 +2268,7 @@ const Chat = () => {
     const handleChatSuccess = async (paymentId, amount) => {
         try {
             setChatPaymentState('COMPLETE');
+            setInsufficientFundsInfo(null);
             setThankYouAction('CHAT_PAYMENT');
             setThankYouOpen(false);
 
@@ -2242,11 +2292,11 @@ const Chat = () => {
             });
 
             // Call Guruji directly — Maya's classification is already saved in DB
-            // from the initial /auth/chat call, so no need to re-call /auth/chat
-            const history = messages.length > 1 ? messages.slice(1) : [];
+            const history = messages;
             const sanitizedHistory = sanitizeHistory(history);
-            await fetchGurujiResponse(mobile, lastUserMsg.content, sanitizedHistory, sessionId, paymentId);
+            const idempotencyKey = pendingMessageId ? `${pendingMessageId}_guruji_${Date.now()}` : null;
 
+            await fetchGurujiResponse(mobile, lastUserMsg.content, sanitizedHistory, sessionId, paymentId, idempotencyKey);
             setChatPaymentState('IDLE');
             setPendingMessageId(null);
         } catch (err) {
@@ -2259,49 +2309,73 @@ const Chat = () => {
     };
 
     const handleChatPayment = async (amount, mobile) => {
-        // Temporary Bypass: Alert Success and proceed
-        setChatPaymentState('PAYING'); // disable button immediately
-        // alert("Payment successful!");
-        handleChatSuccess("MOCK_PAYMENT_ID", amount);
-        return;
+        if (amount === 0) {
+            setChatPaymentState('PAYING');
+            handleChatSuccess("FREE_QUOTA", amount);
+            return;
+        }
 
-        // Original logic preserved below (currently unreachable)
         setChatPaymentState('PAYING');
+        setInsufficientFundsInfo(null);
         try {
-            // const orderRes = await createPaymentOrder(amount, mobile);
             const referenceid = localStorage.getItem('currentProfileId');
-            const orderRes = await createPaymentOrder(amount, mobile, referenceid);
-            const { order_id, key } = orderRes.data;
 
-            const options = {
-                key,
-                amount: amount * 100,
-                currency: "INR",
-                name: "Astrology Consultation",
-                description: "Payment for personalized answer",
-                order_id,
-                handler: async (response) => {
-                    handleChatSuccess(response.razorpay_payment_id, amount);
-                },
-                modal: {
-                    ondismiss: () => {
-                        setChatPaymentState('REQUIRED');
-                    }
-                },
-                prefill: {
-                    contact: mobile
-                },
-                theme: {
-                    color: "#F36A2F"
-                }
-            };
-            const rzp = new window.Razorpay(options);
-            rzp.open();
+            // Deduct from wallet
+            const response = await payForChat({
+                mobile,
+                referenceid,
+                amount,
+                description: `Payment for question: ${activeQuestion ? activeQuestion.substring(0, 30) : ''}...`
+            });
+
+            if (response.data && response.data.success) {
+                // Payment successful
+                handleChatSuccess(response.data.transaction_id, amount);
+            } else {
+                throw new Error("Wallet deduction failed: logic error or insufficient funds.");
+            }
+
         } catch (err) {
-            console.error("Order creation failed:", err);
+            console.error("Wallet deduction failed:", err);
+
+            // Show inline insufficient funds notification instead of redirecting
             setChatPaymentState('REQUIRED');
+            setInsufficientFundsInfo({
+                required: amount,
+                balance: walletBalance
+            });
         }
     };
+
+    // Auto-retry payment after returning from Recharge/Wallet
+    useEffect(() => {
+        const pendingChatPaymentStr = localStorage.getItem('pendingChatPayment');
+        const mobile = localStorage.getItem('mobile');
+
+        if (pendingChatPaymentStr && userStatus === 'ready') {
+            try {
+                const pendingChatPayment = JSON.parse(pendingChatPaymentStr);
+                const retryKey = `retry_initiated_${pendingChatPayment.pendingMessageId}`;
+                const alreadyRetryStarted = sessionStorage.getItem(retryKey);
+
+                if (pendingChatPayment && pendingChatPayment.amount !== undefined && pendingChatPayment.sessionId === sessionId && !alreadyRetryStarted) {
+                    sessionStorage.setItem(retryKey, 'true'); // Guard against re-entry sustainably
+                    localStorage.removeItem('pendingChatPayment'); // Prevent re-trigger on next render
+
+                    setChatPaymentState('REQUIRED');
+                    setPendingMessageId(pendingChatPayment.pendingMessageId);
+                    setActiveQuestion(pendingChatPayment.activeQuestion);
+
+                    setTimeout(() => {
+                        handleChatPayment(pendingChatPayment.amount, mobile);
+                    }, 800);
+                }
+            } catch (e) {
+                console.error("Failed to parse pending payment", e);
+                localStorage.removeItem('pendingChatPayment');
+            }
+        }
+    }, [location.state, userStatus, sessionId]);
 
     return (
         <Box
@@ -2758,9 +2832,28 @@ const Chat = () => {
                                 </Box>
                                 <MayaTemplateBox
                                     // name={userName.split(' ')[0]}
-                                    content={msg.chat_payment_amount === 0
-                                        ? `<span style="font-weight: 800;">This is a premium prediction worth ₹${msg.actual_chat_payment_amount || 39} - but get it for free now.</span> \n\n <span style="color: #54A170">Subscribe</span> to get unlimited answers access for a day, month or a quarter.`
-                                        : `<span style="font-weight: 800;">This is a premium prediction.</span>\n Get the answer for <span style="text-decoration: line-through;">₹${msg.actual_chat_payment_amount || 39}</span> ₹${msg.chat_payment_amount || 39}.<p style="margin-top: 15px;">Or you may <span style="color: #54A170; text-decoration: underline;">subscribe now</span> <span style="font-weight: 800;">to get unlimited answers access </span>for a day, month or a quarter.</p>`}
+                                    // content={msg.chat_payment_amount === 0
+                                    //     ? `<span style="font-weight: 800;">This is a premium prediction worth ₹${msg.actual_chat_payment_amount || 39} - but get it for free now.</span> \n\n <span style="color: #54A170">Subscribe</span> to get unlimited answers access for a day, month or a quarter.`
+                                    //     : `<span style="font-weight: 800;">This is a premium prediction.</span>\n Get the answer for <span style="text-decoration: line-through;">₹${msg.actual_chat_payment_amount || 39}</span> ₹${msg.chat_payment_amount || 39}.<p style="margin-top: 15px;">Or you may <span style="color: #54A170; text-decoration: underline;">subscribe now</span> <span style="font-weight: 800;">to get unlimited answers access </span>for a day, month or a quarter.</p>`}
+                                    content={(() => {
+                                        const amount = msg.chat_payment_amount !== undefined ? msg.chat_payment_amount : 39;
+                                        const actualAmount = msg.actual_chat_payment_amount || 39;
+                                        const level = msg.paywall_level || 'LEVEL_1';
+
+                                        if (amount === 0) {
+                                            let levelBadge = '';
+                                            if (level === 'LEVEL_2') levelBadge = ' <span style="color: #F36A2F; font-weight: 900;">[PRIORITY]</span>';
+                                            if (level === 'LEVEL_3') levelBadge = ' <span style="color: #F36A2F; font-weight: 900;">[EXCLUSIVE]</span>';
+
+                                            return `<span style="font-weight: 800;">This is a premium prediction${levelBadge} worth ₹${actualAmount} - but get it for free now.</span> \n\n <span style="color: #54A170">Subscribe</span> to get unlimited answers access for a day, month or a quarter.`;
+                                        } else {
+                                            let title = 'This is a premium prediction.';
+                                            if (level === 'LEVEL_2') title = 'This is a <span style="color: #F36A2F;">Level 2</span> prediction.';
+                                            if (level === 'LEVEL_3') title = 'This is an <span style="color: #F36A2F;">Level 3</span>.';
+
+                                            return `<span style="font-weight: 800;">${title}</span>\n Get the answer for <span style="text-decoration: line-through;">₹${actualAmount}</span> ₹${amount}.<p style="margin-top: 15px;">Or you may <span style="color: #54A170; text-decoration: underline;">subscribe now</span> <span style="font-weight: 800;">to get unlimited answers access </span>for a day, month or a quarter.</p>`;
+                                        }
+                                    })()}
                                     buttonLabel={(() => {
                                         const lastPaymentMsgIdx = messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1);
                                         const isOldPayment = i < lastPaymentMsgIdx;
@@ -2781,6 +2874,21 @@ const Chat = () => {
                                         return chatPaymentState === 'PAYING' || chatPaymentState === 'COMPLETE';
                                     })()}
                                 />
+                                {insufficientFundsInfo && i === messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1) && (
+                                    <MayaTemplateBox
+                                        content={`<span style="font-weight: 800; color: #d32f2f;">Insufficient balance in your wallet.</span>\n\nYour current balance is <span style="font-weight: 800;">${insufficientFundsInfo.balance} points</span>, but <span style="font-weight: 800;">${insufficientFundsInfo.required} points</span> are needed for this answer.\n\nPlease recharge your wallet to continue.`}
+                                        buttonLabel="Recharge Wallet and Get answer"
+                                        onButtonClick={() => {
+                                            localStorage.setItem('pendingChatPayment', JSON.stringify({
+                                                amount: insufficientFundsInfo.required,
+                                                pendingMessageId,
+                                                activeQuestion,
+                                                sessionId
+                                            }));
+                                            navigate('/wallet', { state: { returnToChat: true } });
+                                        }}
+                                    />
+                                )}
                             </Box>
                         );
                     }

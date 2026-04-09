@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, getTransactionHistory, getPublicRechargeConfigs } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Typography, Card, CardContent, IconButton, Button, Divider, CircularProgress } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
@@ -19,6 +19,7 @@ const Wallet = () => {
     const mobile = localStorage.getItem('mobile');
     const referenceid = localStorage.getItem('currentProfileId');
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
         if (!mobile) {
@@ -38,7 +39,7 @@ const Wallet = () => {
                 document.body.removeChild(script);
             }
         };
-    }, [mobile]);
+    }, [mobile, location.key]);
 
     const fetchConfigs = async () => {
         setConfigsLoading(true);
@@ -67,6 +68,13 @@ const Wallet = () => {
     };
 
     const handleRecharge = async (amount) => {
+        if (!mobile || !referenceid) {
+            console.error("Missing credentials for recharge:", { mobile, referenceid });
+            alert("No profile selected or session expired. Please select a profile before recharging.");
+            navigate('/chat');
+            return;
+        }
+
         setLoading(true);
         try {
             const { createPaymentOrder, verifyPayment } = await import('../../api');
@@ -92,7 +100,13 @@ const Wallet = () => {
                             razorpay_signature: response.razorpay_signature
                         });
                         alert("Recharge successful! Your balance has been updated.");
-                        fetchWalletData();
+                        // Always refresh balance immediately
+                        await fetchWalletData();
+                        if (location.state?.returnToChat) {
+                            setTimeout(() => {
+                                navigate('/chat', { state: { fromRecharge: true } });
+                            }, 800);
+                        }
                     } catch (err) {
                         console.error("Verification failed", err);
                         alert("Payment verification failed. Please contact support.");
@@ -107,6 +121,9 @@ const Wallet = () => {
             };
 
             const rzp = new window.Razorpay(options);
+            if (!window.Razorpay) {
+                throw new Error("Razorpay SDK not loaded. Please refresh the page and try again.");
+            }
             rzp.on('payment.failed', function (response) {
                 alert("Payment Failed: " + response.error.description);
             });
@@ -114,7 +131,8 @@ const Wallet = () => {
 
         } catch (error) {
             console.error("Payment init failed:", error);
-            alert("Failed to initiate payment. Please try again.");
+            const errMsg = error.response?.data?.detail || error.message || "Failed to initiate payment. Please try again.";
+            alert("Error: " + errMsg);
         } finally {
             setLoading(false);
         }
