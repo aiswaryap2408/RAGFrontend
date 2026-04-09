@@ -43,13 +43,16 @@ export const getUserStatus = (mobile) => api.get(`/auth/user-status/${mobile}`);
 export const regenerateReport = (mobile) => api.post(`/auth/regenerate-report/${mobile}`);
 
 
-export const sendMessage = (mobile, message, history, sessionId, paymentId = null, referenceid = null) =>
-    api.post('/auth/chat', { mobile, message, history, session_id: sessionId, payment_id: paymentId, referenceid });
-export const getGurujiResponse = (mobile, message, history, sessionId, paymentId = null, referenceid = null) =>
-    api.post('/auth/chat/guruji', { mobile, message, history, session_id: sessionId, payment_id: paymentId, referenceid });
+export const sendMessage = (mobile, message, history, sessionId, paymentId = null, referenceid = null, idempotencyKey = null) =>
+    api.post('/auth/chat', { mobile, message, history, session_id: sessionId, payment_id: paymentId, referenceid, idempotency_key: idempotencyKey });
+export const getGurujiResponse = (mobile, message, history, sessionId, paymentId = null, referenceid = null, idempotencyKey = null) =>
+    api.post('/auth/chat/guruji', { mobile, message, history, session_id: sessionId, payment_id: paymentId, referenceid, idempotency_key: idempotencyKey });
 export const endChat = (mobile, history, sessionId, referenceid = null) => api.post('/auth/end-chat', { mobile, history, session_id: sessionId, referenceid });
 export const startSession = (mobile, sessionId, referenceid = null) => api.post('/auth/start-session', { mobile, session_id: sessionId, referenceid });
-export const getChatHistory = (mobile) => api.get(`/auth/history/${mobile}`);
+export const getChatHistory = (mobile, referenceid = null) => {
+    const params = referenceid ? { referenceid } : {};
+    return api.get(`/auth/history/${mobile}`, { params });
+};
 export const submitFeedback = (data) => api.post('/auth/feedback', data);
 export const getDailyPrediction = (mobile) => api.get(`/auth/daily-prediction/${mobile}`);
 

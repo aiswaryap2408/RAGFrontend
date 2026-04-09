@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import api, { sendMessage, getGurujiResponse, endChat, startSession, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment } from '../api';
+import api, { sendMessage, getGurujiResponse, endChat, startSession, getChatHistory, submitFeedback, generateReport, createPaymentOrder, verifyPayment, payForChat } from '../api';
 import axios from 'axios';
 
 import {
@@ -162,7 +162,7 @@ const MayaIntro = ({ title, name, content, mayaJson, psycologyJson, rawResponse,
                 position: 'relative',
                 pointerEvents: 'none',
                 mb: 0,
-                mr: 1,
+                // mr: 1,
                 textAlign: 'right',
             }}>
                 MAYA AI
@@ -753,6 +753,60 @@ const SequentialResponse = ({ gurujiJson, bubbles: bubblesProp = [], delays = []
 };
 
 
+const deduplicateHistory = (historyArr) => {
+    if (!Array.isArray(historyArr)) return historyArr;
+    const deduplicated = [];
+    const seenIds = new Set();
+    let lastUserContent = null;
+    let lastUserTime = 0;
+    let skippingDuplicateBlock = false;
+
+    for (let i = 0; i < historyArr.length; i++) {
+        const msg = historyArr[i];
+
+        // 1. Deduplicate by explicit message_id
+        if (msg.message_id && seenIds.has(msg.message_id)) {
+            continue;
+        }
+        if (msg.message_id) seenIds.add(msg.message_id);
+
+        if (msg.role === 'user') {
+            const msgTime = new Date(msg.timestamp || msg.created_at || Date.now()).getTime();
+            // 2. Handle User message retries (identical content within 2 mins)
+            if (lastUserContent && lastUserContent === msg.content && (msgTime - lastUserTime < 120000)) {
+                skippingDuplicateBlock = true;
+                continue; // Skip this user message
+            } else {
+                skippingDuplicateBlock = false;
+                lastUserContent = msg.content;
+                lastUserTime = msgTime;
+                deduplicated.push(msg);
+            }
+        } else {
+            // 3. Handle Assistant message duplicates
+            if (skippingDuplicateBlock) {
+                // Skip assistant messages that belong to the duplicate user message block
+                continue;
+            }
+
+            // [NEW ENHANCED] Check for identical content within the current conversation slice to avoid duplicates from history overlaps
+            const contentExists = deduplicated.some(m =>
+                m.role === msg.role &&
+                m.assistant === msg.assistant &&
+                m.content === msg.content &&
+                (msg.message_id ? m.message_id === msg.message_id : true)
+            );
+
+            if (contentExists) {
+                continue;
+            }
+
+            deduplicated.push(msg);
+        }
+    }
+    return deduplicated;
+};
+
 const Chat = () => {
     const [showHeader, setShowHeader] = useState(true);
     const [sendingWaitMessage, setSendingWaitMessage] = useState("");
@@ -807,6 +861,36 @@ const Chat = () => {
     // Helper to get current time string
     const getCurrentTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
 
+    const [sessionLogs, setSessionLogs] = useState([]);
+    const [logsOpen, setLogsOpen] = useState(false);
+    const addSessionLog = (msg) => {
+        const now = new Date();
+        const timeStr = `${now.toLocaleTimeString()}.${now.getMilliseconds().toString().padStart(3, '0')}`;
+        const logEntry = `[${timeStr}] ${msg}`;
+        setSessionLogs(prev => [...prev, logEntry]);
+        console.log(logEntry);
+    };
+
+    const applyHistoryUpdate = (history) => {
+        if (!history || !Array.isArray(history)) return;
+        const mappedHistory = history.map(msg => ({
+            ...msg,
+            time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
+            gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
+            mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+            psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
+            gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
+            paywall_level: msg.paywall_level,
+            animating: false
+        }));
+        setMessages(deduplicateHistory(mappedHistory));
+    };
+
+    const deduplicateMessages = (msgs) => {
+        if (!Array.isArray(msgs)) return msgs;
+        return deduplicateHistory(msgs);
+    };
+
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -829,10 +913,11 @@ const Chat = () => {
     const [readyReportData, setReadyReportData] = useState(null);
     const [activeQuestion, setActiveQuestion] = useState(null);
     const [activeReportIndex, setActiveReportIndex] = useState(null);
-    const [jsonVisibility, setJsonVisibility] = useState({ maya: false, guruji: false, psycology: false, logs: false });
+    const [jsonVisibility, setJsonVisibility] = useState({ maya: false, guruji: false, psycology: false });
     const [jsonModal, setJsonModal] = useState({ open: false, data: null, title: '' });
     const [chatPaymentState, setChatPaymentState] = useState('IDLE'); // IDLE, REQUIRED, PAYING, COMPLETE
     const [pendingMessageId, setPendingMessageId] = useState(null);
+    const [insufficientFundsInfo, setInsufficientFundsInfo] = useState(null); // { required, balance }
     const [gurujiStarted, setGurujiStarted] = useState(new Set()); // tracks which guruji msgs have shown at least 1 bubble
     const [chatStarted, setChatStarted] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
@@ -844,16 +929,20 @@ const Chat = () => {
     const messagesEndRef = useRef(null);
     const containerRef = useRef(null);
     const processedNewSession = useRef(false);
+    const processedPaymentRetry = useRef(false);
     const isAutoScrolling = useRef(false);
     const scrollTimeout = useRef(null);
     const latestGurujiRef = useRef(null); // ref to the top of the latest guruji response
 
     // Dynamic timer to force re-renders for status ticks
+    // Only runs while a message is actively being sent (tick transitions need it).
+    // When idle, no interval = no unnecessary re-renders.
     const [currentTime, setCurrentTime] = useState(Date.now());
     useEffect(() => {
+        if (!isSendingToBackend) return;
         const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
         return () => clearInterval(interval);
-    }, []);
+    }, [isSendingToBackend]);
 
     // Keep "Astrologer is typing" overlay visible for at least 2s so animation completes
     useEffect(() => {
@@ -977,81 +1066,44 @@ const Chat = () => {
         lastScrollTop.current = scrollTop <= 0 ? 0 : scrollTop;
     };
 
-    const syncInProgressRef = useRef(false);
+    const attemptGurujiRecovery = (currentHistory, currentLocalSid) => {
+        const lastMsg = currentHistory[currentHistory.length - 1];
+        const secondLastMsg = currentHistory.length > 1 ? currentHistory[currentHistory.length - 2] : null;
 
-    const deduplicateMessages = (historyArr) => {
-        if (!Array.isArray(historyArr)) return [];
-        const seenIds = new Set();
-        const seenUserFingerprints = new Set(); // content + timestamp
-        const deduplicated = [];
-
-        // We process from bottom to top to prioritize messages with IDs (server truth)
-        // actually, processing normally but check IDs first is better.
-        for (const msg of historyArr) {
-            // Priority 1: Check message_id
-            if (msg.message_id) {
-                if (seenIds.has(String(msg.message_id))) continue;
-                seenIds.add(String(msg.message_id));
+        if (lastMsg && lastMsg.role === 'assistant' && lastMsg.assistant === 'maya' && secondLastMsg && secondLastMsg.role === 'user') {
+            // Skip recovery if the user message requires payment but hasn't been paid
+            if (secondLastMsg.requires_chat_payment && !secondLastMsg.is_paid) {
+                console.log("DEBUG: Recovery skipped — user message requires payment but is not paid yet.");
+                return;
             }
 
-            // Priority 2: content-based fingerprinting for User messages without IDs
-            // (prevents double-entry of local messages vs server syncs)
-            if (msg.role === 'user') {
-                const fingerprint = `${msg.role}:${msg.content}:${msg.timestamp || msg.created_at || ''}`;
-                if (seenUserFingerprints.has(fingerprint)) continue;
-                seenUserFingerprints.add(fingerprint);
+            const explicitlyTriggered = lastMsg.trigger_guruji === true;
+            const contentLower = typeof lastMsg.content === 'string' ? lastMsg.content.toLowerCase() : '';
+            const hasErrorKeyword = contentLower.includes('error') || contentLower.includes('sorry') || contentLower.includes('offline') || contentLower.includes('payment') || contentLower.includes('verified');
+            const implicitlyTriggered = lastMsg.trigger_guruji === undefined && lastMsg.mayaJson && !lastMsg.mayaJson.is_safety_warning && !lastMsg.requires_chat_payment && !hasErrorKeyword;
+
+            if (explicitlyTriggered || implicitlyTriggered) {
+                if (!isSendingToBackend) {
+                    console.log("DEBUG: Recovering missing Guruji response...");
+                    const mobile = localStorage.getItem('mobile');
+                    const historyForGuruji = currentHistory.length > 2 ? currentHistory.slice(1, -2) : [];
+                    const sanitizedHistory = sanitizeHistory(historyForGuruji);
+                    // const paymentId = secondLastMsg.is_paid ? secondLastMsg.payment_id : null;
+                    const paymentId = (secondLastMsg.is_paid && secondLastMsg.payment_id) ? secondLastMsg.payment_id : null;
+                    const idempotencyKey = secondLastMsg.message_id ? `${secondLastMsg.message_id}_guruji` : null;
+
+                    // Support the same persistent guard used during payment auto-retry
+                    const retryKey = secondLastMsg.message_id ? `retry_initiated_${secondLastMsg.message_id}` : null;
+                    if (retryKey && sessionStorage.getItem(retryKey)) {
+                        console.log("DEBUG: Recovering skipped as resumption is already in progress.");
+                        return;
+                    }
+
+                    setIsSendingToBackend(true);
+                    setSendingWaitMessage("Astrologer is typing");
+                    fetchGurujiResponse(mobile, secondLastMsg.content, sanitizedHistory, currentLocalSid, paymentId, idempotencyKey);
+                }
             }
-
-            deduplicated.push(msg);
-        }
-        return deduplicated;
-    };
-
-    const addSessionLog = (msg) => {
-        try {
-            const logs = JSON.parse(localStorage.getItem('chatSessionLogs') || '[]');
-            logs.push({ time: getCurrentTime(), message: msg });
-            // Keep last 100 logs
-            localStorage.setItem('chatSessionLogs', JSON.stringify(logs.slice(-100)));
-        } catch (e) {
-            console.error("Failed to save session log:", e);
-        }
-    };
-
-    const applyHistoryUpdate = (serverMessages) => {
-        if (!serverMessages) return;
-
-        const mappedHistory = serverMessages.map(msg => ({
-            ...msg,
-            time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
-            gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
-            mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
-            psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
-            gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
-            paywall_level: msg.paywall_level,
-            animating: false
-        }));
-
-        setMessages(prev => {
-            // Protect local queued user messages (currently waiting in the 3s typer delay)
-            const localQueued = prev.filter(m => m.isQueued);
-
-            // Merge: Server History + Local Queued
-            const merged = [...mappedHistory, ...localQueued];
-
-            // Final deduplication pass
-            return deduplicateMessages(merged);
-        });
-
-        setChatStarted(mappedHistory.some(m => m.role === 'user'));
-
-        const unpaidMsg = mappedHistory.find(m => m.requires_chat_payment && !m.is_paid);
-        if (unpaidMsg) {
-            setChatPaymentState('REQUIRED');
-            setPendingMessageId(unpaidMsg.message_id);
-            setActiveQuestion(unpaidMsg.content);
-        } else {
-            setChatPaymentState('IDLE');
         }
     };
 
@@ -1081,7 +1133,8 @@ const Chat = () => {
                 }
 
                 try {
-                    const res = await getChatHistory(mobile);
+                    const currentProfileId = localStorage.getItem('currentProfileId');
+                    const res = await getChatHistory(mobile, currentProfileId);
                     console.log("DEBUG: getChatHistory response:", res.data);
                     const currentLocalSid = localStorage.getItem('activeSessionId');
                     console.log("DEBUG: currentLocalSid:", currentLocalSid);
@@ -1100,7 +1153,29 @@ const Chat = () => {
                             if (history && history.length > 0) {
                                 console.log("DEBUG: Resuming localStorage session with", history.length, "messages");
                                 setSessionId(currentLocalSid);
-                                applyHistoryUpdate(history);
+
+                                const mappedHistory = history.map(msg => ({
+                                    ...msg,
+                                    time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
+                                    gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
+                                    mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                    psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
+                                    gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
+                                    animating: false
+                                }));
+
+                                const dedupHistory = deduplicateHistory(mappedHistory);
+                                setMessages(dedupHistory);
+                                setChatStarted(dedupHistory.some(m => m.role === 'user'));
+                                attemptGurujiRecovery(dedupHistory, currentLocalSid);
+
+                                // Check for unpaid chat messages to resume state
+                                const unpaidMsg = dedupHistory.find(m => m.requires_chat_payment && !m.is_paid);
+                                if (unpaidMsg) {
+                                    setChatPaymentState('REQUIRED');
+                                    setPendingMessageId(unpaidMsg.message_id);
+                                    setActiveQuestion(unpaidMsg.content);
+                                }
                             } else {
                                 // Active session exists on server but has zero messages — keep the welcome screen
                                 console.log("DEBUG: Active localStorage session has no messages yet, keeping welcome screen.");
@@ -1120,7 +1195,7 @@ const Chat = () => {
                             return;
                         }
 
-                        // Scenario 3: Load history (Relaxed logic + Parsing)
+                        // Scenario 3: Load history (Relaxed logic + Parsing) ..
                         const history = mostRecentSession.messages;
                         if (history && history.length > 0) {
                             console.log("DEBUG: Scenario 3 - Resuming Session:", mostRecentSession.session_id);
@@ -1128,7 +1203,29 @@ const Chat = () => {
                             if (!currentLocalSid || currentLocalSid !== mostRecentSession.session_id) {
                                 localStorage.setItem('activeSessionId', mostRecentSession.session_id);
                             }
-                            applyHistoryUpdate(history);
+
+                            const mappedHistory = history.map(msg => ({
+                                ...msg,
+                                time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
+                                gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
+                                mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
+                                gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
+                                animating: false
+                            }));
+
+                            console.log("DEBUG: mappedHistory set, count:", mappedHistory.length);
+                            const dedupHistory = deduplicateHistory(mappedHistory);
+                            setMessages(dedupHistory);
+                            setChatStarted(dedupHistory.some(m => m.role === 'user'));
+                            attemptGurujiRecovery(dedupHistory, mostRecentSession.session_id);
+
+                            const unpaidMsg = dedupHistory.find(m => m.requires_chat_payment && !m.is_paid);
+                            if (unpaidMsg) {
+                                setChatPaymentState('REQUIRED');
+                                setPendingMessageId(unpaidMsg.message_id);
+                                setActiveQuestion(unpaidMsg.content);
+                            }
                         } else {
                             console.log("DEBUG: No history messages found in most recent session.");
                         }
@@ -1144,42 +1241,62 @@ const Chat = () => {
         loadHistory();
     }, [location.state]);
 
-    // Auto-refresh chat history when app becomes visible (e.g. returning from background)
-    /* useEffect(() => {
+    useEffect(() => {
         const handleVisibilityChange = async () => {
-            if (document.visibilityState === 'visible') {
-                if (syncInProgressRef.current) return;
-
+            if (document.visibilityState === 'visible' && !isSendingToBackend && messageQueue.length === 0 && userStatus === 'ready') {
                 const mobile = localStorage.getItem('mobile');
                 const currentLocalSid = localStorage.getItem('activeSessionId');
-                // Only refresh if we have an active session and are not currently waiting for a fresh load
-                if (mobile && currentLocalSid && !processedNewSession.current) {
+
+                if (mobile && currentLocalSid) {
+                    const currentProfileId = localStorage.getItem('currentProfileId');
                     try {
-                        syncInProgressRef.current = true;
-                        addSessionLog("Auto-refreshing history (Visibility change)...");
-                        console.log("DEBUG: App became visible, auto-refreshing history...");
-                        const res = await getChatHistory(mobile);
+                        const res = await getChatHistory(mobile, currentProfileId);
                         if (res.data.sessions && res.data.sessions.length > 0) {
                             const localSessionOnServer = res.data.sessions.find(s => s.session_id === currentLocalSid);
                             if (localSessionOnServer && !localSessionOnServer.is_ended) {
                                 const history = localSessionOnServer.messages;
                                 if (history && history.length > 0) {
-                                    applyHistoryUpdate(history);
+                                    const mappedHistory = history.map(msg => ({
+                                        ...msg,
+                                        time: msg.time || formatTime(msg.timestamp) || formatTime(msg.created_at) || '',
+                                        gurujiJson: tryParseJson(msg.guruji_json || msg.gurujiJson) || (msg.assistant === 'guruji' ? tryParseJson(msg.content) : null),
+                                        mayaJson: tryParseJson(msg.maya_json || msg.mayaJson),
+                                        psycologyJson: tryParseJson(msg.psycology_json || msg.psycologyJson),
+                                        gurujiInput: tryParseJson(msg.guruji_input || msg.gurujiInput),
+                                        animating: false
+                                    }));
+
+                                    const dedupHistory = deduplicateHistory(mappedHistory);
+
+                                    setMessages(prev => {
+                                        if (prev.length === 0) return prev;
+
+                                        const lastLocal = prev[prev.length - 1];
+                                        const hasLocalError = lastLocal?.role === 'assistant' && lastLocal?.assistant === 'maya' && (
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Sorry, I encountered an error')) ||
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Guruji is not available right now')) ||
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Network Error'))
+                                        );
+
+                                        if (hasLocalError || dedupHistory.length > prev.length) {
+                                            attemptGurujiRecovery(dedupHistory, currentLocalSid);
+                                            return dedupHistory;
+                                        }
+                                        return prev;
+                                    });
                                 }
                             }
                         }
                     } catch (err) {
-                        console.error("Visibility auto-refresh failed:", err);
-                    } finally {
-                        syncInProgressRef.current = false;
+                        console.error("Silent history reload failed:", err);
                     }
                 }
             }
         };
 
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-        return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-    }, []); */
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, [isSendingToBackend, messageQueue.length, userStatus]);
 
     const scrollToTop = () => {
         if (containerRef.current) {
@@ -1330,11 +1447,13 @@ const Chat = () => {
         setFeedback({ rating: 0, comment: '' });
         setFeedbackSubmitted(false);
         setChatStarted(false);
+        setInsufficientFundsInfo(null);
 
         // Register the new session on the server immediately so it survives page reload
         const mobile = localStorage.getItem('mobile');
         if (mobile) {
-            startSession(mobile, newSid).catch(err => console.error('Failed to register session:', err));
+            const currentProfileId = localStorage.getItem('currentProfileId');
+            startSession(mobile, newSid, currentProfileId).catch(err => console.error('Failed to register session:', err));
         }
     };
 
@@ -1344,7 +1463,8 @@ const Chat = () => {
         setLoading(true);
         try {
             const mobile = localStorage.getItem('mobile');
-            const res = await endChat(mobile, messages, sessionId);
+            const currentProfileId = localStorage.getItem('currentProfileId');
+            const res = await endChat(mobile, messages, sessionId, currentProfileId);
             setSummary(res.data.summary);
             // Clear local session ID so it doesn't try to resume an ended session
             localStorage.removeItem('activeSessionId');
@@ -1469,7 +1589,7 @@ const Chat = () => {
         }));
     };
 
-    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null) => {
+    const fetchGurujiResponse = async (mobile, text, history, sessionId, paymentId = null, idempotencyKey = null) => {
         setLoading(true);
         setIsSendingToBackend(true);
         setSendingWaitMessage("Sending to Astrologer");
@@ -1481,7 +1601,10 @@ const Chat = () => {
             const sanitizedHistory = sanitizeHistory(history);
             addSessionLog(`Guruji receiving message: ${text}`);
             console.log(`[${getCurrentTime()}] Guruji receiving message:`, text);
-            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid);
+            const startTime = Date.now();
+            const res = await getGurujiResponse(mobile, text, sanitizedHistory, sessionId, paymentId, referenceid, idempotencyKey);
+            const duration = Date.now() - startTime;
+            addSessionLog(`Guruji API responded in ${duration}ms`);
             setSendingWaitMessage("Astrologer is typing");
             addSessionLog("Wait State: Astrologer is typing");
             console.log(`[${getCurrentTime()}] Wait State: Astrologer is typing`);
@@ -1522,6 +1645,62 @@ const Chat = () => {
             }
         } catch (err) {
             console.error("Guruji Error:", err);
+            addSessionLog(`Guruji Error: ${err.message || 'Unknown error'}`);
+
+            const isNetworkError = !err.response && (err.message === 'Network Error' || err.code === 'ECONNABORTED');
+            const isDuplicate = err.response?.status === 409;
+
+            if (isNetworkError || isDuplicate) {
+                addSessionLog(isNetworkError ? "Network dropped. Entering silent recovery polling..." : "Duplicate request. Checking for existing response...");
+                console.log(isNetworkError ? "Network dropped. Entering silent recovery polling..." : "Duplicate request. Checking for existing response...");
+                setSendingWaitMessage("Astrologer is typing");
+
+                let recovered = false;
+                for (let i = 0; i < 10; i++) {
+                    addSessionLog(`Recovery attempt ${i + 1}/10...`);
+                    await new Promise(resolve => setTimeout(resolve, 4000));
+                    try {
+                        const currentProfileId = localStorage.getItem('currentProfileId');
+                        const historyRes = await getChatHistory(mobile, currentProfileId);
+                        if (historyRes.data.sessions && historyRes.data.sessions.length > 0) {
+                            const thisSession = historyRes.data.sessions.find(s => s.session_id === sessionId);
+                            if (thisSession && thisSession.messages) {
+                                const lastServerMsg = thisSession.messages[thisSession.messages.length - 1];
+                                if (lastServerMsg && (lastServerMsg.assistant === 'guruji' || lastServerMsg.role === 'guruji' || lastServerMsg.guruji_json)) {
+                                    addSessionLog("Recovered Guruji response from background!");
+                                    console.log("Recovered Guruji response from background!");
+                                    applyHistoryUpdate(thisSession.messages);
+                                    recovered = true;
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (pollErr) {
+                        console.error("Poll error during silent recovery:", pollErr);
+                    }
+                }
+
+                if (recovered) {
+                    setIsSendingToBackend(false);
+                    setSendingWaitMessage("");
+                    setLoading(false);
+                    return;
+                } else {
+                    addSessionLog("Recovery failed after maximum attempts.");
+                }
+
+                if (isDuplicate && !recovered) {
+                    const errMsg = "Guruji is contemplating your stars deeply. This may take another moment, your answer will appear shortly. You can also refresh the page.";
+                    setMessages(prev => [...prev, {
+                        role: 'assistant', assistant: 'maya', content: errMsg, time: getCurrentTime()
+                    }]);
+                    setIsSendingToBackend(false);
+                    setSendingWaitMessage("");
+                    setLoading(false);
+                    return;
+                }
+            }
+
             const errMsg = err.response?.data?.detail || err.message || 'Guruji is not available right now. Please try again after some time.';
             setMessages(prev => [...prev, {
                 role: 'assistant',
@@ -1533,8 +1712,6 @@ const Chat = () => {
             setSendingWaitMessage("");
         } finally {
             setLoading(false);
-            // setIsSendingToBackend(false); // Keep buffering if Guruji is about to respond/animating
-            // setSendingWaitMessage("");
         }
     };
 
@@ -1711,8 +1888,6 @@ const Chat = () => {
         setIsSendingToBackend(true);
         scrollToBottom();
         setSendingWaitMessage("Sending to Maya");
-        addSessionLog("Wait State: Sending to Maya");
-        console.log(`[${getCurrentTime()}] Wait State: Sending to Maya`);
 
         let trigger_guruji_flag = false;
         try {
@@ -1738,7 +1913,8 @@ const Chat = () => {
 
             // Call backend ONCE securely outside the state setter.
             const sanitizedHistory = sanitizeHistory(historyWithoutNewlyQueued);
-            sendToBackend(mobile, combinedText, sanitizedHistory);
+            const idempotencyKey = `REQ_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            sendToBackend(mobile, combinedText, sanitizedHistory, idempotencyKey);
 
         } catch (err) {
             console.error("Queue Processing Error:", err);
@@ -1747,15 +1923,20 @@ const Chat = () => {
         }
     };
 
-    const sendToBackend = async (mobile, combinedText, history) => {
+    const sendToBackend = async (mobile, combinedText, history, idempotencyKey = null) => {
         let trigger_guruji_flag = false;
         try {
-            addSessionLog(`Maya receiving message: ${combinedText}`);
-            console.log(`[${getCurrentTime()}] Maya receiving message:`, combinedText);
-            const res = await sendMessage(mobile, combinedText, history, sessionId);
+            addSessionLog(`Sending message to Maya: ${combinedText}`);
+            console.log(`[${getCurrentTime()}] Sending message to Maya:`, combinedText);
+            const startTime = Date.now();
+            const currentProfileId = localStorage.getItem('currentProfileId');
+            const res = await sendMessage(mobile, combinedText, history, sessionId, null, currentProfileId, idempotencyKey);
+            const duration = Date.now() - startTime;
+            addSessionLog(`Maya API responded in ${duration}ms`);
 
             // Handle rate limit / offline
             if (res.data.error_code === 'ASTROLOGER_OFFLINE') {
+                addSessionLog("Maya: Astrologer is offline");
                 setSendingWaitMessage("Astrologer is offline");
                 setMessages(prev => [...prev, {
                     role: 'assistant',
@@ -1770,6 +1951,7 @@ const Chat = () => {
             }
 
             if (res.data.requires_payment) {
+                addSessionLog("Maya: Requires payment");
                 setLoading(false);
                 setIsSendingToBackend(false);
                 setSendingWaitMessage("");
@@ -1801,45 +1983,49 @@ const Chat = () => {
             }
 
             const { answer, metrics, context, assistant, wallet_balance, amount, maya_json, guruji_json, psycology_json, bubbles, delays, timestamp, message_id, trigger_guruji } = res.data;
+            trigger_guruji_flag = trigger_guruji;
+
             addSessionLog(`Maya replied with: ${answer.substring(0, 50)}...`);
             console.log(`[${getCurrentTime()}] Maya replied with:`, answer);
-            trigger_guruji_flag = trigger_guruji;
 
             if (wallet_balance !== undefined) setWalletBalance(wallet_balance);
 
-            setMessages(prev => {
-                const newMsg = {
-                    role: 'assistant',
-                    content: answer,
-                    assistant: assistant || 'maya',
-                    metrics,
-                    context,
-                    amount,
-                    rawResponse: res.data,
-                    mayaJson: tryParseJson(maya_json),
-                    gurujiJson: tryParseJson(guruji_json),
-                    psycologyJson: tryParseJson(psycology_json),
-                    bubbles: bubbles || [],
-                    delays: delays || [],
-                    animating: true,
-                    message_id: message_id,
-                    time: timestamp ? formatTime(timestamp) : getCurrentTime(),
-                    timestamp: timestamp || new Date().toISOString(),
-                    arrivalTime: Date.now(),
-                    trigger_guruji: trigger_guruji // Store this for tick logic
-                };
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: answer,
+                assistant: assistant || 'maya',
+                metrics,
+                context,
+                amount,
+                rawResponse: res.data,
+                mayaJson: tryParseJson(maya_json),
+                gurujiJson: tryParseJson(guruji_json),
+                psycologyJson: tryParseJson(psycology_json),
+                bubbles: bubbles || [],
+                delays: delays || [],
+                animating: true,
+                message_id: message_id,
+                time: timestamp ? formatTime(timestamp) : getCurrentTime(),
+                timestamp: timestamp || new Date().toISOString(),
+                arrivalTime: Date.now(),
+                trigger_guruji: trigger_guruji // Store this for tick logic
 
-                return deduplicateMessages([...prev, newMsg]);
-            });
+            }]);
             if (trigger_guruji) {
                 setSendingWaitMessage("Sending to Astrologer");
                 setIsSendingToBackend(true);
-                await fetchGurujiResponse(mobile, combinedText, history, sessionId);
+                // Use the Maya message_id for deterministic idempotency
+                const gurujiIdempotency = message_id ? `${message_id}_guruji` : (idempotencyKey ? `${idempotencyKey}_guruji` : null);
+                await fetchGurujiResponse(mobile, combinedText, history, sessionId, null, gurujiIdempotency);
             }
 
 
         } catch (err) {
             console.error("Chat Error:", err);
+            if (err.response?.status === 409) {
+                console.log("Duplicate Maya request detected, trusting backend process.");
+                return;
+            }
             // If it's a 404/401/403, the interceptor will handle redirect to login
             // Only show error message for other types of errors
             if (err.response?.status !== 404 && err.response?.status !== 401 && err.response?.status !== 403) {
@@ -2082,6 +2268,7 @@ const Chat = () => {
     const handleChatSuccess = async (paymentId, amount) => {
         try {
             setChatPaymentState('COMPLETE');
+            setInsufficientFundsInfo(null);
             setThankYouAction('CHAT_PAYMENT');
             setThankYouOpen(false);
 
@@ -2105,11 +2292,11 @@ const Chat = () => {
             });
 
             // Call Guruji directly — Maya's classification is already saved in DB
-            // from the initial /auth/chat call, so no need to re-call /auth/chat
-            const history = messages.length > 1 ? messages.slice(1) : [];
+            const history = messages;
             const sanitizedHistory = sanitizeHistory(history);
-            await fetchGurujiResponse(mobile, lastUserMsg.content, sanitizedHistory, sessionId, paymentId);
+            const idempotencyKey = pendingMessageId ? `${pendingMessageId}_guruji_${Date.now()}` : null;
 
+            await fetchGurujiResponse(mobile, lastUserMsg.content, sanitizedHistory, sessionId, paymentId, idempotencyKey);
             setChatPaymentState('IDLE');
             setPendingMessageId(null);
         } catch (err) {
@@ -2122,49 +2309,73 @@ const Chat = () => {
     };
 
     const handleChatPayment = async (amount, mobile) => {
-        // Temporary Bypass: Alert Success and proceed
-        setChatPaymentState('PAYING'); // disable button immediately
-        // alert("Payment successful!");
-        handleChatSuccess("MOCK_PAYMENT_ID", amount);
-        return;
+        if (amount === 0) {
+            setChatPaymentState('PAYING');
+            handleChatSuccess("FREE_QUOTA", amount);
+            return;
+        }
 
-        // Original logic preserved below (currently unreachable)
         setChatPaymentState('PAYING');
+        setInsufficientFundsInfo(null);
         try {
-            // const orderRes = await createPaymentOrder(amount, mobile);
             const referenceid = localStorage.getItem('currentProfileId');
-            const orderRes = await createPaymentOrder(amount, mobile, referenceid);
-            const { order_id, key } = orderRes.data;
 
-            const options = {
-                key,
-                amount: amount * 100,
-                currency: "INR",
-                name: "Astrology Consultation",
-                description: "Payment for personalized answer",
-                order_id,
-                handler: async (response) => {
-                    handleChatSuccess(response.razorpay_payment_id, amount);
-                },
-                modal: {
-                    ondismiss: () => {
-                        setChatPaymentState('REQUIRED');
-                    }
-                },
-                prefill: {
-                    contact: mobile
-                },
-                theme: {
-                    color: "#F36A2F"
-                }
-            };
-            const rzp = new window.Razorpay(options);
-            rzp.open();
+            // Deduct from wallet
+            const response = await payForChat({
+                mobile,
+                referenceid,
+                amount,
+                description: `Payment for question: ${activeQuestion ? activeQuestion.substring(0, 30) : ''}...`
+            });
+
+            if (response.data && response.data.success) {
+                // Payment successful
+                handleChatSuccess(response.data.transaction_id, amount);
+            } else {
+                throw new Error("Wallet deduction failed: logic error or insufficient funds.");
+            }
+
         } catch (err) {
-            console.error("Order creation failed:", err);
+            console.error("Wallet deduction failed:", err);
+
+            // Show inline insufficient funds notification instead of redirecting
             setChatPaymentState('REQUIRED');
+            setInsufficientFundsInfo({
+                required: amount,
+                balance: walletBalance
+            });
         }
     };
+
+    // Auto-retry payment after returning from Recharge/Wallet
+    useEffect(() => {
+        const pendingChatPaymentStr = localStorage.getItem('pendingChatPayment');
+        const mobile = localStorage.getItem('mobile');
+
+        if (pendingChatPaymentStr && userStatus === 'ready') {
+            try {
+                const pendingChatPayment = JSON.parse(pendingChatPaymentStr);
+                const retryKey = `retry_initiated_${pendingChatPayment.pendingMessageId}`;
+                const alreadyRetryStarted = sessionStorage.getItem(retryKey);
+
+                if (pendingChatPayment && pendingChatPayment.amount !== undefined && pendingChatPayment.sessionId === sessionId && !alreadyRetryStarted) {
+                    sessionStorage.setItem(retryKey, 'true'); // Guard against re-entry sustainably
+                    localStorage.removeItem('pendingChatPayment'); // Prevent re-trigger on next render
+
+                    setChatPaymentState('REQUIRED');
+                    setPendingMessageId(pendingChatPayment.pendingMessageId);
+                    setActiveQuestion(pendingChatPayment.activeQuestion);
+
+                    setTimeout(() => {
+                        handleChatPayment(pendingChatPayment.amount, mobile);
+                    }, 800);
+                }
+            } catch (e) {
+                console.error("Failed to parse pending payment", e);
+                localStorage.removeItem('pendingChatPayment');
+            }
+        }
+    }, [location.state, userStatus, sessionId]);
 
     return (
         <Box
@@ -2509,6 +2720,22 @@ const Chat = () => {
                                                     RAG
                                                 </Typography>
                                             )}
+                                            {(jsonVisibility.guruji || jsonVisibility.maya) && (
+                                                <Typography
+                                                    onClick={() => setLogsOpen(true)}
+                                                    sx={{
+                                                        fontSize: '0.65rem',
+                                                        color: '#666',
+                                                        fontWeight: 800,
+                                                        cursor: 'pointer',
+                                                        textTransform: 'uppercase',
+                                                        textDecoration: 'underline',
+                                                        '&:hover': { color: '#F36A2F' }
+                                                    }}
+                                                >
+                                                    Logs
+                                                </Typography>
+                                            )}
                                             {(msg.metrics && jsonVisibility.guruji) && (
                                                 <Typography
                                                     onClick={() => handleLabelClick(msg.metrics, 'MODELLING METRICS')}
@@ -2525,23 +2752,6 @@ const Chat = () => {
                                                     Modelling %
                                                 </Typography>
                                             )}
-                                            {(jsonVisibility.maya || jsonVisibility.guruji) && (
-                                                <Typography
-                                                    onClick={() => setJsonVisibility(prev => ({ ...prev, logs: !prev.logs }))}
-                                                    sx={{
-                                                        fontSize: '0.65rem',
-                                                        color: jsonVisibility.logs ? '#F36A2F' : 'rgba(0,0,0,0.4)',
-                                                        fontWeight: 800,
-                                                        cursor: 'pointer',
-                                                        textTransform: 'uppercase',
-                                                        textDecoration: 'underline',
-                                                        transition: 'color 0.2s',
-                                                        '&:hover': { color: '#F36A2F' }
-                                                    }}
-                                                >
-                                                    Session Logs
-                                                </Typography>
-                                            )}
                                         </Box>
                                     )}
 
@@ -2552,7 +2762,7 @@ const Chat = () => {
                                         msg.mayaJson.MSG_LANGUAGE.toLowerCase() !== 'english' && (
                                             <TranslationIndicator
                                                 text={`Translated to your language / language style by MAYA AI`}
-                                                sx={{ mt: reportState === 'IDLE' ? '3px' : '3px', position: 'relative', top: -12 }}
+                                                sx={{ mt: reportState === 'IDLE' ? '3px' : '3px', position: 'relative', top: -9 }}
                                             />
                                         )}
                                 </Box>
@@ -2578,7 +2788,7 @@ const Chat = () => {
                         return (
                             <Box key={i} sx={{ width: '100%', mb: 0 }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 1 }}>
-                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: 1 }}>You</Typography>
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: 0 }}>You</Typography>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
                                         <Box sx={{
                                             p: '12px 16px 14px 12px',
@@ -2622,6 +2832,9 @@ const Chat = () => {
                                 </Box>
                                 <MayaTemplateBox
                                     // name={userName.split(' ')[0]}
+                                    // content={msg.chat_payment_amount === 0
+                                    //     ? `<span style="font-weight: 800;">This is a premium prediction worth ₹${msg.actual_chat_payment_amount || 39} - but get it for free now.</span> \n\n <span style="color: #54A170">Subscribe</span> to get unlimited answers access for a day, month or a quarter.`
+                                    //     : `<span style="font-weight: 800;">This is a premium prediction.</span>\n Get the answer for <span style="text-decoration: line-through;">₹${msg.actual_chat_payment_amount || 39}</span> ₹${msg.chat_payment_amount || 39}.<p style="margin-top: 15px;">Or you may <span style="color: #54A170; text-decoration: underline;">subscribe now</span> <span style="font-weight: 800;">to get unlimited answers access </span>for a day, month or a quarter.</p>`}
                                     content={(() => {
                                         const amount = msg.chat_payment_amount !== undefined ? msg.chat_payment_amount : 39;
                                         const actualAmount = msg.actual_chat_payment_amount || 39;
@@ -2661,6 +2874,21 @@ const Chat = () => {
                                         return chatPaymentState === 'PAYING' || chatPaymentState === 'COMPLETE';
                                     })()}
                                 />
+                                {insufficientFundsInfo && i === messages.reduce((last, m, idx) => m.requires_chat_payment ? idx : last, -1) && (
+                                    <MayaTemplateBox
+                                        content={`<span style="font-weight: 800; color: #d32f2f;">Insufficient balance in your wallet.</span>\n\nYour current balance is <span style="font-weight: 800;">${insufficientFundsInfo.balance} points</span>, but <span style="font-weight: 800;">${insufficientFundsInfo.required} points</span> are needed for this answer.\n\nPlease recharge your wallet to continue.`}
+                                        buttonLabel="Recharge Wallet and Get answer"
+                                        onButtonClick={() => {
+                                            localStorage.setItem('pendingChatPayment', JSON.stringify({
+                                                amount: insufficientFundsInfo.required,
+                                                pendingMessageId,
+                                                activeQuestion,
+                                                sessionId
+                                            }));
+                                            navigate('/wallet', { state: { returnToChat: true } });
+                                        }}
+                                    />
+                                )}
                             </Box>
                         );
                     }
@@ -2682,7 +2910,7 @@ const Chat = () => {
                                     </Typography> */}
                                     <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap', flexDirection: 'column' }}>
-                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: .1 }}>
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: 0 }}>
                                                 {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                             </Typography>
 
@@ -2813,6 +3041,22 @@ const Chat = () => {
                                                                         Modelling %
                                                                     </Typography>
                                                                 )}
+                                                                {(jsonVisibility.guruji || jsonVisibility.maya) && (
+                                                                    <Typography
+                                                                        onClick={() => setLogsOpen(true)}
+                                                                        sx={{
+                                                                            fontSize: '0.65rem',
+                                                                            color: 'rgba(255,255,255,0.8)',
+                                                                            fontWeight: 800,
+                                                                            cursor: 'pointer',
+                                                                            textTransform: 'uppercase',
+                                                                            textDecoration: 'underline',
+                                                                            '&:hover': { color: 'white' }
+                                                                        }}
+                                                                    >
+                                                                        Logs
+                                                                    </Typography>
+                                                                )}
                                                             </Box>
                                                         )}
 
@@ -2824,7 +3068,7 @@ const Chat = () => {
                                                                 opacity: 0.8,
                                                                 position: 'absolute',
                                                                 bottom: 2,
-                                                                right: 0,
+                                                                right: 8,
                                                                 color: msg.role === 'user' ? (msg.requires_chat_payment ? 'rgba(255,255,255,0.7)' : '#494848') : '#494848',
                                                                 fontWeight: 500,
                                                                 pt: 1,
@@ -3348,50 +3592,81 @@ const Chat = () => {
                     </Typography>
                 </Box>
             )} */}
-            {/* Session Logs View */}
-            {jsonVisibility.logs && (
-                <Box sx={{
-                    position: 'fixed',
-                    top: '80px',
-                    left: '10px',
-                    right: '10px',
-                    bottom: '100px',
-                    bgcolor: 'rgba(0,0,0,0.85)',
-                    color: '#00ff00',
-                    p: 2,
-                    borderRadius: 2,
-                    zIndex: 10000,
-                    overflowY: 'auto',
-                    fontFamily: 'monospace',
-                    fontSize: '0.75rem',
-                    border: '1px solid #333',
-                    pointerEvents: 'auto'
-                }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, borderBottom: '1px solid #333', pb: 1 }}>
-                        <Typography sx={{ fontWeight: 800, fontSize: '0.8rem' }}>SESSION DEBUG LOGS</Typography>
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <Typography
-                                onClick={() => localStorage.removeItem('chatSessionLogs')}
-                                sx={{ cursor: 'pointer', color: '#ff0000', fontSize: '0.7rem' }}
-                            >
-                                CLEAR
-                            </Typography>
-                            <Typography
-                                onClick={() => setJsonVisibility(prev => ({ ...prev, logs: false }))}
-                                sx={{ cursor: 'pointer', color: '#fff', fontSize: '0.7rem' }}
-                            >
-                                CLOSE
-                            </Typography>
-                        </Box>
+            {/* Modal for Logs */}
+            <Dialog
+                open={logsOpen}
+                onClose={() => setLogsOpen(false)}
+                fullWidth
+                maxWidth="sm"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        bgcolor: '#1a1a1a',
+                        color: '#eee',
+                        height: '70vh'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ borderBottom: '1px solid #333', py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 700 }}>SESSION LOGS</Typography>
+                    <Box>
+                        <Button
+                            size="small"
+                            onClick={() => {
+                                navigator.clipboard.writeText(sessionLogs.join('\n'));
+                                alert("Logs copied to clipboard!");
+                            }}
+                            sx={{ color: '#F36A2F', fontSize: '0.7rem', mr: 1 }}
+                        >
+                            Copy
+                        </Button>
+                        <Button
+                            size="small"
+                            onClick={() => setSessionLogs([])}
+                            sx={{ color: '#ff4444', fontSize: '0.7rem', mr: 1 }}
+                        >
+                            Clear
+                        </Button>
+                        <IconButton
+                            size="small"
+                            onClick={() => setLogsOpen(false)}
+                            sx={{ color: '#fff' }}
+                        >
+                            <CloseIcon sx={{ fontSize: '1.2rem' }} />
+                        </IconButton>
                     </Box>
-                    {(JSON.parse(localStorage.getItem('chatSessionLogs') || '[]')).map((log, i) => (
-                        <Box key={i} sx={{ mb: 0.5, display: 'flex', gap: 1 }}>
-                            <span style={{ color: '#888', minWidth: '60px' }}>[{log.time}]</span>
-                            <span>{log.message}</span>
-                        </Box>
-                    ))}
-                </Box>
-            )}
+                </DialogTitle>
+                <DialogContent sx={{ p: 0, bgcolor: '#000' }}>
+                    <Box
+                        sx={{
+                            p: 2,
+                            fontFamily: 'monospace',
+                            fontSize: '0.75rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 0.5,
+                            maxHeight: '100%',
+                            overflowY: 'auto',
+                            '&::-webkit-scrollbar': { width: '6px' },
+                            '&::-webkit-scrollbar-thumb': { bgcolor: '#333', borderRadius: '3px' }
+                        }}
+                    >
+                        {sessionLogs.length === 0 ? (
+                            <Typography sx={{ color: '#444', textAlign: 'center', mt: 4 }}>No logs in this session.</Typography>
+                        ) : (
+                            sessionLogs.map((log, idx) => (
+                                <Box key={idx} sx={{ borderBottom: '1px solid #111', pb: 0.5 }}>
+                                    <span style={{ color: '#F36A2F', fontWeight: 600 }}>{log.split(']')[0]}]</span>
+                                    <span style={{ color: '#ccc' }}>{log.split(']')[1]}</span>
+                                </Box>
+                            ))
+                        )}
+                        {/* Auto-scroll anchor */}
+                        <div ref={el => { if (el) el.scrollIntoView({ behavior: 'smooth' }); }} />
+                    </Box>
+                </DialogContent>
+            </Dialog>
+
             {/* Full JSON Modal */}
             <Dialog
                 open={jsonModal.open}
