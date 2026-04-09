@@ -904,8 +904,9 @@ const Chat = () => {
     const [submittingFeedback, setSubmittingFeedback] = useState(false);
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
     const [profileDob, setProfileDob] = useState('');
-    const [profilebirthstar, setProfileBirthStar] = useState('');
+    const [profileBirthStar, setProfileBirthStar] = useState('');
     const [isSubscribed, setIsSubscribed] = useState(false);
+    const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
 
     // Multi-step report flow state
     const [reportState, setReportState] = useState('IDLE'); // IDLE, CONFIRMING, PAYING, PREPARING, READY
@@ -1129,6 +1130,7 @@ const Chat = () => {
                 if (processedNewSession.current) {
                     console.log("DEBUG: Skipping history load as new session was just initialized.");
                     processedNewSession.current = false;
+                    setIsHistoryLoaded(true);
                     return;
                 }
 
@@ -1235,7 +1237,12 @@ const Chat = () => {
                 } catch (err) {
                     console.error("Failed to load chat history:", err);
                     // If it's a 404/401/403, the interceptor will handle redirect to login
+                    setIsHistoryLoaded(true); // Unblock retry even on failure so it can show appropriate errors
+                } finally {
+                    setIsHistoryLoaded(true);
                 }
+            } else {
+                setIsHistoryLoaded(true);
             }
         };
         loadHistory();
@@ -2277,8 +2284,26 @@ const Chat = () => {
             setIsSendingToBackend(true);
             setSendingWaitMessage("Sending to astrologer");
 
-            const lastUserMsg = messages.find(m => m.message_id === pendingMessageId);
             const mobile = localStorage.getItem('mobile');
+
+            // Find the pending user message to retry its state
+            const lastUserMsg = messages.find(m => m.message_id === pendingMessageId);
+
+            if (!lastUserMsg) {
+                console.error("DEBUG [handleChatSuccess]: Could not find pending message with ID:", pendingMessageId);
+                console.log("Current messages in state:", messages.map(m => m.message_id));
+                // Try fallback: if messages exists, use the last user message that requires payment
+                const fallbackMsg = [...messages].reverse().find(m => m.role === 'user' && m.requires_chat_payment);
+                if (fallbackMsg) {
+                    console.log("DEBUG [handleChatSuccess]: Using fallback message:", fallbackMsg.message_id);
+                    setPendingMessageId(fallbackMsg.message_id);
+                    // Continue with fallback
+                } else {
+                    throw new Error("Unable to locate your question in chat history to complete the payment. Please refresh the page.");
+                }
+            }
+
+            const targetMsg = lastUserMsg || messages.find(m => m.role === 'user' && m.requires_chat_payment);
 
             // Mark the user message as paid in UI
             setMessages(prev => {
@@ -2294,9 +2319,9 @@ const Chat = () => {
             // Call Guruji directly — Maya's classification is already saved in DB
             const history = messages;
             const sanitizedHistory = sanitizeHistory(history);
-            const idempotencyKey = pendingMessageId ? `${pendingMessageId}_guruji_${Date.now()}` : null;
+            const idempotencyKey = (targetMsg.message_id || pendingMessageId) ? `${targetMsg.message_id || pendingMessageId}_guruji_${Date.now()}` : null;
 
-            await fetchGurujiResponse(mobile, lastUserMsg.content, sanitizedHistory, sessionId, paymentId, idempotencyKey);
+            await fetchGurujiResponse(mobile, targetMsg.content, sanitizedHistory, sessionId, paymentId, idempotencyKey);
             setChatPaymentState('IDLE');
             setPendingMessageId(null);
         } catch (err) {
@@ -2352,13 +2377,14 @@ const Chat = () => {
         const pendingChatPaymentStr = localStorage.getItem('pendingChatPayment');
         const mobile = localStorage.getItem('mobile');
 
-        if (pendingChatPaymentStr && userStatus === 'ready') {
+        if (pendingChatPaymentStr && userStatus === 'ready' && isHistoryLoaded) {
             try {
                 const pendingChatPayment = JSON.parse(pendingChatPaymentStr);
                 const retryKey = `retry_initiated_${pendingChatPayment.pendingMessageId}`;
                 const alreadyRetryStarted = sessionStorage.getItem(retryKey);
 
                 if (pendingChatPayment && pendingChatPayment.amount !== undefined && pendingChatPayment.sessionId === sessionId && !alreadyRetryStarted) {
+                    console.log("DEBUG [Chat]: Auto-retrying payment for message:", pendingChatPayment.pendingMessageId);
                     sessionStorage.setItem(retryKey, 'true'); // Guard against re-entry sustainably
                     localStorage.removeItem('pendingChatPayment'); // Prevent re-trigger on next render
 
@@ -2369,13 +2395,15 @@ const Chat = () => {
                     setTimeout(() => {
                         handleChatPayment(pendingChatPayment.amount, mobile);
                     }, 800);
+                } else if (alreadyRetryStarted) {
+                    localStorage.removeItem('pendingChatPayment');
                 }
             } catch (e) {
                 console.error("Failed to parse pending payment", e);
                 localStorage.removeItem('pendingChatPayment');
             }
         }
-    }, [location.state, userStatus, sessionId]);
+    }, [location.state, userStatus, sessionId, isHistoryLoaded]);
 
     return (
         <Box
@@ -2396,7 +2424,7 @@ const Chat = () => {
                 showProfile={true}
                 name={userName.split(' ')[0]}
                 profiledob={profileDob}
-                profilebirthstar={profilebirthstar}
+                profilebirthstar={profileBirthStar}
                 hscrollsx={{
                     position: 'fixed',
                     transition: 'transform 0.3s ease-in-out',
