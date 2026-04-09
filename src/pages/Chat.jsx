@@ -1280,9 +1280,12 @@ const Chat = () => {
 
                                         const lastLocal = prev[prev.length - 1];
                                         const hasLocalError = lastLocal?.role === 'assistant' && lastLocal?.assistant === 'maya' && (
+                                            lastLocal.isLocalError === true ||
                                             (typeof lastLocal.content === 'string' && lastLocal.content.includes('Sorry, I encountered an error')) ||
                                             (typeof lastLocal.content === 'string' && lastLocal.content.includes('Guruji is not available right now')) ||
-                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Network Error'))
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('Network Error')) ||
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('network connection was interrupted')) ||
+                                            (typeof lastLocal.content === 'string' && lastLocal.content.includes('taking a bit longer'))
                                         );
 
                                         if (hasLocalError || dedupHistory.length > prev.length) {
@@ -1654,8 +1657,12 @@ const Chat = () => {
             console.error("Guruji Error:", err);
             addSessionLog(`Guruji Error: ${err.message || 'Unknown error'}`);
 
+            // const isTimeout = err.code === 'ECONNABORTED' || (err.message && err.message.toLowerCase().includes('timeout'));
+            // const isNetworkError = !err.response && (err.message === 'Network Error' || isTimeout);
             const isTimeout = err.code === 'ECONNABORTED' || (err.message && err.message.toLowerCase().includes('timeout'));
-            const isNetworkError = !err.response && (err.message === 'Network Error' || isTimeout);
+            const isCancelled = err.code === 'ERR_CANCELED' || axios.isCancel(err);
+            // Treat anything with NO server response as a network/connectivity issue for silent recovery
+            const isNetworkError = !err.response && (err.message === 'Network Error' || isTimeout || isCancelled || !err.status);
             const isDuplicate = err.response?.status === 409;
 
             if (isNetworkError || isDuplicate) {
@@ -1701,7 +1708,7 @@ const Chat = () => {
                 if (isDuplicate && !recovered) {
                     const errMsg = "Guruji is contemplating your stars deeply. This may take another moment, your answer will appear shortly. You can also refresh the page.";
                     setMessages(prev => [...prev, {
-                        role: 'assistant', assistant: 'maya', content: errMsg, time: getCurrentTime()
+                        role: 'assistant', assistant: 'maya', content: errMsg, time: getCurrentTime(), isLocalError: true
                     }]);
                     setIsSendingToBackend(false);
                     setSendingWaitMessage("");
@@ -1718,7 +1725,8 @@ const Chat = () => {
                 role: 'assistant',
                 assistant: 'maya',
                 content: errMsg,
-                time: getCurrentTime()
+                time: getCurrentTime(),
+                isLocalError: true
             }]);
             setIsSendingToBackend(false);
             setSendingWaitMessage("");
@@ -2034,8 +2042,12 @@ const Chat = () => {
 
         } catch (err) {
             console.error("Chat Error:", err);
+            // const isTimeout = err.code === 'ECONNABORTED' || (err.message && err.message.toLowerCase().includes('timeout'));
+            // const isNetworkError = !err.response && (err.message === 'Network Error' || isTimeout);
             const isTimeout = err.code === 'ECONNABORTED' || (err.message && err.message.toLowerCase().includes('timeout'));
-            const isNetworkError = !err.response && (err.message === 'Network Error' || isTimeout);
+            const isCancelled = err.code === 'ERR_CANCELED' || axios.isCancel(err);
+            // Treat anything with NO server response as a network/connectivity issue for silent recovery
+            const isNetworkError = !err.response && (err.message === 'Network Error' || isTimeout || isCancelled || !err.status);
             if (err.response?.status === 409) {
                 console.log("Duplicate Maya request detected, trusting backend process.");
                 return;
@@ -2043,12 +2055,21 @@ const Chat = () => {
             // If it's a 404/401/403, the interceptor will handle redirect to login
             // Only show error message for other types of errors
             if (err.response?.status !== 404 && err.response?.status !== 401 && err.response?.status !== 403) {
-                const errMsg = err.response?.data?.detail || err.message || 'Sorry, I encountered an error. Please try again.';
+                let errMsg;
+                if (isTimeout) {
+                    errMsg = "I'm taking a bit longer to process your message. Please give me a moment or try refreshing the page.";
+                } else if (isNetworkError) {
+                    errMsg = "It seems your network connection was interrupted. Please check your connection or refresh the page.";
+                } else {
+                    errMsg = err.response?.data?.detail || err.message || 'Sorry, I encountered an error. Please try again.';
+                }
+
                 setMessages(prev => [...prev, {
                     role: 'assistant',
                     assistant: 'maya',
                     content: errMsg,
-                    time: getCurrentTime()
+                    time: getCurrentTime(),
+                    isLocalError: true
                 }]);
             }
         } finally {
