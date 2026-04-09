@@ -138,7 +138,7 @@ const FeedbackDrawer = ({
                         Thank you for your feedback/rating. This for sure will help us continue improving the service.
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-                        <Button
+                        {/* <Button
                             onClick={onAddDakshina}
                             sx={{
                                 bgcolor: "#fff",
@@ -153,7 +153,7 @@ const FeedbackDrawer = ({
                             }}
                         >
                             Add Dakshina
-                        </Button>
+                        </Button> */}
                         <Button
                             onClick={onNewJourney}
                             sx={{
@@ -162,7 +162,7 @@ const FeedbackDrawer = ({
                                 borderRadius: 30,
                                 height: 42,
                                 fontSize: 14,
-                                width: "45%",
+                                width: "90%",
                                 textTransform: "none",
                                 border: '1px solid #fff',
                                 fontWeight: 600,
