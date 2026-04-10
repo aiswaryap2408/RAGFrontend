@@ -1717,7 +1717,7 @@ const Chat = () => {
                 }
             }
 
-            if (isTimeout) {
+            if (isTimeout || isNetworkError) {
                 window.location.reload();
                 return;
             }
@@ -2057,17 +2057,12 @@ const Chat = () => {
             // If it's a 404/401/403, the interceptor will handle redirect to login
             // Only show error message for other types of errors
             if (err.response?.status !== 404 && err.response?.status !== 401 && err.response?.status !== 403) {
-                if (isTimeout) {
+                if (isTimeout || isNetworkError) {
                     window.location.reload();
                     return;
                 }
                 
-                let errMsg;
-                if (isNetworkError) {
-                    errMsg = "It seems your network connection was interrupted. Please check your connection or refresh the page.";
-                } else {
-                    errMsg = err.response?.data?.detail || err.message || 'Sorry, I encountered an error. Please try again.';
-                }
+                const errMsg = err.response?.data?.detail || err.message || 'Sorry, I encountered an error. Please try again.';
 
                 setMessages(prev => [...prev, {
                     role: 'assistant',
