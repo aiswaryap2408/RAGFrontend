@@ -1717,10 +1717,12 @@ const Chat = () => {
                 }
             }
 
-            // Using isTimeout defined above...
-            const errMsg = isTimeout
-                ? "Guruji is taking a bit longer than usual to contemplate your query. Your answer will appear here shortly, or you can try refreshing the page."
-                : (err.response?.data?.detail || err.message || 'Guruji is not available right now. Please try again after some time.');
+            if (isTimeout) {
+                window.location.reload();
+                return;
+            }
+
+            const errMsg = err.response?.data?.detail || err.message || 'Guruji is not available right now. Please try again after some time.';
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 assistant: 'maya',
@@ -2055,10 +2057,13 @@ const Chat = () => {
             // If it's a 404/401/403, the interceptor will handle redirect to login
             // Only show error message for other types of errors
             if (err.response?.status !== 404 && err.response?.status !== 401 && err.response?.status !== 403) {
-                let errMsg;
                 if (isTimeout) {
-                    errMsg = "I'm taking a bit longer to process your message. Please give me a moment or try refreshing the page.";
-                } else if (isNetworkError) {
+                    window.location.reload();
+                    return;
+                }
+                
+                let errMsg;
+                if (isNetworkError) {
                     errMsg = "It seems your network connection was interrupted. Please check your connection or refresh the page.";
                 } else {
                     errMsg = err.response?.data?.detail || err.message || 'Sorry, I encountered an error. Please try again.';
