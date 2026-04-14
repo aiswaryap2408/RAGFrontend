@@ -4,7 +4,7 @@ import {
     InputBase,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
-import { Typography, keyframes } from "@mui/material";
+import { Typography, keyframes, useMediaQuery, useTheme } from "@mui/material";
 
 const bounce = keyframes`
   0%, 100% { transform: translateY(0); }
@@ -14,6 +14,8 @@ const bounce = keyframes`
 const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, inputValue, setInputValue, isBuffering, isConnecting, connectionText, focusTrigger }) => {
 
     const inputRef = useRef(null);
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     // When focusTrigger increments (e.g. user edits a queued message),
     // focus the native textarea so the mobile keyboard opens.
@@ -137,7 +139,7 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, input
                                     if (onTyping) onTyping(e.target.value.length > 0);
                                 }}
                                 onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                    if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
                                         e.preventDefault();
                                         handleSend();
                                     }
