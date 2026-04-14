@@ -2063,7 +2063,7 @@ const Chat = () => {
                     window.location.reload();
                     return;
                 }
-                
+
                 const errMsg = err.response?.data?.detail || err.message || 'Sorry, I encountered an error. Please try again.';
 
                 setMessages(prev => [...prev, {
@@ -2667,7 +2667,7 @@ const Chat = () => {
                         return (
                             <Box key={i} ref={i === messages.length - 1 ? latestGurujiRef : null} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 0, width: '100%' }}>
                                 {startedCond && <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0 }}>Guruji</Typography>}
-                                <Box sx={{ flex: 1, maxWidth: '85%' }}>
+                                <Box sx={{ flex: 1, maxWidth: '90%' }}>
                                     <SequentialResponse
                                         // isPaidResponse={isPaidUserMsg}
                                         isPaidResponse={isPaidUserMsg || isSubscribed}
@@ -2847,7 +2847,7 @@ const Chat = () => {
                             <Box key={i} sx={{ width: '100%', mb: 0 }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 1 }}>
                                     <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: 0 }}>You</Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '90%' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '80%' }}>
                                         <Box sx={{
                                             p: '12px 16px 14px 12px',
                                             borderRadius: msg.role === 'user' ? '10px 2px 10px 10px' : '2px 10px 10px 10px',
@@ -2966,10 +2966,10 @@ const Chat = () => {
                                     {/* <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: .5 }}>
                                         {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                     </Typography> */}
-                                    <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'wrap', flexDirection: 'column' }}>
-                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.2, mr: 0 }}>
-                                                {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
+                                    <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexDirection: 'column', minWidth: 0 }}>
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.1, mr: 0 }}>
+                                                {msg.role === 'user' ? (msg.requires_chat_payment || isSubscribed ? 'You (Premium Question)' : 'You') : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                             </Typography>
 
                                             <Box sx={{
@@ -2977,7 +2977,7 @@ const Chat = () => {
                                                 alignItems: 'flex-start',
                                                 gap: 1.5,
                                                 flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
-                                                maxWidth: '100%',
+                                                maxWidth: '90%',
 
                                             }}>
                                                 {msg.content && msg.content.trim() !== '' && (
@@ -3154,8 +3154,9 @@ const Chat = () => {
                                                 display: 'flex',
                                                 justifyContent: 'center',
                                                 alignItems: 'center',
-                                                position: 'relative',
-                                                top: '15px',
+                                                flexShrink: 0,
+                                                alignSelf: 'flex-end',
+                                                mb: '2px',
                                                 pointerEvents: (msg.isQueued && isLastQueuedMsg && !isUserTyping && msg.role === 'user') ? 'auto' : 'none',
                                                 zIndex: 10,
                                             }}
