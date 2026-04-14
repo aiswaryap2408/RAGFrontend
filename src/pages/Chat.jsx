@@ -815,6 +815,7 @@ const Chat = () => {
     const [isUserTyping, setIsUserTyping] = useState(false);
     const [messageQueue, setMessageQueue] = useState([]);
     const [timerKey, setTimerKey] = useState(Date.now());
+    const [footerFocusTrigger, setFooterFocusTrigger] = useState(0);
     const debounceTimerRef = useRef(null);
     const lastScrollTop = useRef(0);
     const navigate = useNavigate();
@@ -1888,8 +1889,9 @@ const Chat = () => {
         // Clear the conceptual queue
         setMessageQueue([]);
 
-        // Optionally, focus the input field by treating it as if the user is typing again
+        // Focus the input so the mobile keyboard appears
         setIsUserTyping(true);
+        setFooterFocusTrigger(prev => prev + 1);
     };
 
     const processQueue = async (queuedMessages) => {
@@ -3473,6 +3475,7 @@ const Chat = () => {
                     isBuffering={isSendingToBackend}
                     isConnecting={isConnecting}
                     connectionText={connectionText}
+                    focusTrigger={footerFocusTrigger}
                 />
             ) : null}
             {/* Same overlays as before (Inactivity, Summary, Drawer) */}

@@ -11,9 +11,21 @@ const bounce = keyframes`
   50% { transform: translateY(-10px); }
 `;
 
-const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, inputValue, setInputValue, isBuffering, isConnecting, connectionText }) => {
+const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, inputValue, setInputValue, isBuffering, isConnecting, connectionText, focusTrigger }) => {
 
     const inputRef = useRef(null);
+
+    // When focusTrigger increments (e.g. user edits a queued message),
+    // focus the native textarea so the mobile keyboard opens.
+    useEffect(() => {
+        if (!focusTrigger) return;
+        // inputRef is attached to the underlying <textarea> via MUI's inputRef prop.
+        // Calling focus() here is safe: the trigger originates from a user touch event
+        // so the browser will honour it and raise the mobile keyboard.
+        if (inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [focusTrigger]);
 
     // Gate: block send when backend is processing, chat ended, astrologer is typing, or connecting
     const isBlocked = loading || !!summary || isBuffering || isConnecting;
@@ -124,12 +136,12 @@ const ChatInputFooter = ({ onSend, onTyping, userStatus, loading, summary, input
                                     setInputValue(e.target.value);
                                     if (onTyping) onTyping(e.target.value.length > 0);
                                 }}
-                                // onKeyPress={(e) => {
-                                //     if (e.key === 'Enter' && !e.shiftKey) {
-                                //         e.preventDefault();
-                                //         handleSend();
-                                //     }
-                                // }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSend();
+                                    }
+                                }}
                                 disabled={isBlocked || userStatus !== 'ready'}
                                 sx={{
                                     fontSize: 14,
