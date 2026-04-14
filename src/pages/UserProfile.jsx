@@ -192,11 +192,15 @@ const UserProfile = () => {
 
             const payload = { ...details, ...locationFields };
             await updateProfile(payload);
-            setSuccessMsg("Profile updated successfully! Your report is being regenerated.");
+            setSuccessMsg("Profile updated successfully.");
 
             // Optional: Update local storage if name/email changed
             localStorage.setItem('userName', details.name);
             localStorage.setItem('userEmail', details.email);
+
+            setTimeout(() => {
+                navigate('/dashboard');
+            }, 1500);
 
         } catch (err) {
             console.error(err);
@@ -320,7 +324,7 @@ const UserProfile = () => {
                 onClose={() => setSuccessMsg('')}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
-                <Alert onClose={() => setSuccessMsg('')} severity="success" sx={{ width: '80%', m: 'auto' }}>
+                <Alert onClose={() => setSuccessMsg('')} severity="success" sx={{ width: '100%', m: 'auto' }}>
                     {successMsg}
                 </Alert>
             </Snackbar>
