@@ -1167,8 +1167,16 @@ const Chat = () => {
                                     animating: false
                                 }));
 
+                                // Restore saved intro messages (welcomeMsg + systemMsg + mayaConnectMsg) that were
+                                // added when the consultation started but are not stored on the server.
+                                const savedIntroMsgs = (() => {
+                                    try {
+                                        return JSON.parse(sessionStorage.getItem('chatIntroMsgs') || '[]');
+                                    } catch { return []; }
+                                })();
+
                                 const dedupHistory = deduplicateHistory(mappedHistory);
-                                setMessages(dedupHistory);
+                                setMessages([...savedIntroMsgs, ...dedupHistory]);
                                 setChatStarted(dedupHistory.some(m => m.role === 'user'));
                                 attemptGurujiRecovery(dedupHistory, currentLocalSid);
 
@@ -1217,9 +1225,17 @@ const Chat = () => {
                                 animating: false
                             }));
 
+                            // Restore saved intro messages (welcomeMsg + systemMsg + mayaConnectMsg) that were
+                            // added when the consultation started but are not stored on the server.
+                            const savedIntroMsgsFallback = (() => {
+                                try {
+                                    return JSON.parse(sessionStorage.getItem('chatIntroMsgs') || '[]');
+                                } catch { return []; }
+                            })();
+
                             console.log("DEBUG: mappedHistory set, count:", mappedHistory.length);
                             const dedupHistory = deduplicateHistory(mappedHistory);
-                            setMessages(dedupHistory);
+                            setMessages([...savedIntroMsgsFallback, ...dedupHistory]);
                             setChatStarted(dedupHistory.some(m => m.role === 'user'));
                             attemptGurujiRecovery(dedupHistory, mostRecentSession.session_id);
 
@@ -1459,6 +1475,8 @@ const Chat = () => {
         setFeedbackSubmitted(false);
         setChatStarted(false);
         setInsufficientFundsInfo(null);
+        // Clear saved intro messages so they don't bleed into the new session on refresh
+        sessionStorage.removeItem('chatIntroMsgs');
 
         // Register the new session on the server immediately so it survives page reload
         const mobile = localStorage.getItem('mobile');
@@ -1822,6 +1840,10 @@ const Chat = () => {
                     setChatStarted(true);
                     setIsConnecting(false);
                     setIsMovingToTop(false);
+
+                    // Save intro messages to sessionStorage so they survive page refresh
+                    const introMsgs = [welcomeMsg, systemMsg, mayaConnectedMsg];
+                    sessionStorage.setItem('chatIntroMsgs', JSON.stringify(introMsgs));
                 }, 2000);
             }, connectingTime);
         }, 600); // Wait for initial scroll/slide
@@ -2844,10 +2866,10 @@ const Chat = () => {
 
                     if (msg.role === 'user' && msg.requires_chat_payment && !msg.is_paid) {
                         return (
-                            <Box key={i} sx={{ width: '100%', mb: 0 }}>
+                            <Box key={i} sx={{ width: '100%', mb: 0, maxWidth: '80%' }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%', mb: 1 }}>
                                     <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: 0 }}>You</Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', maxWidth: '80%' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexDirection: 'row-reverse', }}>
                                         <Box sx={{
                                             p: '12px 16px 14px 12px',
                                             borderRadius: msg.role === 'user' ? '10px 2px 10px 10px' : '2px 10px 10px 10px',
@@ -2966,7 +2988,7 @@ const Chat = () => {
                                     {/* <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: 0, mr: .5 }}>
                                         {msg.role === 'user' ? 'You' : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
                                     </Typography> */}
-                                    <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexWrap: 'nowrap', maxWidth: '90%', }}>
                                         <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', flexDirection: 'column', minWidth: 0 }}>
                                             <Typography sx={{ fontSize: '0.75rem', color: '#acacac', fontWeight: 400, pointerEvents: 'none', mb: -.1, mr: 0 }}>
                                                 {msg.role === 'user' ? (msg.requires_chat_payment || isSubscribed ? 'You (Premium Question)' : 'You') : (msg.assistant === 'maya' ? 'MAYA' : 'Guruji')}
@@ -2977,7 +2999,7 @@ const Chat = () => {
                                                 alignItems: 'flex-start',
                                                 gap: 1.5,
                                                 flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
-                                                maxWidth: '90%',
+
 
                                             }}>
                                                 {msg.content && msg.content.trim() !== '' && (
