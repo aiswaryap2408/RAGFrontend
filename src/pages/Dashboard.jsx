@@ -246,7 +246,7 @@ const Dashboard = () => {
                             </Box>
                             <Typography fontSize={14} mt={.3} width={75} color="#574228">Recharge</Typography>
                         </Box>
-                        <Box onClick={() => handleAction('/wallet/recharge-history')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
+                        <Box onClick={() => handleAction('/subscription')} sx={{ cursor: 'pointer', display: "flex", flexDirection: "column", alignItems: "center" }}>
                             <Box sx={{ bgcolor: "#dc5d35", borderRadius: 1, p: 1.5, width: '45px', height: '45px', display: "flex", justifyContent: "center", alignItems: "center" }}>
                                 <img src="/svg/subscribe.svg" alt="" style={{ width: '36px', height: '36px' }} />
                             </Box>

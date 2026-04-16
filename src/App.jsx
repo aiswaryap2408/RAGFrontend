@@ -24,6 +24,7 @@ import Settings from './pages/admin/Settings';
 import ScrollToTop from './components/ScrollToTop';
 import Dashboard from './pages/Dashboard';
 import DetailedReports from './pages/DetailedReports';
+import Subscription from './pages/Subscription';
 
 
 // User Protected Route Component
@@ -135,6 +136,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <RechargeHistory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subscription"
+            element={
+              <ProtectedRoute>
+                <Subscription />
               </ProtectedRoute>
             }
           />
